@@ -1,68 +1,140 @@
 import { NextResponse } from "next/server";
 import { callAI } from "@/lib/ai/client";
 import { FINANCIAL_COACHING_PROMPT } from "@/lib/ai/prompts";
+import { createClient } from "@/lib/supabase/server";
 
-/**
- * POST /api/webhooks/telegram
- * Handles incoming messages from Telegram Bot API
- */
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
     const body = await request.json();
 
-    // Check if it's a new message
     const message = body.message;
     if (!message || !message.text) {
       return NextResponse.json({ status: "ok" });
     }
 
-    const chatId = message.chat.id;
-    const userMessage = message.text;
-    const userName = message.from?.first_name || "Pemilik Dana";
+    const chatId = message.chat.id.toString();
+    const userMessage = message.text.trim();
+    const userName = message.from?.first_name || "Pengguna Baru";
 
     console.log(`[Telegram] Message from ${userName} (${chatId}): ${userMessage}`);
 
-    // Call Gemini AI for coaching response
+    // --- 1. HANDLE /link COMMAND ---
+    if (userMessage.startsWith("/link ")) {
+      const code = userMessage.split(" ")[1];
+      
+      if (!code) {
+        await replyTelegram(chatId, "Format salah. Gunakan `/link KODE`");
+        return NextResponse.json({ status: "ok" });
+      }
+
+      // Find user with this code
+      const { data: userLink } = await supabase
+        .from("users")
+        .select("id, email")
+        .eq("telegram_link_code", code)
+        .single();
+
+      if (!userLink) {
+        await replyTelegram(chatId, "❌ Kode tidak valid atau sudah kadaluwarsa.");
+        return NextResponse.json({ status: "ok" });
+      }
+
+      // Update user with chat_id and clear the code
+      const { error } = await supabase
+        .from("users")
+        .update({ 
+          telegram_chat_id: chatId,
+          telegram_link_code: null 
+        })
+        .eq("id", userLink.id);
+
+      if (error) {
+        await replyTelegram(chatId, "❌ Terjadi kesalahan sistem saat menghubungkan akun.");
+        return NextResponse.json({ status: "ok" });
+      }
+
+      await replyTelegram(chatId, `✅ Akun SafeWallet berhasil terhubung!\n\nHalo pemilik email **${userLink.email}**, Saku sekarang siap bantu analisa kesehatan keuangan kamu. Cobalah tanya: *"Saku, bagaimana kondisi skorku saat ini?"*`);
+      return NextResponse.json({ status: "ok" });
+    }
+
+    // --- 2. REGULAR CHAT (RAG Context Injection) ---
+    // Check if telegram account is linked
+    const { data: linkInfo } = await supabase
+      .from("users")
+      .select("id, monthly_income")
+      .eq("telegram_chat_id", chatId)
+      .single();
+
+    let ragContext = "";
+    
+    // If linked, fetch newest health scan
+    if (linkInfo) {
+      const { data: latestScan } = await supabase
+        .from("scans")
+        .select("health_score, categories, created_at")
+        .eq("user_id", linkInfo.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      ragContext += `\n\n[CONTEXT INVISIBLE TO USER - FOR AI ONLY]`;
+      ragContext += `\n- Akun user ini SUDAH TERSAMBUNG ke sistem SafeWallet.`;
+      if (linkInfo.monthly_income) {
+        ragContext += `\n- Gaji bulanan user: Rp ${linkInfo.monthly_income.toLocaleString("id-ID")}`;
+      }
+      if (latestScan) {
+        ragContext += `\n- Hasil Health Scanner Terakhir (${new Date(latestScan.created_at).toLocaleDateString()}):`;
+        ragContext += `\n  * Health Score: ${latestScan.health_score}/100`;
+        ragContext += `\n  * Kategori Pengeluaran: ${JSON.stringify(latestScan.categories)}`;
+      } else {
+        ragContext += `\n- User belum pernah melakukan scan data mutasi sama sekali.`;
+      }
+      ragContext += `\n[END CONTEXT] - Jawablah chat user berikut berdasarkan context di atas jika relevan. Jika tidak relevan, jawab seperti biasa.`;
+    } else {
+      ragContext += `\n\n[CONTEXT INVISIBLE TO USER - FOR AI ONLY]`;
+      ragContext += `\n- User ini BELUM menyambungkan akun Telegramnya ke SafeWallet. Sarankan mereka untuk login ke website, buka menu Profil, dan klik Integrasi Bot Telegram untuk mendapatkan kode /link.`;
+      ragContext += `\n[END CONTEXT]`;
+    }
+
+    // Call AI
     let aiResponseText = "Halo! Maaf, Saku sedang sibuk menghitung angka. Coba lagi nanti ya 😊";
-    let isError = false;
 
     try {
       const aiResponse = await callAI(
         [
-          { role: "system", content: FINANCIAL_COACHING_PROMPT },
+          { role: "system", content: FINANCIAL_COACHING_PROMPT + ragContext },
           { role: "user", content: `(Pesan dari ${userName}): ${userMessage}` }
         ],
-        { jsonMode: false, temperature: 0.7 } // Higher temp for more conversational replies
+        { jsonMode: false, temperature: 0.7 }
       );
       
       aiResponseText = aiResponse.content;
     } catch (aiError) {
       console.error("[Telegram] Gemini AI Error:", aiError);
-      isError = true;
+      aiResponseText = "Waduh, koneksi Saku ke otak utama lagi gangguan nih. Boleh diulang sebentar lagi? 🙏";
     }
 
-    // Send reply back to Telegram
-    const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-    if (!telegramToken) {
-      console.error("[Telegram] TELEGRAM_BOT_TOKEN is missing!");
-      return NextResponse.json({ status: "error", message: "Token missing" }, { status: 500 });
-    }
-
-    await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: isError ? "Waduh, koneksi Saku ke otak utama lagi gangguan nih. Boleh diulang sebentar lagi? 🙏" : aiResponseText,
-        parse_mode: "Markdown",
-      }),
-    });
-
+    await replyTelegram(chatId, aiResponseText);
     return NextResponse.json({ status: "ok" });
   } catch (error) {
     console.error("[Telegram] Webhook critical error:", error);
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
+}
+
+// Helper function to reply
+async function replyTelegram(chatId: string, text: string) {
+  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+  if (!telegramToken) return;
+
+  await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: text,
+      parse_mode: "Markdown",
+    }),
+  });
 }

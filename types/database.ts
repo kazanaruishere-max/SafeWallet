@@ -27,6 +27,8 @@ export type User = {
   subscription_tier: SubscriptionTier;
   subscription_expires_at: string | null;
   onboarding_completed: boolean;
+  telegram_chat_id: string | null;
+  telegram_link_code: string | null;
   created_at: string;
   updated_at: string;
 };

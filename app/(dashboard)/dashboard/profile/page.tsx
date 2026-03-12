@@ -17,6 +17,7 @@ type ProfileData = {
   monthly_income: number | null;
   subscription_tier: string;
   onboarding_completed: boolean;
+  telegram_chat_id: string | null;
 };
 
 export default function ProfilePage() {
@@ -30,6 +31,9 @@ export default function ProfilePage() {
     scans: { used: number; limit: number };
     scam_checks: { used: number; limit: number };
   } | null>(null);
+
+  const [linkCode, setLinkCode] = useState<string | null>(null);
+  const [linking, setLinking] = useState(false);
 
   // Fetch profile + quota on mount
   useEffect(() => {
@@ -107,6 +111,24 @@ export default function ProfilePage() {
       toast.success("Data berhasil diunduh!");
     } catch {
       toast.error("Gagal mengunduh data.");
+    }
+  };
+
+  const handleGenerateTelegramCode = async () => {
+    setLinking(true);
+    try {
+      const res = await fetch("/api/user/telegram-link", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        setLinkCode(json.code);
+        toast.success("Kode OTP Telegram berhasil dibuat!");
+      } else {
+        toast.error(json.error?.message ?? "Gagal mendapatkan kode.");
+      }
+    } catch {
+      toast.error("Gagal terhubung ke server.");
+    } finally {
+      setLinking(false);
     }
   };
 
@@ -200,6 +222,54 @@ export default function ProfilePage() {
             <p>📊 Scan tersisa bulan ini: <strong>{scanQuota.limit - scanQuota.used} / {scanQuota.limit}</strong></p>
             <p>🛡️ Cek scam tersisa bulan ini: <strong>{scamQuota.limit - scamQuota.used} / {scamQuota.limit}</strong></p>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Telegram Link */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <svg viewBox="0 0 24 24" className="h-4 w-4 fill-current"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.32.252-.472.252l.215-3.048 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/></svg>
+            Integrasi Bot Telegram
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Status Koneksi</p>
+              <Badge variant={profile?.telegram_chat_id ? "default" : "secondary"} className="mt-1">
+                {profile?.telegram_chat_id ? "Tersambung" : "Belum Tersambung"}
+              </Badge>
+            </div>
+            {!profile?.telegram_chat_id && !linkCode && (
+              <Button onClick={handleGenerateTelegramCode} disabled={linking}>
+                {linking ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Hubungkan
+              </Button>
+            )}
+          </div>
+          
+          {linkCode && (
+            <div className="rounded-lg border bg-blue-50/50 p-4 space-y-3 dark:bg-blue-950/20">
+              <p className="text-sm font-medium">Langkah Terakhir:</p>
+              <ol className="text-sm space-y-1 list-decimal list-inside text-muted-foreground">
+                <li>Buka aplikasi Telegram dan cari bot <strong>@SakuSafeBot</strong></li>
+                <li>Klik tombol <strong>Start</strong></li>
+                <li>Kirim pesan berikut ke bot tersebut:</li>
+              </ol>
+              <div className="bg-background border p-3 rounded-md flex items-center justify-between">
+                <code className="text-lg font-bold text-primary">/link {linkCode}</code>
+                <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(`/link ${linkCode}`)}>Copy</Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">Kode ini hanya berlaku sementara.</p>
+            </div>
+          )}
+
+          {profile?.telegram_chat_id && (
+            <p className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-3 rounded-md">
+              ✅ Bot Telegram (@SakuSafeBot) berhasil tersambung. Saku sekarang dapat melihat skor kesehatan keuanganmu dan memberikan saran yang jauh lebih personal langsung dari Telegram!
+            </p>
+          )}
         </CardContent>
       </Card>
 
