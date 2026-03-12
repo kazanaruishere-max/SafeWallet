@@ -15,9 +15,22 @@ type AIResponse = {
   usage: { prompt_tokens: number; completion_tokens: number };
 };
 
+export class AIError extends Error {
+  code: string;
+  statusCode: number;
+  userMessage: string;
+
+  constructor(code: string, statusCode: number, userMessage: string, detail?: string) {
+    super(detail ?? userMessage);
+    this.code = code;
+    this.statusCode = statusCode;
+    this.userMessage = userMessage;
+  }
+}
+
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const PRIMARY_MODEL = "gemini-2.0-flash";
-const FALLBACK_MODEL = "gemini-2.0-flash-lite";
+const FALLBACK_MODEL = "gemini-1.5-flash";
 
 export async function callAI(
   messages: Message[],
@@ -26,14 +39,21 @@ export async function callAI(
     maxTokens?: number;
     temperature?: number;
     jsonMode?: boolean;
+    _retryCount?: number;
   }
 ): Promise<AIResponse> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not set in environment variables");
+    throw new AIError(
+      "CONFIG_ERROR",
+      500,
+      "Konfigurasi AI belum lengkap. Hubungi admin.",
+      "GEMINI_API_KEY is not set"
+    );
   }
 
   const model = options?.model ?? PRIMARY_MODEL;
+  const retryCount = options?._retryCount ?? 0;
 
   // Convert messages to Gemini format
   const systemInstruction = messages
@@ -57,28 +77,25 @@ export async function callAI(
     },
   };
 
-  // Add system instruction
   if (systemInstruction) {
     body.systemInstruction = {
       parts: [{ text: systemInstruction }],
     };
   }
 
-  // JSON mode
   if (options?.jsonMode) {
     (body.generationConfig as Record<string, unknown>).responseMimeType =
       "application/json";
   }
 
-  // FIX F1: API key in header instead of URL query string
-  const endpoint = `${GEMINI_URL}/${model}:generateContent`;
+  // Use both header and query key for maximum compatibility
+  const endpoint = `${GEMINI_URL}/${model}:generateContent?key=${apiKey}`;
 
   try {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(body),
     });
@@ -87,12 +104,67 @@ export async function callAI(
       const errorText = await response.text();
       console.error(`Gemini API error (${response.status}):`, errorText);
 
-      // Fallback to lighter model
-      if (model === PRIMARY_MODEL) {
-        console.warn("Primary model failed, trying fallback...");
-        return callAI(messages, { ...options, model: FALLBACK_MODEL });
+      // Handle specific status codes
+      switch (response.status) {
+        case 429: {
+          // Rate limit — retry once after delay
+          if (retryCount < 1) {
+            console.warn("Rate limited, retrying in 2s...");
+            await delay(2000);
+            return callAI(messages, { ...options, _retryCount: retryCount + 1 });
+          }
+          // Try fallback model
+          if (model === PRIMARY_MODEL) {
+            console.warn("Rate limited on primary, trying fallback model...");
+            await delay(1000);
+            return callAI(messages, { ...options, model: FALLBACK_MODEL, _retryCount: 0 });
+          }
+          throw new AIError(
+            "QUOTA_EXCEEDED",
+            429,
+            "Kuota AI harian telah habis. Coba lagi besok atau upgrade ke premium.",
+            errorText
+          );
+        }
+        case 400:
+          throw new AIError(
+            "BAD_REQUEST",
+            400,
+            "Data yang dikirim tidak dapat diproses AI. Coba file lain.",
+            errorText
+          );
+        case 401:
+        case 403:
+          throw new AIError(
+            "AUTH_ERROR",
+            response.status,
+            "API key AI tidak valid. Hubungi admin.",
+            errorText
+          );
+        case 500:
+        case 503:
+          // Server error — try fallback model
+          if (model === PRIMARY_MODEL) {
+            console.warn("Gemini server error, trying fallback...");
+            return callAI(messages, { ...options, model: FALLBACK_MODEL });
+          }
+          throw new AIError(
+            "SERVER_ERROR",
+            response.status,
+            "Server AI sedang bermasalah. Coba lagi dalam beberapa menit.",
+            errorText
+          );
+        default:
+          if (model === PRIMARY_MODEL) {
+            return callAI(messages, { ...options, model: FALLBACK_MODEL });
+          }
+          throw new AIError(
+            "UNKNOWN_ERROR",
+            response.status,
+            "Layanan AI sedang tidak tersedia. Coba lagi nanti.",
+            errorText
+          );
       }
-      throw new Error(`Gemini API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -100,7 +172,20 @@ export async function callAI(
     const text = candidate?.content?.parts?.[0]?.text;
 
     if (!text) {
-      throw new Error("Gemini returned empty response");
+      // Check for safety blocks
+      const blockReason = candidate?.finishReason;
+      if (blockReason === "SAFETY") {
+        throw new AIError(
+          "SAFETY_BLOCK",
+          200,
+          "AI tidak bisa menganalisis konten ini karena alasan keamanan. Coba file lain."
+        );
+      }
+      throw new AIError(
+        "EMPTY_RESPONSE",
+        200,
+        "AI mengembalikan respons kosong. Coba lagi."
+      );
     }
 
     return {
@@ -112,10 +197,23 @@ export async function callAI(
       },
     };
   } catch (error) {
+    // Re-throw AIError as-is
+    if (error instanceof AIError) throw error;
+
+    // Network errors
     if (model === PRIMARY_MODEL) {
-      console.warn("Primary model error, trying fallback...", error);
+      console.warn("Network error, trying fallback...", error);
       return callAI(messages, { ...options, model: FALLBACK_MODEL });
     }
-    throw error;
+    throw new AIError(
+      "NETWORK_ERROR",
+      0,
+      "Gagal terhubung ke server AI. Periksa koneksi internet.",
+      String(error)
+    );
   }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

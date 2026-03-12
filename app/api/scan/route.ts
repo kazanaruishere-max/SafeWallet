@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { callAI } from "@/lib/ai/client";
+import { callAI, AIError } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
 import { checkQuota, incrementUsage } from "@/lib/rate-limit";
 import { checkAndAwardBadges } from "@/lib/gamification";
@@ -126,16 +126,20 @@ export async function POST(request: Request) {
       );
 
       analysisResult = parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan");
-    } catch {
+    } catch (aiError) {
+      const message = aiError instanceof AIError
+        ? aiError.userMessage
+        : "Layanan AI sedang tidak tersedia. Coba lagi dalam beberapa saat.";
+      const code = aiError instanceof AIError ? aiError.code : "AI_UNAVAILABLE";
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: "AI_UNAVAILABLE",
-            message: "Layanan AI sedang tidak tersedia. Coba lagi dalam beberapa saat.",
+            code,
+            message,
           },
         } satisfies ApiError,
-        { status: 503 }
+        { status: aiError instanceof AIError ? aiError.statusCode || 503 : 503 }
       );
     }
 
