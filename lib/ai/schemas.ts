@@ -8,8 +8,8 @@ import { z } from "zod";
 export const HealthAnalysisSchema = z.object({
   health_score: z.number().min(0).max(100),
   categories: z.record(z.string(), z.number()).default({}),
-  debt_to_income_ratio: z.number().min(0).max(10).default(0),
-  savings_rate: z.number().min(-1).max(1).default(0),
+  debt_to_income_ratio: z.number().default(0),
+  savings_rate: z.number().default(0),
   recommendations: z.array(z.string()).default([]),
   warnings: z.array(z.string()).default([]),
 });
@@ -76,9 +76,10 @@ function extractJSON(raw: string): string {
 function repairJSON(jsonString: string): string {
   let str = jsonString.trim();
   
-  // If it's heavily truncated ending in a comma, remove the comma
-  if (str.endsWith(",")) str = str.slice(0, -1);
-  if (str.endsWith(",\n")) str = str.slice(0, -2);
+  // Remove dangling commas or empty keys like `"debt_to_income_ratio": `
+  str = str.replace(/,\s*$/, "");
+  str = str.replace(/,\s*"[^"]+"\s*:\s*$/, "");
+  str = str.replace(/"[^"]+"\s*:\s*$/, "");
   
   // Count open and close braces
   const openBraces = (str.match(/\{/g) || []).length;

@@ -170,10 +170,14 @@ export async function callAI(
     const data = await response.json();
     const candidate = data.candidates?.[0];
     const text = candidate?.content?.parts?.[0]?.text;
+    const blockReason = candidate?.finishReason;
+
+    if (blockReason && blockReason !== "STOP") {
+      console.warn(`[Gemini API] Response truncated. finishReason: ${blockReason}`);
+    }
 
     if (!text) {
       // Check for safety blocks
-      const blockReason = candidate?.finishReason;
       if (blockReason === "SAFETY") {
         throw new AIError(
           "SAFETY_BLOCK",
