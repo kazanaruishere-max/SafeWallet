@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { callAI, AIError } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
-import { checkQuota, incrementUsage } from "@/lib/rate-limit";
-import { checkAndAwardBadges } from "@/lib/gamification";
 import { sanitizeAIInput } from "@/lib/sanitize";
 import { parseAIResponse, HealthAnalysisSchema } from "@/lib/ai/schemas";
 import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
@@ -32,30 +30,32 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Quota check
-    const quota = await checkQuota(user.id, "scan");
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "QUOTA_EXCEEDED",
-            message: "Batas 3 scan gratis/bulan tercapai. Upgrade ke Premium?",
-            details: {
-              current: quota.used,
-              limit: quota.limit,
-              resets_at: getNextMonthReset(),
+    // 2. Quota check (non-blocking — works even if DB tables missing)
+    let quotaRemaining = 2;
+    try {
+      const { checkQuota } = await import("@/lib/rate-limit");
+      const quota = await checkQuota(user.id, "scan");
+      quotaRemaining = quota.remaining;
+      if (!quota.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "QUOTA_EXCEEDED",
+              message: "Batas scan gratis/bulan tercapai. Upgrade ke Premium?",
             },
-          },
-        } satisfies ApiError,
-        { status: 429 }
-      );
+          } satisfies ApiError,
+          { status: 429 }
+        );
+      }
+    } catch (quotaErr) {
+      console.warn("Quota check failed (tables may not exist), allowing scan:", quotaErr);
+      // Allow scan to proceed if quota system fails
     }
 
     // 3. Parse request body
     const formData = await request.formData();
     const image = formData.get("image") as File | null;
-    const bankHint = formData.get("bank_hint") as string | null;
     const monthlyIncome = formData.get("monthly_income")
       ? Number(formData.get("monthly_income"))
       : undefined;
@@ -66,37 +66,37 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "File gambar mutasi bank harus disertakan.",
+            message: "File harus disertakan.",
           },
         } satisfies ApiError,
         { status: 400 }
       );
     }
 
-    // 4. Validate file
-    if (image.size > 5 * 1024 * 1024) {
+    // 4. Validate file size (20MB for PDFs/Excel)
+    if (image.size > 20 * 1024 * 1024) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "Ukuran file maksimum 5MB.",
+            message: "Ukuran file maksimum 20MB.",
           },
         } satisfies ApiError,
         { status: 400 }
       );
     }
 
-    // 5. Sanitize OCR text
+    // 5. Get OCR text from client
     const ocrText = formData.get("ocr_text") as string | null;
 
-    if (!ocrText) {
+    if (!ocrText || ocrText.trim().length < 10) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "OCR_FAILED",
-            message: "Teks OCR diperlukan. Pastikan browser melakukan OCR terlebih dahulu.",
+            message: "Teks dari file tidak cukup. Pastikan file berisi data keuangan yang jelas.",
           },
         } satisfies ApiError,
         { status: 422 }
@@ -105,16 +105,22 @@ export async function POST(request: Request) {
 
     const { sanitized: cleanOcrText } = sanitizeAIInput(ocrText, 5000);
 
-    // 6. Get user income for analysis
-    const { data: userProfile } = await supabase
-      .from("users")
-      .select("monthly_income")
-      .eq("id", user.id)
-      .single();
+    // 6. Get user income (non-blocking)
+    let income = monthlyIncome;
+    if (!income) {
+      try {
+        const { data: userProfile } = await supabase
+          .from("users")
+          .select("monthly_income")
+          .eq("id", user.id)
+          .single();
+        income = userProfile?.monthly_income ?? undefined;
+      } catch {
+        // DB may not have users table — proceed without income
+      }
+    }
 
-    const income = monthlyIncome ?? userProfile?.monthly_income ?? undefined;
-
-    // 7. AI Analysis
+    // 7. AI Analysis — core feature
     let analysisResult;
     try {
       const aiResponse = await callAI(
@@ -127,6 +133,7 @@ export async function POST(request: Request) {
 
       analysisResult = parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan");
     } catch (aiError) {
+      console.error("AI Analysis failed:", aiError);
       const message = aiError instanceof AIError
         ? aiError.userMessage
         : "Layanan AI sedang tidak tersedia. Coba lagi dalam beberapa saat.";
@@ -134,41 +141,54 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          error: {
-            code,
-            message,
-          },
+          error: { code, message },
         } satisfies ApiError,
         { status: aiError instanceof AIError ? aiError.statusCode || 503 : 503 }
       );
     }
 
-    // 8. Store scan in database
-    const { data: scan, error: insertError } = await supabase
-      .from("scans")
-      .insert({
-        user_id: user.id,
-        image_url: "client-side-only",
-        ocr_raw_text: ocrText.substring(0, 5000),
-        health_score: analysisResult.health_score,
-        categories: analysisResult.categories,
-        recommendations: analysisResult.recommendations,
-        processing_time_ms: Date.now() - startTime,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      console.error("Failed to save scan:", insertError);
+    // 8. Store scan in database (non-blocking)
+    let scanId = "local";
+    try {
+      const { data: scan } = await supabase
+        .from("scans")
+        .insert({
+          user_id: user.id,
+          image_url: "client-side-only",
+          ocr_raw_text: ocrText.substring(0, 5000),
+          health_score: analysisResult.health_score,
+          categories: analysisResult.categories,
+          recommendations: analysisResult.recommendations,
+          processing_time_ms: Date.now() - startTime,
+        })
+        .select("id")
+        .single();
+      scanId = scan?.id ?? "local";
+    } catch (dbErr) {
+      console.warn("Failed to save scan to DB:", dbErr);
+      // Still return results even if DB save fails
     }
 
-    // 9. Increment usage + check badges
-    await incrementUsage(user.id, "scan");
-    const newBadges = await checkAndAwardBadges(user.id);
+    // 9. Increment usage (non-blocking)
+    try {
+      const { incrementUsage } = await import("@/lib/rate-limit");
+      await incrementUsage(user.id, "scan");
+    } catch {
+      // Usage tracking failure shouldn't block results
+    }
 
-    // 10. Return result
+    // 10. Badge check (non-blocking)
+    let newBadges: string[] = [];
+    try {
+      const { checkAndAwardBadges } = await import("@/lib/gamification");
+      newBadges = await checkAndAwardBadges(user.id);
+    } catch {
+      // Badge failure shouldn't block results
+    }
+
+    // 11. Return result
     const result: ScanResult = {
-      scan_id: scan?.id ?? "unknown",
+      scan_id: scanId,
       health_score: analysisResult.health_score,
       categories: analysisResult.categories,
       debt_to_income_ratio: analysisResult.debt_to_income_ratio ?? 0,
@@ -181,7 +201,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: result,
-      meta: { remaining_quota: quota.remaining - 1, new_badges: newBadges },
+      meta: { remaining_quota: quotaRemaining - 1, new_badges: newBadges },
     } satisfies ApiResponse<ScanResult>);
   } catch (error) {
     console.error("Scan error:", error);
@@ -191,15 +211,10 @@ export async function POST(request: Request) {
         error: {
           code: "INTERNAL_ERROR",
           message: "Terjadi kesalahan internal. Silakan coba lagi.",
+          details: { hint: String(error) },
         },
       } satisfies ApiError,
       { status: 500 }
     );
   }
-}
-
-function getNextMonthReset(): string {
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  return next.toISOString();
 }
