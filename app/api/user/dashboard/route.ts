@@ -1,0 +1,119 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import type { ApiResponse, ApiError, DashboardData } from "@/types/api";
+
+export async function GET() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: { code: "AUTH_REQUIRED", message: "Login terlebih dahulu." },
+        } satisfies ApiError,
+        { status: 401 }
+      );
+    }
+
+    // Get user profile
+    const { data: profile } = await supabase
+      .from("users")
+      .select("email, subscription_tier, created_at")
+      .eq("id", user.id)
+      .single();
+
+    // Get latest scan
+    const { data: latestScan } = await supabase
+      .from("scans")
+      .select("health_score, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    // Get scan trend (last 3 scans)
+    const { data: scanTrend } = await supabase
+      .from("scans")
+      .select("health_score")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(3);
+
+    // Get scam check count
+    const { count: scamCount } = await supabase
+      .from("scam_checks")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
+    // Get badges
+    const { data: badges } = await supabase
+      .from("badges")
+      .select("badge_type, badge_name, earned_at")
+      .eq("user_id", user.id);
+
+    // Get current period usage
+    const period = getCurrentPeriod();
+    const { data: usageData } = await supabase
+      .from("usage_counts")
+      .select("feature, count")
+      .eq("user_id", user.id)
+      .eq("period", period);
+
+    const scanUsage = usageData?.find((u) => u.feature === "scan")?.count ?? 0;
+    const scamUsage = usageData?.find((u) => u.feature === "scam_check")?.count ?? 0;
+
+    const tier = profile?.subscription_tier ?? "free";
+    const scanLimit = tier === "free" ? 3 : 999999;
+    const scamLimit = tier === "free" ? 5 : 999999;
+
+    const result: DashboardData = {
+      user: {
+        email: profile?.email ?? user.email ?? "",
+        subscription: tier,
+        member_since: profile?.created_at ?? user.created_at ?? "",
+      },
+      latest_scan: latestScan
+        ? {
+            health_score: latestScan.health_score,
+            date: latestScan.created_at,
+          }
+        : null,
+      scan_trend: scanTrend?.map((s) => s.health_score).reverse() ?? [],
+      scam_checks_count: scamCount ?? 0,
+      badges:
+        badges?.map((b) => ({
+          type: b.badge_type,
+          name: b.badge_name,
+          earned_at: b.earned_at,
+        })) ?? [],
+      quota: {
+        scans: { used: scanUsage, limit: scanLimit },
+        scam_checks: { used: scamUsage, limit: scamLimit },
+      },
+    };
+
+    return NextResponse.json({
+      success: true,
+      data: result,
+    } satisfies ApiResponse<DashboardData>);
+  } catch (error) {
+    console.error("Dashboard error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: { code: "INTERNAL_ERROR", message: "Terjadi kesalahan." },
+      } satisfies ApiError,
+      { status: 500 }
+    );
+  }
+}
+
+function getCurrentPeriod(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
