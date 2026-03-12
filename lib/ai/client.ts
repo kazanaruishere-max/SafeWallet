@@ -72,7 +72,7 @@ export async function callAI(
     contents,
     generationConfig: {
       temperature: options?.temperature ?? 0.3,
-      maxOutputTokens: options?.maxTokens ?? 2000,
+      maxOutputTokens: options?.maxTokens ?? 4000,
       topP: 0.95,
     },
   };

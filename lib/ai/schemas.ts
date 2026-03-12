@@ -55,15 +55,49 @@ function extractJSON(raw: string): string {
   }
 
   // If still not starting with { or [, try to find JSON object in the text
+  // First try to extract the main JSON block if there's text surrounding it
   if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
     const jsonStart = cleaned.indexOf("{");
     const jsonEnd = cleaned.lastIndexOf("}");
     if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
       cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+    } else if (jsonStart !== -1) {
+      // Missing closing brace - will try to repair below
+      cleaned = cleaned.substring(jsonStart);
     }
   }
 
   return cleaned;
+}
+
+/**
+ * Attempts to repair slightly cut-off JSON (e.g. missing closing braces)
+ */
+function repairJSON(jsonString: string): string {
+  let str = jsonString.trim();
+  
+  // If it's heavily truncated ending in a comma, remove the comma
+  if (str.endsWith(",")) str = str.slice(0, -1);
+  if (str.endsWith(",\n")) str = str.slice(0, -2);
+  
+  // Count open and close braces
+  const openBraces = (str.match(/\{/g) || []).length;
+  const closeBraces = (str.match(/\}/g) || []).length;
+  const openBrackets = (str.match(/\[/g) || []).length;
+  const closeBrackets = (str.match(/\]/g) || []).length;
+  
+  // Append missing closing braces
+  if (openBrackets > closeBrackets) {
+    str += "]".repeat(openBrackets - closeBrackets);
+  }
+  if (openBraces > closeBraces) {
+    // If we're missing braces, it's possible the last key-value pair is cut off.
+    // E.g. `"recommendations": [` or `"savings_rate": 0.`
+    // A simple approach is just adding the closing braces and letting JSON.parse try.
+    str += "}".repeat(openBraces - closeBraces);
+  }
+
+  return str;
 }
 
 /**
@@ -75,14 +109,20 @@ export function parseAIResponse<T>(
   schema: z.ZodSchema<T>,
   context: string
 ): T {
-  const cleaned = extractJSON(rawJson);
+  let cleaned = extractJSON(rawJson);
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(cleaned);
-  } catch {
-    console.error(`[${context}] Raw AI response (failed to parse):`, rawJson.substring(0, 500));
-    throw new Error(`AI response bukan JSON valid (${context})`);
+  } catch (e1) {
+    console.warn(`[${context}] JSON parse failed, attempting repair...`);
+    try {
+      cleaned = repairJSON(cleaned);
+      parsed = JSON.parse(cleaned);
+    } catch {
+      console.error(`[${context}] Raw AI response (failed to parse):`, rawJson.substring(0, 500));
+      throw new Error(`AI response bukan JSON valid (${context})`);
+    }
   }
 
   const result = schema.safeParse(parsed);
