@@ -24,13 +24,16 @@ import {
   LogOut,
   Menu,
   CreditCard,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/scan", label: "Health Scanner", icon: Scan },
   { href: "/dashboard/scam", label: "Scam Detector", icon: AlertTriangle },
+  { href: "/dashboard/history", label: "Riwayat Scan", icon: History },
   { href: "/dashboard/profile", label: "Profil", icon: User },
 ];
 
@@ -138,8 +141,11 @@ export default function DashboardLayout({
 
           <div className="hidden lg:block" />
 
-          {/* User menu */}
-          <DropdownMenu>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+
+            {/* User menu */}
+            <DropdownMenu>
             <DropdownMenuTrigger className="relative h-9 w-9 rounded-full outline-none">
               <Avatar className="h-9 w-9">
                 <AvatarFallback className="bg-primary/10 text-primary text-sm">
@@ -157,6 +163,7 @@ export default function DashboardLayout({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         </header>
 
         {/* Content */}

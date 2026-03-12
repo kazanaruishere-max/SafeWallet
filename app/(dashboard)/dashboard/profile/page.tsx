@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, CreditCard, Shield, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 type ProfileData = {
   email: string;
@@ -19,6 +20,7 @@ type ProfileData = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -76,13 +78,36 @@ export default function ProfilePage() {
 
   const handleDeleteAccount = async () => {
     if (!confirm("Yakin ingin menghapus akun? Semua data akan hilang permanen.")) return;
-    // TODO: Implement deletion via API
-    toast.info("Fitur hapus akun akan tersedia segera.");
+    if (!confirm("Ini TIDAK BISA DIBATALKAN. Ketik ya untuk konfirmasi.")) return;
+    try {
+      const res = await fetch("/api/user/delete", { method: "DELETE" });
+      const json = await res.json();
+      if (json.success) {
+        toast.success("Akun berhasil dihapus.");
+        router.push("/");
+      } else {
+        toast.error(json.error?.message ?? "Gagal menghapus akun.");
+      }
+    } catch {
+      toast.error("Gagal terhubung ke server.");
+    }
   };
 
   const handleExportData = async () => {
-    // TODO: Implement data export via API
-    toast.info("Fitur ekspor data akan tersedia segera.");
+    try {
+      const res = await fetch("/api/user/export");
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `safewallet-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Data berhasil diunduh!");
+    } catch {
+      toast.error("Gagal mengunduh data.");
+    }
   };
 
   if (loading) {

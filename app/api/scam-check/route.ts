@@ -4,6 +4,8 @@ import { callAI } from "@/lib/ai/client";
 import { SCAM_DETECTION_PROMPT, buildScamPrompt } from "@/lib/ai/prompts";
 import { checkQuota, incrementUsage } from "@/lib/rate-limit";
 import { checkAndAwardBadges } from "@/lib/gamification";
+import { sanitizeScamInput } from "@/lib/sanitize";
+import { parseAIResponse, ScamAnalysisSchema } from "@/lib/ai/schemas";
 import type { ApiResponse, ApiError, ScamCheckResult } from "@/types/api";
 
 const VALID_INPUT_TYPES = ["text", "url", "screenshot"] as const;
@@ -76,18 +78,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Sanitize input
+    const { sanitized: cleanContent } = sanitizeScamInput(content);
+
     // 4. AI Analysis
     let analysisResult;
     try {
       const aiResponse = await callAI(
         [
           { role: "system", content: SCAM_DETECTION_PROMPT },
-          { role: "user", content: buildScamPrompt(content, company_name) },
+          { role: "user", content: buildScamPrompt(cleanContent, company_name) },
         ],
         { jsonMode: true, temperature: 0.1 }
       );
 
-      analysisResult = JSON.parse(aiResponse.content);
+      analysisResult = parseAIResponse(aiResponse.content, ScamAnalysisSchema, "scam-check");
     } catch {
       return NextResponse.json(
         {

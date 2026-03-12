@@ -4,6 +4,8 @@ import { callAI } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
 import { checkQuota, incrementUsage } from "@/lib/rate-limit";
 import { checkAndAwardBadges } from "@/lib/gamification";
+import { sanitizeAIInput } from "@/lib/sanitize";
+import { parseAIResponse, HealthAnalysisSchema } from "@/lib/ai/schemas";
 import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
 
 export async function POST(request: Request) {
@@ -85,8 +87,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. OCR — in production, OCR runs client-side (Tesseract.js)
-    // For API, accept pre-extracted text or process server-side
+    // 5. Sanitize OCR text
     const ocrText = formData.get("ocr_text") as string | null;
 
     if (!ocrText) {
@@ -101,6 +102,8 @@ export async function POST(request: Request) {
         { status: 422 }
       );
     }
+
+    const { sanitized: cleanOcrText } = sanitizeAIInput(ocrText, 5000);
 
     // 6. Get user income for analysis
     const { data: userProfile } = await supabase
@@ -117,12 +120,12 @@ export async function POST(request: Request) {
       const aiResponse = await callAI(
         [
           { role: "system", content: HEALTH_ANALYSIS_PROMPT },
-          { role: "user", content: buildHealthPrompt(ocrText, income) },
+          { role: "user", content: buildHealthPrompt(cleanOcrText, income) },
         ],
         { jsonMode: true, temperature: 0.2 }
       );
 
-      analysisResult = JSON.parse(aiResponse.content);
+      analysisResult = parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan");
     } catch {
       return NextResponse.json(
         {
