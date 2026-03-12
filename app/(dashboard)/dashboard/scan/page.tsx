@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -28,7 +28,15 @@ export default function ScanPage() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [ocrProgress, setOcrProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // FIX C4: Revoke object URL on cleanup
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -41,31 +49,43 @@ export default function ScanPage() {
     }
 
     setError(null);
-    setPreview(URL.createObjectURL(file));
+    // FIX C4: Revoke previous URL before creating new one
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
 
-    // Step 1: OCR (client-side simulation for now)
+    // FIX F2: Real OCR with Tesseract.js
     setState("ocr");
+    setOcrProgress(0);
 
-    // In production, use Tesseract.js here:
-    // const worker = await Tesseract.createWorker('ind');
-    // const { data: { text } } = await worker.recognize(file);
-    // For now, simulate OCR with mock data
-    await new Promise((r) => setTimeout(r, 1500));
-    const mockOcrText = `BCA - Mutasi Rekening
-    01/03/2026 Transfer Masuk Gaji PT TECH 8.500.000
-    02/03/2026 Debit Tokopedia Belanja 450.000
-    03/03/2026 Debit GrabFood 85.000
-    05/03/2026 Debit Shopee 320.000
-    07/03/2026 Debit PLN Tagihan Listrik 280.000
-    08/03/2026 Debit GoFood 65.000
-    10/03/2026 Debit SPBU Shell 250.000
-    12/03/2026 Debit Indomaret 120.000
-    15/03/2026 Debit GrabCar 45.000
-    18/03/2026 Debit Starbucks 95.000
-    20/03/2026 Transfer Keluar Cicilan KPR 2.500.000
-    22/03/2026 Debit Netflix 54.000
-    25/03/2026 Debit Shopee 180.000
-    28/03/2026 Debit GoFood 72.000`;
+    let ocrText: string;
+    try {
+      const Tesseract = await import("tesseract.js");
+      const worker = await Tesseract.createWorker("ind+eng", undefined, {
+        logger: (m: { status: string; progress: number }) => {
+          if (m.status === "recognizing text") {
+            setOcrProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+      const { data } = await worker.recognize(file);
+      ocrText = data.text;
+      await worker.terminate();
+
+      if (!ocrText || ocrText.trim().length < 20) {
+        setError(
+          "Tidak dapat membaca teks dari gambar. Pastikan foto jelas dan berisi mutasi bank."
+        );
+        setState("error");
+        return;
+      }
+    } catch (ocrError) {
+      console.error("OCR failed:", ocrError);
+      setError("Gagal membaca teks dari gambar. Coba lagi dengan foto yang lebih jelas.");
+      setState("error");
+      return;
+    }
 
     // Step 2: AI Analysis
     setState("analyzing");
@@ -73,7 +93,7 @@ export default function ScanPage() {
     try {
       const formData = new FormData();
       formData.append("image", file);
-      formData.append("ocr_text", mockOcrText);
+      formData.append("ocr_text", ocrText);
 
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -86,6 +106,12 @@ export default function ScanPage() {
         setError(json.error?.message ?? "Gagal menganalisis. Coba lagi.");
         setState("error");
         return;
+      }
+
+      // Show new badges notification
+      if (json.meta?.new_badges?.length > 0) {
+        // Could use toast here
+        console.log("New badges earned:", json.meta.new_badges);
       }
 
       setResult(json.data as ScanResult);
@@ -192,7 +218,7 @@ export default function ScanPage() {
             </Card>
           )}
 
-          {/* How it works */}
+          {/* How it works — FIX F5: Corrected "Claude" to "Gemini" */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Cara Kerja</CardTitle>
@@ -209,7 +235,7 @@ export default function ScanPage() {
                   {
                     step: "2",
                     title: "OCR + AI",
-                    desc: "Teks diekstrak & dianalisis Claude AI",
+                    desc: "Teks diekstrak Tesseract.js & dianalisis Gemini AI",
                   },
                   {
                     step: "3",
@@ -408,8 +434,8 @@ export default function ScanPage() {
               {state === "uploading"
                 ? "Mengupload..."
                 : state === "ocr"
-                  ? "Membaca teks dari gambar (OCR)..."
-                  : "Menganalisis dengan AI Claude..."}
+                  ? `Membaca teks dari gambar (OCR)... ${ocrProgress}%`
+                  : "Menganalisis dengan Gemini AI..."}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               {state === "ocr"

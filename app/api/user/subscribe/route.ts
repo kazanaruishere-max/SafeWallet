@@ -4,10 +4,7 @@ import type { ApiError } from "@/types/api";
 
 /**
  * POST /api/user/subscribe — Initiate subscription
- * See: API_SPECIFICATION.md § 3.4
- * 
- * In production, this integrates with Midtrans Snap for payment.
- * Currently returns a mock payment URL.
+ * FIX C7: Don't auto-activate — set to pending until webhook confirms.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -36,16 +33,16 @@ export async function POST(request: NextRequest) {
 
     const amount = tier === "premium" ? 29000 : 79000;
 
-    // Create subscription record
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + 1);
 
+    // FIX C7: Status is "pending" — only activated by Midtrans webhook
     const { data: subscription, error } = await supabase
       .from("subscriptions")
       .insert({
         user_id: user.id,
         tier,
-        status: "active",
+        status: "pending",
         payment_method: payment_method ?? "qris",
         amount,
         expires_at: expiresAt.toISOString(),
@@ -55,19 +52,9 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
-    // Update user tier
-    await supabase
-      .from("users")
-      .update({
-        subscription_tier: tier,
-        subscription_expires_at: expiresAt.toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", user.id);
-
-    // In production: create Midtrans Snap transaction
-    // const snapToken = await midtrans.createTransaction({...});
-    // const paymentUrl = `https://app.midtrans.com/snap/v2/vtweb/${snapToken}`;
+    // NOTE: User tier is NOT updated here.
+    // It will be updated when Midtrans webhook confirms payment.
+    // See: app/api/webhooks/midtrans/route.ts
 
     return NextResponse.json({
       success: true,
@@ -75,6 +62,7 @@ export async function POST(request: NextRequest) {
         subscription_id: subscription?.id,
         payment_url: `https://app.midtrans.com/snap/v2/placeholder/${subscription?.id}`,
         expires_at: expiresAt.toISOString(),
+        status: "pending",
       },
     });
   } catch (error) {

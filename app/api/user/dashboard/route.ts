@@ -20,49 +20,50 @@ export async function GET() {
       );
     }
 
-    // Get user profile
-    const { data: profile } = await supabase
-      .from("users")
-      .select("email, subscription_tier, created_at")
-      .eq("id", user.id)
-      .single();
-
-    // Get latest scan
-    const { data: latestScan } = await supabase
-      .from("scans")
-      .select("health_score, created_at")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
-
-    // Get scan trend (last 3 scans)
-    const { data: scanTrend } = await supabase
-      .from("scans")
-      .select("health_score")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(3);
-
-    // Get scam check count
-    const { count: scamCount } = await supabase
-      .from("scam_checks")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
-    // Get badges
-    const { data: badges } = await supabase
-      .from("badges")
-      .select("badge_type, badge_name, earned_at")
-      .eq("user_id", user.id);
-
-    // Get current period usage
+    // FIX C8: Parallel queries instead of sequential
     const period = getCurrentPeriod();
-    const { data: usageData } = await supabase
-      .from("usage_counts")
-      .select("feature, count")
-      .eq("user_id", user.id)
-      .eq("period", period);
+
+    const [profileRes, latestScanRes, scanTrendRes, scamCountRes, badgesRes, usageRes] =
+      await Promise.all([
+        supabase
+          .from("users")
+          .select("email, subscription_tier, created_at")
+          .eq("id", user.id)
+          .single(),
+        supabase
+          .from("scans")
+          .select("health_score, created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single(),
+        supabase
+          .from("scans")
+          .select("health_score")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(3),
+        supabase
+          .from("scam_checks")
+          .select("*", { count: "exact", head: true })
+          .eq("user_id", user.id),
+        supabase
+          .from("badges")
+          .select("badge_type, badge_name, earned_at")
+          .eq("user_id", user.id),
+        supabase
+          .from("usage_counts")
+          .select("feature, count")
+          .eq("user_id", user.id)
+          .eq("period", period),
+      ]);
+
+    const profile = profileRes.data;
+    const latestScan = latestScanRes.data;
+    const scanTrend = scanTrendRes.data;
+    const scamCount = scamCountRes.count;
+    const badges = badgesRes.data;
+    const usageData = usageRes.data;
 
     const scanUsage = usageData?.find((u) => u.feature === "scan")?.count ?? 0;
     const scamUsage = usageData?.find((u) => u.feature === "scam_check")?.count ?? 0;

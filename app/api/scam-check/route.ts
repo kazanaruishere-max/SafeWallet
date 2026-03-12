@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { callAI } from "@/lib/ai/client";
 import { SCAM_DETECTION_PROMPT, buildScamPrompt } from "@/lib/ai/prompts";
 import { checkQuota, incrementUsage } from "@/lib/rate-limit";
+import { checkAndAwardBadges } from "@/lib/gamification";
 import type { ApiResponse, ApiError, ScamCheckResult } from "@/types/api";
 
 const VALID_INPUT_TYPES = ["text", "url", "screenshot"] as const;
@@ -119,8 +120,9 @@ export async function POST(request: Request) {
       console.error("Failed to save scam check:", insertError);
     }
 
-    // 6. Increment usage
+    // 6. Increment usage + check badges
     await incrementUsage(user.id, "scam_check");
+    const newBadges = await checkAndAwardBadges(user.id);
 
     // 7. Determine verdict
     const verdict =
@@ -147,7 +149,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: result,
-      meta: { remaining_quota: quota.remaining - 1 },
+      meta: { remaining_quota: quota.remaining - 1, new_badges: newBadges },
     } satisfies ApiResponse<ScamCheckResult>);
   } catch (error) {
     console.error("Scam check error:", error);

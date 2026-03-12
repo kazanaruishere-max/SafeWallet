@@ -1,7 +1,7 @@
 /**
  * AI Client — Google Gemini via Google AI Studio
- * User requested Gemini over OpenRouter for cost efficiency.
  * Uses gemini-2.0-flash as primary with structured JSON output.
+ * API key sent via header (not URL) for security.
  */
 
 type Message = {
@@ -70,12 +70,16 @@ export async function callAI(
       "application/json";
   }
 
-  const endpoint = `${GEMINI_URL}/${model}:generateContent?key=${apiKey}`;
+  // FIX F1: API key in header instead of URL query string
+  const endpoint = `${GEMINI_URL}/${model}:generateContent`;
 
   try {
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
       body: JSON.stringify(body),
     });
 
