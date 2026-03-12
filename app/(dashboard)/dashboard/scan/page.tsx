@@ -18,20 +18,33 @@ import {
   TrendingUp,
   AlertTriangle,
   CheckCircle2,
+  FileText,
+  FileSpreadsheet,
+  File,
 } from "lucide-react";
 import type { ScanResult } from "@/types/api";
+import {
+  parseFile,
+  getFileFormat,
+  getSupportedExtensions,
+  getFormatLabel,
+  type ParsedFile,
+} from "@/lib/file-parser";
 
-type ScanState = "idle" | "uploading" | "ocr" | "analyzing" | "done" | "error";
+type ScanState = "idle" | "parsing" | "analyzing" | "done" | "error";
 
 export default function ScanPage() {
   const [state, setState] = useState<ScanState>("idle");
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
-  const [ocrProgress, setOcrProgress] = useState(0);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileFormat, setFileFormat] = useState<ParsedFile["format"] | null>(null);
+  const [progress, setProgress] = useState(0);
+  const [progressMsg, setProgressMsg] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // FIX C4: Revoke object URL on cleanup
+  // Cleanup object URL on unmount
   useEffect(() => {
     return () => {
       if (preview) URL.revokeObjectURL(preview);
@@ -39,61 +52,63 @@ export default function ScanPage() {
   }, [preview]);
 
   const handleFile = useCallback(async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setError("File harus berupa gambar (JPEG/PNG).");
+    const format = getFileFormat(file);
+    if (!format) {
+      setError(
+        "Format tidak didukung. Gunakan: JPEG, PNG, PDF, Excel (.xlsx/.xls), CSV, atau TXT."
+      );
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Ukuran file maksimum 5MB.");
+
+    if (file.size > 20 * 1024 * 1024) {
+      setError("Ukuran file maksimum 20MB.");
       return;
     }
 
     setError(null);
-    // FIX C4: Revoke previous URL before creating new one
-    setPreview((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return URL.createObjectURL(file);
-    });
+    setFileName(file.name);
+    setFileFormat(format);
 
-    // FIX F2: Real OCR with Tesseract.js
-    setState("ocr");
-    setOcrProgress(0);
-
-    let ocrText: string;
-    try {
-      const Tesseract = await import("tesseract.js");
-      const worker = await Tesseract.createWorker("ind+eng", undefined, {
-        logger: (m: { status: string; progress: number }) => {
-          if (m.status === "recognizing text") {
-            setOcrProgress(Math.round(m.progress * 100));
-          }
-        },
+    // Set preview for images only
+    if (format === "image") {
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
       });
-      const { data } = await worker.recognize(file);
-      ocrText = data.text;
-      await worker.terminate();
+    } else {
+      setPreview(null);
+    }
 
-      if (!ocrText || ocrText.trim().length < 20) {
-        setError(
-          "Tidak dapat membaca teks dari gambar. Pastikan foto jelas dan berisi mutasi bank."
-        );
-        setState("error");
-        return;
-      }
-    } catch (ocrError) {
-      console.error("OCR failed:", ocrError);
-      setError("Gagal membaca teks dari gambar. Coba lagi dengan foto yang lebih jelas.");
+    // Step 1: Parse file
+    setState("parsing");
+    setProgress(0);
+
+    let parsedText: string;
+    try {
+      const parsed = await parseFile(file, (p, msg) => {
+        setProgress(p);
+        setProgressMsg(msg);
+      });
+      parsedText = parsed.text;
+    } catch (parseError) {
+      setError(
+        parseError instanceof Error
+          ? parseError.message
+          : "Gagal membaca file. Coba format lain."
+      );
       setState("error");
       return;
     }
 
     // Step 2: AI Analysis
     setState("analyzing");
+    setProgress(0);
+    setProgressMsg("Menganalisis dengan Gemini AI...");
 
     try {
       const formData = new FormData();
       formData.append("image", file);
-      formData.append("ocr_text", ocrText);
+      formData.append("ocr_text", parsedText);
 
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -106,12 +121,6 @@ export default function ScanPage() {
         setError(json.error?.message ?? "Gagal menganalisis. Coba lagi.");
         setState("error");
         return;
-      }
-
-      // Show new badges notification
-      if (json.meta?.new_badges?.length > 0) {
-        // Could use toast here
-        console.log("New badges earned:", json.meta.new_badges);
       }
 
       setResult(json.data as ScanResult);
@@ -143,12 +152,37 @@ export default function ScanPage() {
     return "bg-red-500";
   };
 
+  const getFormatIcon = (fmt: ParsedFile["format"] | null) => {
+    switch (fmt) {
+      case "pdf":
+        return <FileText className="h-5 w-5 text-red-500" />;
+      case "excel":
+        return <FileSpreadsheet className="h-5 w-5 text-emerald-600" />;
+      case "csv":
+        return <FileSpreadsheet className="h-5 w-5 text-blue-500" />;
+      case "text":
+        return <File className="h-5 w-5 text-gray-500" />;
+      default:
+        return <FileImage className="h-5 w-5 text-primary" />;
+    }
+  };
+
+  const resetScan = () => {
+    setState("idle");
+    setResult(null);
+    setPreview(null);
+    setFileName(null);
+    setFileFormat(null);
+    setProgress(0);
+    setProgressMsg("");
+  };
+
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold">Health Scanner</h1>
         <p className="mt-1 text-muted-foreground">
-          Upload foto mutasi bank untuk analisis kesehatan keuangan AI.
+          Upload mutasi bank untuk analisis kesehatan keuangan AI.
         </p>
       </div>
 
@@ -166,7 +200,7 @@ export default function ScanPage() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/jpeg,image/png"
+                  accept={getSupportedExtensions()}
                   className="hidden"
                   onChange={(e) => {
                     const f = e.target.files?.[0];
@@ -177,20 +211,40 @@ export default function ScanPage() {
                   <Upload className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="mt-4 text-lg font-semibold">
-                  Drop foto mutasi bank di sini
+                  Drop file mutasi bank di sini
                 </h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  JPEG atau PNG, maksimum 5MB
+                <p className="mt-2 text-sm text-muted-foreground text-center">
+                  Mendukung gambar, PDF, Excel, CSV, dan teks — maks 20MB
                 </p>
                 <Button className="mt-6 gradient-primary text-white">
                   <FileImage className="mr-2 h-4 w-4" /> Pilih File
                 </Button>
+
+                {/* Supported formats */}
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  {[
+                    { label: "JPEG/PNG", icon: "🖼️" },
+                    { label: "PDF", icon: "📄" },
+                    { label: "Excel", icon: "📊" },
+                    { label: "CSV", icon: "📋" },
+                    { label: "TXT", icon: "📝" },
+                  ].map((fmt) => (
+                    <Badge key={fmt.label} variant="secondary" className="text-xs">
+                      {fmt.icon} {fmt.label}
+                    </Badge>
+                  ))}
+                </div>
+
+                {/* Bank logos */}
+                <div className="mt-3 flex flex-wrap justify-center gap-1.5">
                   {["BCA", "BRI", "Mandiri", "BNI", "Dana", "OVO", "GoPay"].map(
                     (bank) => (
-                      <Badge key={bank} variant="secondary" className="text-xs">
+                      <span
+                        key={bank}
+                        className="text-[10px] text-muted-foreground/60"
+                      >
                         {bank}
-                      </Badge>
+                      </span>
                     )
                   )}
                 </div>
@@ -201,12 +255,12 @@ export default function ScanPage() {
           {error && (
             <Card className="border-destructive">
               <CardContent className="flex items-center gap-3 p-4">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+                <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
                 <p className="text-sm text-destructive">{error}</p>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="ml-auto"
+                  className="ml-auto shrink-0"
                   onClick={() => {
                     setError(null);
                     setState("idle");
@@ -218,7 +272,7 @@ export default function ScanPage() {
             </Card>
           )}
 
-          {/* How it works — FIX F5: Corrected "Claude" to "Gemini" */}
+          {/* How it works */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Cara Kerja</CardTitle>
@@ -230,17 +284,17 @@ export default function ScanPage() {
                   {
                     step: "1",
                     title: "Upload",
-                    desc: "Foto mutasi bank (screenshot)",
+                    desc: "Foto, PDF e-statement, atau Excel mutasi bank",
                   },
                   {
                     step: "2",
-                    title: "OCR + AI",
-                    desc: "Teks diekstrak Tesseract.js & dianalisis Gemini AI",
+                    title: "Parsing + AI",
+                    desc: "Teks diekstrak otomatis & dianalisis Gemini AI",
                   },
                   {
                     step: "3",
                     title: "Hasil",
-                    desc: "Skor 0-100, kategori, rekomendasi",
+                    desc: "Skor 0-100, kategori pengeluaran, rekomendasi",
                   },
                 ].map((item) => (
                   <div key={item.step} className="flex items-start gap-3">
@@ -273,10 +327,7 @@ export default function ScanPage() {
                 {result.health_score}
               </p>
               <p className="text-sm text-muted-foreground mt-1">dari 100</p>
-              <Badge
-                variant="secondary"
-                className="mt-3"
-              >
+              <Badge variant="secondary" className="mt-3">
                 {result.health_score >= 80
                   ? "🟢 Sehat"
                   : result.health_score >= 50
@@ -300,7 +351,7 @@ export default function ScanPage() {
                       (s, v) => s + v,
                       0
                     );
-                    const pct = Math.round((amount / total) * 100);
+                    const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
                     return (
                       <div key={category}>
                         <div className="flex justify-between text-sm mb-1">
@@ -406,15 +457,7 @@ export default function ScanPage() {
             </Card>
           )}
 
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={() => {
-              setState("idle");
-              setResult(null);
-              setPreview(null);
-            }}
-          >
+          <Button variant="outline" className="w-full" onClick={resetScan}>
             <Scan className="mr-2 h-4 w-4" /> Scan Lagi
           </Button>
         </div>
@@ -422,6 +465,19 @@ export default function ScanPage() {
         /* ===== PROCESSING ===== */
         <Card>
           <CardContent className="flex flex-col items-center py-16">
+            {/* File info */}
+            <div className="flex items-center gap-2 mb-4 px-4 py-2 rounded-lg bg-muted">
+              {getFormatIcon(fileFormat)}
+              <span className="text-sm font-medium truncate max-w-[200px]">
+                {fileName}
+              </span>
+              {fileFormat && (
+                <Badge variant="secondary" className="text-[10px]">
+                  {getFormatLabel(fileFormat)}
+                </Badge>
+              )}
+            </div>
+
             {preview && (
               <img
                 src={preview}
@@ -429,17 +485,32 @@ export default function ScanPage() {
                 className="mb-6 h-32 rounded-lg object-cover opacity-60"
               />
             )}
+
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="mt-4 text-lg font-semibold">
-              {state === "uploading"
-                ? "Mengupload..."
-                : state === "ocr"
-                  ? `Membaca teks dari gambar (OCR)... ${ocrProgress}%`
-                  : "Menganalisis dengan Gemini AI..."}
+              {state === "parsing"
+                ? progressMsg || "Membaca file..."
+                : "Menganalisis dengan Gemini AI..."}
             </p>
+
+            {/* Progress bar */}
+            {state === "parsing" && (
+              <div className="mt-4 w-full max-w-xs">
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full gradient-primary transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-center text-muted-foreground">
+                  {progress}%
+                </p>
+              </div>
+            )}
+
             <p className="mt-2 text-sm text-muted-foreground">
-              {state === "ocr"
-                ? "Tesseract.js sedang memproses gambar"
+              {state === "parsing"
+                ? "Mengekstrak data dari file"
                 : "Ini mungkin memakan waktu 5-10 detik"}
             </p>
           </CardContent>
