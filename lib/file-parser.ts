@@ -21,10 +21,8 @@ const SUPPORTED_TYPES: Record<string, ParsedFile["format"]> = {
 };
 
 export function getFileFormat(file: File): ParsedFile["format"] | null {
-  // Check MIME type first
   if (SUPPORTED_TYPES[file.type]) return SUPPORTED_TYPES[file.type];
 
-  // Fallback to extension
   const ext = file.name.split(".").pop()?.toLowerCase();
   switch (ext) {
     case "jpg":
@@ -52,16 +50,11 @@ export function getSupportedExtensions(): string {
 
 export function getFormatLabel(format: ParsedFile["format"]): string {
   switch (format) {
-    case "image":
-      return "Gambar (OCR)";
-    case "pdf":
-      return "PDF";
-    case "excel":
-      return "Excel";
-    case "csv":
-      return "CSV";
-    case "text":
-      return "Text";
+    case "image": return "Gambar (OCR)";
+    case "pdf": return "PDF";
+    case "excel": return "Excel";
+    case "csv": return "CSV";
+    case "text": return "Text";
   }
 }
 
@@ -74,22 +67,15 @@ export async function parseFile(
 ): Promise<ParsedFile> {
   const format = getFileFormat(file);
   if (!format) {
-    throw new Error(
-      `Format file tidak didukung. Gunakan: JPEG, PNG, PDF, Excel, CSV, atau TXT.`
-    );
+    throw new Error("Format file tidak didukung. Gunakan: JPEG, PNG, PDF, Excel, CSV, atau TXT.");
   }
 
   switch (format) {
-    case "image":
-      return parseImage(file, onProgress);
-    case "pdf":
-      return parsePDF(file, onProgress);
-    case "excel":
-      return parseExcel(file, onProgress);
-    case "csv":
-      return parseCSV(file, onProgress);
-    case "text":
-      return parseText(file, onProgress);
+    case "image": return parseImage(file, onProgress);
+    case "pdf": return parsePDF(file, onProgress);
+    case "excel": return parseExcel(file, onProgress);
+    case "csv": return parseCSV(file, onProgress);
+    case "text": return parseText(file, onProgress);
   }
 }
 
@@ -101,6 +87,7 @@ async function parseImage(
   onProgress?: (p: number, s: string) => void
 ): Promise<ParsedFile> {
   onProgress?.(10, "Memuat Tesseract.js...");
+
   const Tesseract = await import("tesseract.js");
 
   onProgress?.(20, "Membaca teks dari gambar...");
@@ -116,9 +103,7 @@ async function parseImage(
   await worker.terminate();
 
   if (!data.text || data.text.trim().length < 20) {
-    throw new Error(
-      "Tidak dapat membaca teks dari gambar. Pastikan foto jelas dan berisi data keuangan."
-    );
+    throw new Error("Tidak dapat membaca teks dari gambar. Pastikan foto jelas dan berisi data keuangan.");
   }
 
   onProgress?.(100, "Selesai!");
@@ -126,7 +111,7 @@ async function parseImage(
 }
 
 /**
- * PDF → Text using pdf.js
+ * PDF → Text using pdf.js with local worker
  */
 async function parsePDF(
   file: File,
@@ -136,34 +121,46 @@ async function parsePDF(
 
   const pdfjsLib = await import("pdfjs-dist");
 
-  // Set worker path
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+  // Use local worker file (copied from node_modules to public/)
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
   onProgress?.(20, "Membaca PDF...");
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+  let pdf;
+  try {
+    pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  } catch (e) {
+    console.error("PDF load error:", e);
+    throw new Error("Gagal membaca PDF. Pastikan file PDF tidak rusak atau terenkripsi/password-protected.");
+  }
 
   const totalPages = pdf.numPages;
   const textParts: string[] = [];
 
-  for (let i = 1; i <= totalPages; i++) {
+  for (let i = 1; i <= Math.min(totalPages, 50); i++) {
     onProgress?.(
-      20 + Math.round((i / totalPages) * 70),
+      20 + Math.round((i / Math.min(totalPages, 50)) * 70),
       `Membaca halaman ${i}/${totalPages}...`
     );
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    const pageText = content.items
-      .map((item) => ("str" in item ? item.str : ""))
-      .join(" ");
-    textParts.push(pageText);
+
+    try {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const pageText = content.items
+        .map((item) => ("str" in item ? item.str : ""))
+        .join(" ");
+      textParts.push(pageText);
+    } catch (pageErr) {
+      console.warn(`Failed to read page ${i}:`, pageErr);
+    }
   }
 
   const fullText = textParts.join("\n\n");
 
   if (fullText.trim().length < 10) {
     throw new Error(
-      "PDF tidak berisi teks yang dapat dibaca. Gunakan PDF mutasi bank dari internet/mobile banking (bukan scan gambar)."
+      "PDF tidak berisi teks yang dapat dibaca. Jika PDF berupa scan gambar, coba upload sebagai gambar (JPEG/PNG) untuk OCR."
     );
   }
 
@@ -183,22 +180,30 @@ async function parseExcel(
 
   onProgress?.(30, "Membaca spreadsheet...");
   const arrayBuffer = await file.arrayBuffer();
-  const workbook = XLSX.read(arrayBuffer, { type: "array" });
+
+  let workbook;
+  try {
+    workbook = XLSX.read(arrayBuffer, { type: "array" });
+  } catch (e) {
+    console.error("Excel read error:", e);
+    throw new Error("Gagal membaca file Excel. Pastikan file tidak rusak atau terproteksi.");
+  }
 
   onProgress?.(60, "Mengekstrak data...");
   const textParts: string[] = [];
 
-  for (const sheetName of workbook.SheetNames) {
+  for (const sheetName of workbook.SheetNames.slice(0, 10)) {
     const sheet = workbook.Sheets[sheetName];
-    // Convert to CSV-like text for AI analysis
     const csv = XLSX.utils.sheet_to_csv(sheet);
-    textParts.push(`--- Sheet: ${sheetName} ---\n${csv}`);
+    if (csv.trim().length > 0) {
+      textParts.push(`--- Sheet: ${sheetName} ---\n${csv}`);
+    }
   }
 
   const fullText = textParts.join("\n\n");
 
   if (fullText.trim().length < 10) {
-    throw new Error("Spreadsheet kosong atau tidak berisi data.");
+    throw new Error("Spreadsheet kosong atau tidak berisi data keuangan.");
   }
 
   onProgress?.(100, "Selesai!");
