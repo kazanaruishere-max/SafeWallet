@@ -42,24 +42,53 @@ export type HealthAnalysis = z.infer<typeof HealthAnalysisSchema>;
 export type ScamAnalysis = z.infer<typeof ScamAnalysisSchema>;
 
 /**
+ * Extract JSON from AI response that may be wrapped in markdown code blocks,
+ * contain extra text, or have other formatting issues.
+ */
+function extractJSON(raw: string): string {
+  let cleaned = raw.trim();
+
+  // Strip markdown code blocks: ```json ... ``` or ``` ... ```
+  const codeBlockMatch = cleaned.match(/```(?:json)?\s*\n?([\s\S]*?)\n?\s*```/);
+  if (codeBlockMatch) {
+    cleaned = codeBlockMatch[1].trim();
+  }
+
+  // If still not starting with { or [, try to find JSON object in the text
+  if (!cleaned.startsWith("{") && !cleaned.startsWith("[")) {
+    const jsonStart = cleaned.indexOf("{");
+    const jsonEnd = cleaned.lastIndexOf("}");
+    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+    }
+  }
+
+  return cleaned;
+}
+
+/**
  * Safely parse AI response with Zod validation.
- * Returns parsed data or throws descriptive error.
+ * Handles markdown-wrapped JSON, extra text, and other formatting quirks.
  */
 export function parseAIResponse<T>(
   rawJson: string,
   schema: z.ZodSchema<T>,
   context: string
 ): T {
+  const cleaned = extractJSON(rawJson);
+
   let parsed: unknown;
   try {
-    parsed = JSON.parse(rawJson);
+    parsed = JSON.parse(cleaned);
   } catch {
+    console.error(`[${context}] Raw AI response (failed to parse):`, rawJson.substring(0, 500));
     throw new Error(`AI response bukan JSON valid (${context})`);
   }
 
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    console.error(`AI response validation failed (${context}):`, result.error.format());
+    console.error(`[${context}] Zod validation failed:`, result.error.format());
+    console.error(`[${context}] Parsed data:`, JSON.stringify(parsed).substring(0, 500));
     throw new Error(`AI response format tidak sesuai (${context})`);
   }
 
