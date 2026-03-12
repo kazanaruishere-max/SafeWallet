@@ -4,14 +4,15 @@
  */
 
 import { z } from "zod";
+import { jsonrepair } from "jsonrepair";
 
 export const HealthAnalysisSchema = z.object({
-  health_score: z.number().min(0).max(100),
-  categories: z.record(z.string(), z.number()).default({}),
-  debt_to_income_ratio: z.number().default(0),
-  savings_rate: z.number().default(0),
-  recommendations: z.array(z.string()).default([]),
-  warnings: z.array(z.string()).default([]),
+  health_score: z.coerce.number().min(0).max(100).catch(0),
+  categories: z.record(z.string(), z.coerce.number().catch(0)).default({}),
+  debt_to_income_ratio: z.coerce.number().catch(0),
+  savings_rate: z.coerce.number().catch(0),
+  recommendations: z.array(z.string()).catch([]).default([]),
+  warnings: z.array(z.string()).catch([]).default([]),
 });
 
 export const ScamAnalysisSchema = z.object({
@@ -74,31 +75,12 @@ function extractJSON(raw: string): string {
  * Attempts to repair slightly cut-off JSON (e.g. missing closing braces)
  */
 function repairJSON(jsonString: string): string {
-  let str = jsonString.trim();
-  
-  // Remove dangling commas or empty keys like `"debt_to_income_ratio": `
-  str = str.replace(/,\s*$/, "");
-  str = str.replace(/,\s*"[^"]+"\s*:\s*$/, "");
-  str = str.replace(/"[^"]+"\s*:\s*$/, "");
-  
-  // Count open and close braces
-  const openBraces = (str.match(/\{/g) || []).length;
-  const closeBraces = (str.match(/\}/g) || []).length;
-  const openBrackets = (str.match(/\[/g) || []).length;
-  const closeBrackets = (str.match(/\]/g) || []).length;
-  
-  // Append missing closing braces
-  if (openBrackets > closeBrackets) {
-    str += "]".repeat(openBrackets - closeBrackets);
+  try {
+    return jsonrepair(jsonString.trim());
+  } catch (err) {
+    console.warn("jsonrepair failed, returning original string", err);
+    return jsonString; // Fallback to raw if even jsonrepair fails
   }
-  if (openBraces > closeBraces) {
-    // If we're missing braces, it's possible the last key-value pair is cut off.
-    // E.g. `"recommendations": [` or `"savings_rate": 0.`
-    // A simple approach is just adding the closing braces and letting JSON.parse try.
-    str += "}".repeat(openBraces - closeBraces);
-  }
-
-  return str;
 }
 
 /**

@@ -73,7 +73,31 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Validate file size (20MB for PDFs/Excel)
+    // 4. Validate file type and size (20MB)
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/vnd.ms-excel",
+      "text/csv",
+      "text/plain",
+    ];
+
+    if (!allowedTypes.includes(image.type)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Format file tidak didukung secara native oleh sistem keamanan kami.",
+          },
+        } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
     if (image.size > 20 * 1024 * 1024) {
       return NextResponse.json(
         {
@@ -147,10 +171,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 8. Store scan in database (non-blocking)
-    let scanId = "local";
+    // 8. Store scan in database & deduct quota atomically via Node-level flow
+    let scanId: string = "fallback-" + crypto.randomUUID();
+    let dbSuccess = false;
+
     try {
-      const { data: scan } = await supabase
+      const { data: scan, error: insertError } = await supabase
         .from("scans")
         .insert({
           user_id: user.id,
@@ -163,18 +189,23 @@ export async function POST(request: Request) {
         })
         .select("id")
         .single();
-      scanId = scan?.id ?? "local";
+        
+      if (insertError) throw insertError;
+      
+      scanId = scan.id;
+      dbSuccess = true;
     } catch (dbErr) {
-      console.warn("Failed to save scan to DB:", dbErr);
-      // Still return results even if DB save fails
+      console.warn("Failed to save scan to DB (Dirty State Prevented). Skipping quota deduction:", dbErr);
     }
 
-    // 9. Increment usage (non-blocking)
-    try {
-      const { incrementUsage } = await import("@/lib/rate-limit");
-      await incrementUsage(user.id, "scan");
-    } catch {
-      // Usage tracking failure shouldn't block results
+    // 9. Increment usage ONLY if scan was successfully appended to history
+    if (dbSuccess) {
+      try {
+        const { incrementUsage } = await import("@/lib/rate-limit");
+        await incrementUsage(user.id, "scan");
+      } catch (incErr) {
+        console.warn("Quota increment failed after save.", incErr);
+      }
     }
 
     // 10. Badge check (non-blocking)
