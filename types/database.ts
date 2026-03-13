@@ -29,6 +29,9 @@ export type User = {
   onboarding_completed: boolean;
   telegram_chat_id: string | null;
   telegram_link_code: string | null;
+  debt_ratio: number;
+  needs_education_lock: boolean;
+  modules_completed: string[];
   created_at: string;
   updated_at: string;
 };

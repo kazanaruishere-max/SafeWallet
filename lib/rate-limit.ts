@@ -6,7 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 
 const TIER_LIMITS: Record<string, Record<string, number>> = {
-  free: { scan: 3, scam_check: 5 },
+  free: { scan: 5, scam_check: 10 },
   premium: { scan: 999999, scam_check: 999999 },
   family: { scan: 999999, scam_check: 999999 },
 };
@@ -30,7 +30,7 @@ export async function checkQuota(
     .single();
 
   const tier = user?.subscription_tier ?? "free";
-  const limit = TIER_LIMITS[tier]?.[feature] ?? 3;
+  const limit = TIER_LIMITS[tier]?.[feature] ?? (feature === "scan" ? 5 : 10);
 
   // Get current period usage
   const period = getCurrentPeriod();

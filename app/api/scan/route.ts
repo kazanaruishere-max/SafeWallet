@@ -73,8 +73,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Validate file type and size (20MB)
-    const allowedTypes = [
+    if (image.size > 20 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: "Ukuran file maksimum 20MB.",
+          },
+        } satisfies ApiError,
+        { status: 400 }
+      );
+    }
+
+    // 4. Validate file type via Magic Bytes (file-type) instead of trusting client MIME
+    const allowedMimeTypes = [
       "image/jpeg",
       "image/png",
       "image/webp",
@@ -85,26 +98,44 @@ export async function POST(request: Request) {
       "text/plain",
     ];
 
-    if (!allowedTypes.includes(image.type)) {
+    // Read the buffer for magic bytes inspection
+    const arrayBuffer = await image.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Dynamic import to handle ESM 'file-type' module safely in Next.js 
+    const { fileTypeFromBuffer } = await import("file-type");
+    const fileTypeResult = await fileTypeFromBuffer(buffer);
+
+    // If it's a binary file (images, pdf, excel), fileTypeResult will correctly identify it.
+    // Text formats like CSV and PLAIN don't have distinct magic bytes and will be undefined.
+    let verifiedMime = image.type; 
+    
+    if (fileTypeResult) {
+       verifiedMime = fileTypeResult.mime;
+    } else {
+       // If undefined, it must only be plain text or CSV. 
+       // If client claimed it was an image/pdf but magic bytes are missing, REJECT IT.
+       if (!image.type.startsWith("text/") && image.type !== "application/csv") {
+           return NextResponse.json(
+             {
+               success: false,
+               error: {
+                 code: "VALIDATION_ERROR",
+                 message: "Format file rusak atau ekstensi dipalsukan (Malicious MIME Spoofing Detected).",
+               },
+             } satisfies ApiError,
+             { status: 400 }
+           );
+       }
+    }
+
+    if (!allowedMimeTypes.includes(verifiedMime)) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "VALIDATION_ERROR",
             message: "Format file tidak didukung secara native oleh sistem keamanan kami.",
-          },
-        } satisfies ApiError,
-        { status: 400 }
-      );
-    }
-
-    if (image.size > 20 * 1024 * 1024) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "VALIDATION_ERROR",
-            message: "Ukuran file maksimum 20MB.",
           },
         } satisfies ApiError,
         { status: 400 }
@@ -208,6 +239,24 @@ export async function POST(request: Request) {
       }
     }
 
+    // 9.5 PINJOL RESCUE: Check Debt Ratio and Lock if > 35%
+    let needs_education_lock = false;
+    // Note: AI returns percentage as whole number usually (e.g. 40 for 40%) or decimal. Safe interpretation: > 35 (assuming it meant 35%)
+    const dtiRatio = analysisResult.debt_to_income_ratio ?? 0;
+    if (dbSuccess && dtiRatio > 35) {
+      if (user) { 
+        try {
+          await supabase.from("users").update({
+            debt_ratio: dtiRatio,
+            needs_education_lock: true
+          }).eq("id", user.id);
+          needs_education_lock = true;
+        } catch (err) {
+          console.warn("Failed to apply Pinjol Education Lock", err);
+        }
+      }
+    }
+
     // 10. Badge check (non-blocking)
     let newBadges: string[] = [];
     try {
@@ -215,6 +264,41 @@ export async function POST(request: Request) {
       newBadges = await checkAndAwardBadges(user.id);
     } catch {
       // Badge failure shouldn't block results
+    }
+
+    // 10.5 JUDOL TRACKER: Telegram Crisis Coaching Intervention (Asynchronous)
+    if (analysisResult.gambling_flags && analysisResult.gambling_flags.length > 0) {
+      // Fire and forget (don't await so we don't block the UI return)
+      (async () => {
+        try {
+          const { data: userLink } = await supabase
+            .from("users")
+            .select("telegram_chat_id")
+            .eq("id", user.id)
+            .single();
+
+          if (userLink?.telegram_chat_id) {
+            const totalGambling = analysisResult.gambling_flags.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+            
+            const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+            if (telegramToken && totalGambling > 0) {
+              const message = `🚨 *URGENT: CRISIS COACHING* 🚨\n\nSaku perhatikan pada scan terbarumu, kamu terindikasi menghabiskan sekitar *Rp ${totalGambling.toLocaleString("id-ID")}* untuk transaksi berpola judi online (deposit berulang malam hari).\n\nCoba bayangkan, uang itu bisa sangat berarti jika ditabung untuk darurat atau masa depanmu. Yuk, setop sebelum jebol! Saku ada di sini kalau kamu butuh teman ngobrol untuk bangkit. 🙏`;
+              
+              await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  chat_id: userLink.telegram_chat_id,
+                  text: message,
+                  parse_mode: "Markdown",
+                }),
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Failed to process gambling flag intervention", err);
+        }
+      })();
     }
 
     // 11. Return result
@@ -228,11 +312,20 @@ export async function POST(request: Request) {
       warnings: analysisResult.warnings ?? [],
       processing_time_ms: Date.now() - startTime,
     };
+    
+    // Add visual indicator to frontend if gambling flags exist
+    if (analysisResult.gambling_flags && analysisResult.gambling_flags.length > 0) {
+      result.warnings.unshift("🔴 CRITICAL WARNING: Terdeteksi pola transaksi mencurigakan terkait aktivitas Judi Online. Mohon evaluasi pengeluaran Anda.");
+    }
 
     return NextResponse.json({
       success: true,
       data: result,
-      meta: { remaining_quota: quotaRemaining - 1, new_badges: newBadges },
+      meta: { 
+        remaining_quota: quotaRemaining - 1, 
+        new_badges: newBadges,
+        needs_education_lock
+      },
     } satisfies ApiResponse<ScanResult>);
   } catch (error) {
     console.error("Scan error:", error);

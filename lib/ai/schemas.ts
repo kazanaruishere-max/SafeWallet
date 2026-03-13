@@ -13,6 +13,11 @@ export const HealthAnalysisSchema = z.object({
   savings_rate: z.coerce.number().catch(0),
   recommendations: z.array(z.string()).catch([]).default([]),
   warnings: z.array(z.string()).catch([]).default([]),
+  gambling_flags: z.array(z.object({
+    pattern_type: z.enum(["suspicious_ewallet_topup", "suspicious_night_transfer", "va_deposit"]).catch("suspicious_ewallet_topup"),
+    amount: z.coerce.number().catch(0),
+    description: z.string().default("")
+  })).catch([]).default([]),
 });
 
 export const ScamAnalysisSchema = z.object({

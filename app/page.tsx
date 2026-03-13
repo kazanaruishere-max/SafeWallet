@@ -1,325 +1,149 @@
 import Link from "next/link";
-import {
-  Shield,
-  Scan,
-  Bot,
-  ArrowRight,
-  Check,
-  Star,
-  ChevronRight,
-  Sparkles,
-  TrendingUp,
-  AlertTriangle,
-} from "lucide-react";
+import { Shield, Sparkles, TrendingUp, AlertTriangle, ArrowRight, Scan, Lock, Target, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-              <Shield className="h-5 w-5 text-white" />
+    <div className="min-h-screen bg-[#101218] text-white font-sans selection:bg-[#00E573]/30">
+      {/* Navigation Bar */}
+      <header className="fixed top-0 z-50 w-full backdrop-blur-md bg-[#101218]/50 border-b border-white/5">
+        <div className="container mx-auto flex h-20 items-center justify-between px-6">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#00E573] to-emerald-600 shadow-[0_0_15px_rgba(0,229,115,0.4)] transition-transform group-hover:scale-105">
+              <Shield className="h-6 w-6 text-[#101218]" fill="currentColor" />
             </div>
-            <span className="text-xl font-bold">SafeWallet</span>
+            <span className="text-2xl font-bold tracking-tight text-white/90">SafeWallet</span>
           </Link>
-          <nav className="hidden items-center gap-6 md:flex">
-            <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Fitur
-            </Link>
-            <Link href="#how-it-works" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Cara Kerja
-            </Link>
-            <Link href="#pricing" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Harga
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link href="/login">
-              <Button variant="ghost" size="sm">Masuk</Button>
+              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/5 rounded-full px-6">
+                Login
+              </Button>
             </Link>
             <Link href="/signup">
-              <Button size="sm" className="gradient-primary text-white shadow-lg hover:opacity-90 transition-opacity">
-                Daftar Gratis
+              <Button className="bg-[#00E573] text-[#101218] hover:bg-[#00E573]/90 rounded-full px-8 font-semibold shadow-[0_4px_14px_0_rgba(0,229,115,0.39)] hover:shadow-[0_6px_20px_rgba(0,229,115,0.23)] hover:-translate-y-0.5 transition-all">
+                Get Started
               </Button>
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="relative overflow-hidden py-20 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="container relative mx-auto px-4 text-center">
-          <Badge variant="secondary" className="mb-6 rounded-full px-4 py-1.5">
-            <Sparkles className="mr-1.5 h-3.5 w-3.5" />
-            AI-Powered Financial Wellness
-          </Badge>
-          <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight md:text-6xl lg:text-7xl">
-            Jaga Keuanganmu
-            <br />
-            <span className="gradient-text">dengan Kekuatan AI</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:text-xl">
-            Cek kesehatan keuangan, deteksi investasi bodong, dan dapatkan coaching personal.
-            Gratis untuk 270 juta rakyat Indonesia.
-          </p>
-          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/signup">
-              <Button size="lg" className="gradient-primary text-white shadow-xl hover:opacity-90 transition-all px-8 text-base">
-                Mulai Gratis <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="#how-it-works">
-              <Button size="lg" variant="outline" className="px-8 text-base">
-                Lihat Demo
-              </Button>
-            </Link>
-          </div>
-          <div className="mt-12 flex items-center justify-center gap-8 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-primary" /> Gratis selamanya
+      <main className="pt-32 pb-20">
+        {/* Hero Section */}
+        <section className="relative px-6 pt-20 pb-32 text-center overflow-hidden">
+          {/* Background Ambient Glows */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#3323D2]/30 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-0 right-1/4 w-[400px] h-[400px] bg-[#00E573]/20 rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="relative z-10 container mx-auto flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-8 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-[#00E573]" />
+              <span className="text-sm font-medium text-white/80">SaaS Finansial AI #1 di Indonesia</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-primary" /> Tanpa kartu kredit
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Check className="h-4 w-4 text-primary" /> Data aman 100%
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem Stats */}
-      <section className="border-y bg-muted/30 py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-            {[
-              { value: "70%", label: "Tanpa dana darurat" },
-              { value: "41%", label: "APR paylater tersembunyi" },
-              { value: "Rp 100T+", label: "Kerugian investasi bodong" },
-              { value: "64%", label: "Literasi keuangan rendah" },
-            ].map((stat) => (
-              <div key={stat.label} className="text-center">
-                <p className="text-3xl font-bold gradient-text md:text-4xl">{stat.value}</p>
-                <p className="mt-1.5 text-sm text-muted-foreground">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold md:text-4xl">Tiga Pilar Pelindung Keuanganmu</h2>
-            <p className="mt-4 text-muted-foreground">Powered by AI, dirancang untuk Indonesia</p>
-          </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-3">
-            {/* Health Scanner */}
-            <Card className="group relative overflow-hidden border-0 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-              <CardHeader className="relative pb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
-                  <Scan className="h-6 w-6 text-emerald-600" />
-                </div>
-                <CardTitle className="mt-4 text-xl">Health Scanner</CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground">
-                  Upload foto mutasi bank → AI analisis pengeluaran → skor kesehatan keuangan 0-100 + rekomendasi personal.
-                </p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" /> Analisis &lt;8 detik</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" /> Support BCA, BRI, Mandiri, BNI</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-emerald-500" /> Privasi: foto tidak disimpan</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* Scam Detector */}
-            <Card className="group relative overflow-hidden border-0 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
-              <CardHeader className="relative pb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-red-500/10">
-                  <AlertTriangle className="h-6 w-6 text-red-600" />
-                </div>
-                <CardTitle className="mt-4 text-xl">Scam Detector</CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground">
-                  Kirim screenshot/link investasi → cek lisensi OJK → deteksi pola penipuan → skor risiko + alternatif aman.
-                </p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-red-500" /> Verifikasi OJK otomatis</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-red-500" /> Deteksi Ponzi, MLM, forex bodong</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-red-500" /> Saran investasi aman</li>
-                </ul>
-              </CardContent>
-            </Card>
-
-            {/* AI Coach */}
-            <Card className="group relative overflow-hidden border-0 shadow-lg transition-all hover:shadow-xl hover:-translate-y-1">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent" />
-              <CardHeader className="relative pb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                  <Bot className="h-6 w-6 text-blue-600" />
-                </div>
-                <CardTitle className="mt-4 text-xl">AI Coach</CardTitle>
-              </CardHeader>
-              <CardContent className="relative">
-                <p className="text-muted-foreground">
-                  Coaching keuangan harian via WhatsApp — tips personal, tantangan menabung, dan perayaan milestone.
-                </p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-blue-500" /> WhatsApp setiap jam 7 pagi</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-blue-500" /> Badges & leaderboard</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-blue-500" /> Personalisasi berdasarkan data</li>
-                </ul>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section id="how-it-works" className="border-y bg-muted/30 py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold md:text-4xl">Cara Kerja</h2>
-            <p className="mt-4 text-muted-foreground">3 langkah sederhana, hasil instant</p>
-          </div>
-          <div className="mt-16 grid gap-12 md:grid-cols-3">
-            {[
-              { step: "1", title: "Upload / Input", desc: "Foto mutasi bank atau screenshot investasi mencurigakan", icon: TrendingUp },
-              { step: "2", title: "AI Analisis", desc: "OCR + Claude AI membaca, mengkategorikan, dan menganalisis", icon: Sparkles },
-              { step: "3", title: "Dapat Hasil", desc: "Skor kesehatan/risiko + rekomendasi konkret dalam <8 detik", icon: Shield },
-            ].map((item) => (
-              <div key={item.step} className="text-center">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary text-white text-2xl font-bold shadow-lg">
-                  {item.step}
-                </div>
-                <h3 className="mt-6 text-lg font-semibold">{item.title}</h3>
-                <p className="mt-2 text-muted-foreground">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-20 md:py-28">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold md:text-4xl">Harga Transparan</h2>
-            <p className="mt-4 text-muted-foreground">Mulai gratis, upgrade kapan saja</p>
-          </div>
-          <div className="mt-16 grid gap-8 md:grid-cols-3 max-w-5xl mx-auto">
-            {/* Free */}
-            <Card className="relative border-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Gratis</CardTitle>
-                <p className="text-3xl font-bold">Rp 0<span className="text-sm font-normal text-muted-foreground">/bulan</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> 3 scan keuangan/bulan</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> 5 cek scam/bulan</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Dashboard dasar</li>
-                </ul>
-                <Link href="/signup" className="mt-6 block">
-                  <Button variant="outline" className="w-full">Mulai Gratis</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Premium */}
-            <Card className="relative border-2 border-primary shadow-xl scale-105">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="gradient-primary text-white px-3 py-1">
-                  <Star className="mr-1 h-3 w-3" /> Populer
-                </Badge>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-lg">Premium</CardTitle>
-                <p className="text-3xl font-bold">Rp 29K<span className="text-sm font-normal text-muted-foreground">/bulan</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Unlimited scan & cek scam</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> WhatsApp AI coach harian</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Gamifikasi & badges</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Prioritas AI analysis</li>
-                </ul>
-                <Link href="/signup" className="mt-6 block">
-                  <Button className="w-full gradient-primary text-white">Upgrade Premium</Button>
-                </Link>
-              </CardContent>
-            </Card>
-
-            {/* Family */}
-            <Card className="relative border-2">
-              <CardHeader>
-                <CardTitle className="text-lg">Keluarga</CardTitle>
-                <p className="text-3xl font-bold">Rp 79K<span className="text-sm font-normal text-muted-foreground">/bulan</span></p>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> 5 anggota keluarga</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Semua fitur Premium</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Dashboard keluarga</li>
-                  <li className="flex items-center gap-2"><Check className="h-4 w-4 text-primary" /> Target menabung bersama</li>
-                </ul>
-                <Link href="/signup" className="mt-6 block">
-                  <Button variant="outline" className="w-full">Pilih Keluarga</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 md:py-28">
-        <div className="container mx-auto px-4 text-center">
-          <div className="mx-auto max-w-2xl rounded-3xl gradient-primary p-12 text-white shadow-2xl">
-            <h2 className="text-3xl font-bold">Mulai Lindungi Keuanganmu</h2>
-            <p className="mt-4 text-white/80">
-              Bergabung dengan ribuan orang Indonesia yang sudah menjaga kesehatan keuangan mereka dengan AI.
+            
+            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 max-w-4xl leading-tight">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">AI Guardian untuk </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00E573] to-emerald-400 drop-shadow-[0_0_30px_rgba(0,229,115,0.3)]">Uangmu</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-white/60 max-w-2xl mb-12 leading-relaxed">
+              Deteksi mutasi pinjol, judi online, dan dapatkan saran finansial personal dengan kecerdasan buatan.
             </p>
+            
             <Link href="/signup">
-              <Button size="lg" variant="secondary" className="mt-8 px-8 text-base font-semibold">
-                Daftar Gratis Sekarang <ChevronRight className="ml-1 h-4 w-4" />
+              <Button className="h-16 px-10 rounded-full bg-[#00E573] text-[#101218] text-lg font-bold shadow-[0_0_40px_rgba(0,229,115,0.4)] hover:shadow-[0_0_60px_rgba(0,229,115,0.6)] hover:-translate-y-1 transition-all duration-300">
+                Mulai Perjalanan Finansialmu
+                <ArrowRight className="ml-3 w-5 h-5" />
               </Button>
             </Link>
           </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t py-12">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary">
-                <Shield className="h-4 w-4 text-white" />
+          {/* 3D Glassmorphism Mockup Card */}
+          <div className="relative mt-24 max-w-5xl mx-auto perspective-[2000px]">
+            <div className="absolute inset-0 bg-gradient-to-b from-[#3323D2]/40 to-transparent blur-[80px] -z-10" />
+            <div className="w-full rounded-[2.5rem] bg-white/[0.03] backdrop-blur-2xl border border-white/10 shadow-2xl p-2 md:p-4 transform rotateX-[10deg] hover:rotate-[0deg] transition-transform duration-700 ease-out">
+              <div className="w-full aspect-[16/9] rounded-[2rem] bg-[#101218]/80 border border-white/5 overflow-hidden relative flex flex-col">
+                {/* Mockup Top Bar */}
+                <div className="h-12 border-b border-white/5 flex items-center px-6 gap-2 bg-white/[0.02]">
+                  <div className="w-3 h-3 rounded-full bg-red-500/50" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
+                  <div className="w-3 h-3 rounded-full bg-[#00E573]/50" />
+                </div>
+                {/* Mockup Content */}
+                <div className="flex-1 p-8 flex flex-col justify-center items-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,229,115,0.1)_0%,transparent_70%)]" />
+                  <div className="text-center z-10">
+                    <div className="w-24 h-24 rounded-full border-4 border-[#00E573] flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(0,229,115,0.3)]">
+                      <span className="text-3xl font-bold text-[#00E573]">85</span>
+                    </div>
+                    <h3 className="text-2xl font-bold text-white/90 mb-2">Health Score: Sehat</h3>
+                    <p className="text-white/50">Tidak ada indikasi transaksi Pinjol atau Judol.</p>
+                  </div>
+                </div>
               </div>
-              <span className="font-semibold">SafeWallet</span>
             </div>
-            <nav className="flex gap-6 text-sm text-muted-foreground">
-              <Link href="#" className="hover:text-foreground transition-colors">Tentang</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Privasi</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Syarat</Link>
-              <Link href="#" className="hover:text-foreground transition-colors">Kontak</Link>
-            </nav>
-            <p className="text-sm text-muted-foreground">
-              © 2026 SafeWallet. All rights reserved.
-            </p>
+          </div>
+        </section>
+
+        {/* Features Bento Box */}
+        <section className="container mx-auto px-6 py-24">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* Judol Tracker */}
+            <Card className="bg-[#1A1D24] border-white/10 hover:border-red-500/30 transition-colors rounded-3xl overflow-hidden group">
+              <CardHeader className="p-8">
+                <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-white mb-3">Judol Tracker</CardTitle>
+                <p className="text-white/60 leading-relaxed">
+                  Deteksi otomatis transaksi mencurigakan ke platform judi online dari riwayat mutasi bank Anda.
+                </p>
+              </CardHeader>
+            </Card>
+
+            {/* Pinjol Rescue */}
+            <Card className="bg-[#1A1D24] border-white/10 hover:border-[#FA9B0A]/30 transition-colors rounded-3xl overflow-hidden group">
+              <CardHeader className="p-8">
+                <div className="w-16 h-16 rounded-2xl bg-[#FA9B0A]/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Lock className="w-8 h-8 text-[#FA9B0A]" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-white mb-3">Pinjol Rescue</CardTitle>
+                <p className="text-white/60 leading-relaxed">
+                  Analisis rasio hutang (DTI) dan modul edukasi darurat untuk membebaskan Anda dari jerat pinjaman online predator.
+                </p>
+              </CardHeader>
+            </Card>
+
+            {/* Side-Hustle Matchmaker */}
+            <Card className="bg-[#1A1D24] border-white/10 hover:border-[#3323D2]/30 transition-colors rounded-3xl overflow-hidden group">
+              <CardHeader className="p-8">
+                <div className="w-16 h-16 rounded-2xl bg-[#3323D2]/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Target className="w-8 h-8 text-[#8B7DFF]" />
+                </div>
+                <CardTitle className="text-2xl font-bold text-white mb-3">Side-Hustle Matchmaker</CardTitle>
+                <p className="text-white/60 leading-relaxed">
+                  Rekomendasi pekerjaan sampingan cerdas berbasis AI jika gaji Anda di bawah UMR daerah.
+                </p>
+              </CardHeader>
+            </Card>
+
+          </div>
+        </section>
+      </main>
+
+      {/* Footer Minimalist */}
+      <footer className="border-t border-white/5 py-12 bg-[#101218]/80 backdrop-blur-xl">
+        <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-[#00E573]" />
+            <span className="font-bold text-white/50">SafeWallet © 2026</span>
+          </div>
+          <div className="flex gap-6 text-sm text-white/40">
+            <Link href="#" className="hover:text-white transition-colors">Privasi</Link>
+            <Link href="#" className="hover:text-white transition-colors">Syarat Ketentuan</Link>
           </div>
         </div>
       </footer>

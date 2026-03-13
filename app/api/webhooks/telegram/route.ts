@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import { NATIONAL_AVERAGE_UMR } from "@/lib/constants/umr_data";
 import { callAI } from "@/lib/ai/client";
 import { FINANCIAL_COACHING_PROMPT } from "@/lib/ai/prompts";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const body = await request.json();
 
     const message = body.message;
@@ -82,6 +83,9 @@ export async function POST(request: Request) {
       ragContext += `\n- Akun user ini SUDAH TERSAMBUNG ke sistem SafeWallet.`;
       if (linkInfo.monthly_income) {
         ragContext += `\n- Gaji bulanan user: Rp ${linkInfo.monthly_income.toLocaleString("id-ID")}`;
+        if (linkInfo.monthly_income < NATIONAL_AVERAGE_UMR) {
+          ragContext += `\n[SISTEM ALERT: Pendapatan user di bawah batas UMR (Rp 3,2 Juta). JANGAN MENYARANKAN INVESTASI RISIKO TINGGI. AKTIFKAN MODE SIDE-HUSTLE MATCHMAKER: Berikan 1-2 rekomendasi kerja sampingan lepasan (freelance, affiliate, admin sosmed, dll) yang nyata, tanpa modal, dan bisa dikerjakan dari HP untuk menambah income.]`;
+        }
       }
       if (latestScan) {
         ragContext += `\n- Hasil Health Scanner Terakhir (${new Date(latestScan.created_at).toLocaleDateString()}):`;

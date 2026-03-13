@@ -15,6 +15,9 @@ INSTRUKSI:
    - Pola belanja impulsif (banyak belanja online kecil = red flag)
 4. Berikan 3-5 rekomendasi praktis dalam bahasa Indonesia
 5. Berikan warnings jika ada masalah serius
+6. DETEKSI JUDI ONLINE (PENTING):
+   - Jika ada pengeluaran berupa top-up ke e-wallet (DANA/OVO/GoPay/LinkAja) atau transfer ke Virtual Account pada RENTANG JAM 22:00 - 05:00 dalam jumlah repetitif atau angka acak unik (misal 50.123, 100.888), catat ini di gambling_flags.
+   - Jangan masukkan belanja makan malam rutin ke sini. Hanya curigai pola deposit ganjil.
 
 PENTING:
 - Bahasa Indonesia, gaya bicara ramah dan suportif
@@ -31,7 +34,14 @@ OUTPUT FORMAT (JSON):
   "savings_rate": number,
   "debt_to_income_ratio": number,
   "recommendations": ["string"],
-  "warnings": ["string"]
+  "warnings": ["string"],
+  "gambling_flags": [
+    {
+      "pattern_type": "suspicious_ewallet_topup" | "suspicious_night_transfer" | "va_deposit",
+      "amount": number,
+      "description": "string"
+    }
+  ]
 }`;
 
 export const SCAM_DETECTION_PROMPT = `Kamu adalah AI scam detector spesialis Indonesia. Analisis input berikut untuk mendeteksi potensi penipuan investasi.

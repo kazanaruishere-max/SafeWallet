@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
   TrendingUp,
@@ -11,8 +10,17 @@ import {
   Loader2,
   ArrowLeft,
   Scan,
+  FileText,
+  ChevronRight,
+  TrendingDown
 } from "lucide-react";
 import type { ScanHistoryItem } from "@/types/api";
+
+const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <div className={`bg-[#1A1D24]/60 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-lg relative overflow-hidden transition-all hover:bg-white/5 hover:border-white/10 group ${className}`}>
+    {children}
+  </div>
+);
 
 export default function HistoryPage() {
   const [scans, setScans] = useState<ScanHistoryItem[]>([]);
@@ -33,155 +41,176 @@ export default function HistoryPage() {
       .finally(() => setLoading(false));
   }, [page]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-emerald-600";
-    if (score >= 50) return "text-amber-600";
-    return "text-red-600";
-  };
-
-  const getScoreBadge = (score: number) => {
-    if (score >= 80) return { label: "Sehat", variant: "default" as const };
-    if (score >= 50) return { label: "Perhatian", variant: "secondary" as const };
-    return { label: "Perbaiki", variant: "destructive" as const };
+  const getScoreStyle = (score: number) => {
+    if (score >= 80) return {
+      color: "text-[#00E573]",
+      bg: "bg-[#00E573]/10",
+      border: "border-[#00E573]/20",
+      label: "Health Score Baik",
+      badge: "bg-[#00E573]"
+    };
+    if (score >= 50) return {
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      label: "Perlu Evaluasi",
+      badge: "bg-amber-500"
+    };
+    return {
+      color: "text-red-500",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      label: "Kritis",
+      badge: "bg-red-500"
+    };
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-24 h-24 border-4 border-[#3323D2]/30 rounded-full animate-ping" />
+          <Loader2 className="h-10 w-10 animate-spin text-[#3323D2]" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-1 h-4 w-4" /> Kembali
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#00E573]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard">
+            <Button variant="ghost" size="icon" className="rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 h-12 w-12">
+              <ArrowLeft className="h-5 w-5 text-white/70" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Riwayat Scan</h1>
+            <p className="text-white/50 text-lg">
+              {total} dokumen mutasi dianalisis sejauh ini.
+            </p>
+          </div>
+        </div>
+        <Link href="/dashboard/scan">
+          <Button className="h-12 px-6 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all font-bold">
+            <Scan className="w-5 h-5 mr-2" /> Scan Dokumen Baru
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold">Riwayat Scan</h1>
-          <p className="text-sm text-muted-foreground">
-            {total} total scan
-          </p>
-        </div>
       </div>
 
       {scans.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-              <Scan className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="mt-6 text-lg font-semibold">Belum ada riwayat scan</h3>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Upload foto mutasi bank untuk mendapatkan analisis pertamamu.
-            </p>
-            <Link href="/dashboard/scan">
-              <Button className="mt-6 gradient-primary text-white">
-                <Scan className="mr-2 h-4 w-4" /> Mulai Scan
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className="space-y-3">
-            {scans.map((scan, i) => {
-              const badge = getScoreBadge(scan.health_score);
-              const date = new Date(scan.created_at);
-              const topCategories = Object.entries(scan.categories || {})
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 3);
-
-              return (
-                <Card
-                  key={scan.scan_id || i}
-                  className="transition-all hover:shadow-md hover:-translate-y-0.5"
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                      {/* Score */}
-                      <div className="flex flex-col items-center min-w-[60px]">
-                        <span className={`text-3xl font-bold ${getScoreColor(scan.health_score)}`}>
-                          {scan.health_score}
-                        </span>
-                        <Badge variant={badge.variant} className="mt-1 text-[10px]">
-                          {badge.label}
-                        </Badge>
-                      </div>
-
-                      {/* Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                          <Calendar className="h-3 w-3" />
-                          {date.toLocaleDateString("id-ID", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                          })}
-                        </div>
-
-                        {/* Top categories */}
-                        {topCategories.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {topCategories.map(([cat, amount]) => (
-                              <span
-                                key={cat}
-                                className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground"
-                              >
-                                {cat}: Rp {(amount as number).toLocaleString("id-ID")}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Top recommendation */}
-                        {scan.recommendations?.[0] && (
-                          <p className="mt-1.5 text-xs text-muted-foreground truncate">
-                            💡 {scan.recommendations[0]}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Trend arrow */}
-                      <TrendingUp
-                        className={`h-5 w-5 shrink-0 ${getScoreColor(scan.health_score)}`}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+        <GlassCard className="flex flex-col items-center justify-center py-20 text-center border-dashed border-white/20">
+          <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 border border-white/10 mb-8 shadow-2xl">
+            <Scan className="h-12 w-12 text-white/40" />
           </div>
+          <h3 className="text-2xl font-bold text-white mb-2">Belum ada riwayat</h3>
+          <p className="max-w-md text-white/50 mb-8 leading-relaxed">
+            Upload file mutasi bank Anda untuk mendapatkan jejak riwayat kesehatan finansial bulan demi bulan.
+          </p>
+          <Link href="/dashboard/scan">
+            <Button className="h-14 px-8 rounded-2xl bg-[#00E573] text-[#101218] font-bold text-lg shadow-[0_0_30px_rgba(0,229,115,0.3)] hover:shadow-[0_0_40px_rgba(0,229,115,0.4)] transition-all">
+              <Scan className="mr-2 h-5 w-5" /> Mulai Analisis Pertamamu
+            </Button>
+          </Link>
+        </GlassCard>
+      ) : (
+        <div className="space-y-4">
+          {scans.map((scan, i) => {
+            const style = getScoreStyle(scan.health_score);
+            const date = new Date(scan.created_at);
+            const topCategories = Object.entries(scan.categories || {})
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 3);
+
+            return (
+              <GlassCard key={scan.scan_id || i} className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-6 cursor-pointer">
+                {/* Left Thumbnail */}
+                <div className={`w-20 h-20 shrink-0 rounded-2xl border flex flex-col items-center justify-center shadow-lg transition-transform group-hover:scale-105 ${style.bg} ${style.border}`}>
+                  <FileText className={`h-8 w-8 ${style.color}`} />
+                  <span className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${style.color}`}>Report</span>
+                </div>
+
+                {/* Middle Info */}
+                <div className="flex-1 min-w-0 flex flex-col items-center sm:items-start text-center sm:text-left w-full">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="h-4 w-4 text-white/40" />
+                    <span className="text-sm font-medium text-white/50">
+                      {date.toLocaleDateString("id-ID", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
+                    {topCategories.map(([cat, amount]) => (
+                      <span
+                        key={cat}
+                        className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-semibold text-white/70"
+                      >
+                        {cat} <span className="text-white/40 ml-1 font-normal">Rp {(amount as number).toLocaleString("id-ID")}</span>
+                      </span>
+                    ))}
+                  </div>
+
+                  {scan.recommendations?.[0] && (
+                    <p className="text-sm text-white/60 truncate w-full max-w-2xl bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
+                      <span className="mr-2 text-[#8B7DFF]">✨ AI Update:</span> {scan.recommendations[0]}
+                    </p>
+                  )}
+                </div>
+
+                {/* Right Score */}
+                <div className="shrink-0 flex items-center gap-5 bg-white/5 px-6 py-4 rounded-2xl border border-white/5 h-20 w-full sm:w-auto justify-between sm:justify-center">
+                  <div className="flex flex-col items-start sm:items-end">
+                    <span className="text-xs uppercase tracking-wider font-bold text-white/30 mb-1">{style.label}</span>
+                    <Badge className={`border-none ${style.badge} text-[#101218] font-black uppercase tracking-wider py-1 px-3 shadow-[0_0_15px_inherit]`}>
+                      {scan.health_score} / 100
+                    </Badge>
+                  </div>
+                  {scan.health_score >= 80 ? (
+                    <TrendingUp className={`w-8 h-8 ${style.color} drop-shadow-lg opacity-50 sm:opacity-100`} />
+                  ) : (
+                    <TrendingDown className={`w-8 h-8 ${style.color} drop-shadow-lg opacity-50 sm:opacity-100`} />
+                  )}
+                  <ChevronRight className="w-5 h-5 text-white/20 group-hover:text-white/50 group-hover:translate-x-1 transition-all hidden sm:block" />
+                </div>
+              </GlassCard>
+            );
+          })}
 
           {/* Pagination */}
           {total > 10 && (
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-4 pt-8">
               <Button
                 variant="outline"
-                size="sm"
+                className="h-12 px-6 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                Sebelumnya
+                <ArrowLeft className="w-4 h-4 mr-2" /> Prev
               </Button>
-              <span className="text-sm text-muted-foreground">
-                Halaman {page} / {Math.ceil(total / 10)}
-              </span>
+              <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
+                <span className="text-sm font-bold text-white">
+                  Hal {page} <span className="text-white/30 mx-1">/</span> {Math.ceil(total / 10)}
+                </span>
+              </div>
               <Button
                 variant="outline"
-                size="sm"
+                className="h-12 px-6 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10"
                 disabled={page >= Math.ceil(total / 10)}
                 onClick={() => setPage((p) => p + 1)}
               >
-                Selanjutnya
+                Next <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -7,45 +7,26 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      {/* Left panel — branding */}
-      <div className="hidden w-1/2 gradient-primary lg:flex lg:flex-col lg:justify-between p-12 text-white">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/20">
-            <Shield className="h-5 w-5" />
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-t from-[#1c1438] to-[#101218] p-4 font-sans text-white selection:bg-[#00E573]/30">
+      <div className="absolute top-8 left-8 hidden md:block">
+        <Link href="/" className="flex items-center gap-3 group">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10 group-hover:border-[#00E573]/50 transition-colors">
+            <Shield className="h-6 w-6 text-[#00E573]" />
           </div>
-          <span className="text-xl font-bold">SafeWallet</span>
+          <span className="text-xl font-bold tracking-tight">SafeWallet</span>
         </Link>
-        <div>
-          <h2 className="text-3xl font-bold leading-tight">
-            Jaga keuanganmu
-            <br />
-            dari jerat utang &
-            <br />
-            investasi bodong.
-          </h2>
-          <p className="mt-4 text-white/70">
-            Platform AI gratis untuk 270 juta rakyat Indonesia.
-          </p>
-        </div>
-        <p className="text-sm text-white/50">
-          © 2026 SafeWallet
-        </p>
       </div>
-
-      {/* Right panel — auth form */}
-      <div className="flex w-full items-center justify-center p-8 lg:w-1/2">
-        <div className="w-full max-w-md">
-          <div className="mb-8 lg:hidden">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-primary">
-                <Shield className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">SafeWallet</span>
-            </Link>
-          </div>
-          {children}
+      
+      <div className="w-full max-w-md">
+        <div className="mb-8 flex justify-center md:hidden">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 border border-white/10">
+              <Shield className="h-6 w-6 text-[#00E573]" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">SafeWallet</span>
+          </Link>
         </div>
+        {children}
       </div>
     </div>
   );

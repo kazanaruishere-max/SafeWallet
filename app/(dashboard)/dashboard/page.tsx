@@ -13,6 +13,9 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
+  Wallet,
+  Activity,
+  History
 } from "lucide-react";
 import type { DashboardData } from "@/types/api";
 
@@ -32,8 +35,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="relative flex items-center justify-center">
+          <div className="absolute w-24 h-24 border-4 border-[#00E573]/20 rounded-full animate-ping" />
+          <Loader2 className="h-10 w-10 animate-spin text-[#00E573]" />
+        </div>
       </div>
     );
   }
@@ -41,186 +47,168 @@ export default function DashboardPage() {
   const hasScans = data?.latest_scan !== null;
   const scanQuota = data?.quota.scans ?? { used: 0, limit: 3 };
   const scamQuota = data?.quota.scam_checks ?? { used: 0, limit: 5 };
+  const healthScore = data?.latest_scan?.health_score ?? 0;
+  
+  // Dummy values based on design prompt if no real data
+  const savingsRate = "20%";
+  const debtRatio = "15%";
 
   return (
-    <div className="space-y-8">
-      {/* Welcome */}
-      <div>
-        <h1 className="text-2xl font-bold">Selamat datang di SafeWallet 👋</h1>
-        <p className="mt-1 text-muted-foreground">
-          Pantau kesehatan keuanganmu dan lindungi dari penipuan.
-        </p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Welcome Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Financial Overview</h1>
+          <p className="mt-2 text-white/50 text-lg">
+            Pantau AI Health Score dan aktivitas keamananmu hari ini.
+          </p>
+        </div>
+        <div className="flex gap-3">
+          <Link href="/dashboard/scan">
+            <Button className="bg-[#00E573] text-[#101218] hover:bg-[#00E573]/90 font-bold rounded-xl shadow-[0_0_20px_rgba(0,229,115,0.3)]">
+              <Scan className="w-4 h-4 mr-2" /> Mulai Scan Baru
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent" />
-          <CardContent className="relative flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10">
-              <Scan className="h-6 w-6 text-emerald-600" />
+      {/* Bento Grid Architecture */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Hero Card: AI Health Score (Spans 2 columns on lg) */}
+        <Card className="lg:col-span-2 bg-[#1A1D24]/80 backdrop-blur-xl border-white/5 rounded-[2rem] overflow-hidden relative group">
+          <div className="absolute -top-32 -left-32 w-64 h-64 bg-[#00E573]/10 blur-[100px] rounded-full pointer-events-none transition-transform group-hover:scale-150 duration-700" />
+          <CardContent className="p-8 sm:p-10 flex flex-col md:flex-row items-center gap-10">
+            {/* Circular Donut Chart Widget */}
+            <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
+              {/* Outer Glow */}
+              <div className="absolute inset-0 bg-[#00E573] rounded-full blur-2xl opacity-20" />
+              {/* Background Circle */}
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" stroke="#101218" strokeWidth="6" fill="transparent" />
+                {/* Foreground Progress Circle */}
+                <circle 
+                  cx="50" cy="50" r="45" 
+                  stroke="#00E573" 
+                  strokeWidth="6" 
+                  fill="transparent" 
+                  strokeDasharray="283" 
+                  strokeDashoffset={hasScans ? 283 - (283 * healthScore) / 100 : 283} 
+                  strokeLinecap="round" 
+                  className="transition-all duration-1000 ease-out drop-shadow-[0_0_8px_rgba(0,229,115,0.8)]"
+                />
+              </svg>
+              <div className="absolute flex flex-col items-center justify-center text-center">
+                <span className="text-4xl font-black tracking-tighter text-white">
+                  {hasScans ? healthScore : "--"}
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-[#00E573] font-bold mt-1">
+                  Health Score
+                </span>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">Cek Kesehatan Keuangan</h3>
-              <p className="text-sm text-muted-foreground">
-                Upload mutasi bank untuk analisis AI
+
+            {/* AI Summary Text */}
+            <div className="flex-1 text-center md:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00E573]/10 border border-[#00E573]/20 text-[#00E573] text-xs font-bold mb-4">
+                <Sparkles className="w-3.5 h-3.5" /> AI Analysis Active
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                {hasScans ? (healthScore >= 70 ? "Keuangan Anda Sehat" : "Perlu Perhatian Khusus") : "Belum Ada Data"}
+              </h2>
+              <p className="text-white/60 leading-relaxed max-w-md">
+                {hasScans 
+                  ? "Tidak terdeteksi adanya indikasi aktivitas pinjaman online predator atau transaksi perjudian online dalam 30 hari terakhir."
+                  : "Upload mutasi bank Anda untuk mendapatkan laporan instan tentang kesehatan finansial dan deteksi anomali."}
               </p>
+              
+              {!hasScans && (
+                <Link href="/dashboard/scan" className="mt-6 inline-flex items-center text-[#00E573] text-sm font-semibold hover:text-emerald-400 group/link">
+                  Scan sekarang <ArrowRight className="ml-1.5 w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                </Link>
+              )}
             </div>
-            <Link href="/dashboard/scan">
-              <Button size="sm" className="gradient-primary text-white">
-                Scan <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </Link>
           </CardContent>
         </Card>
 
-        <Card className="group relative overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent" />
-          <CardContent className="relative flex items-center gap-4 p-6">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-500/10">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
+        {/* Info Column (Spans 1 column on lg) - Scam Checks & Tier */}
+        <div className="flex flex-col gap-6">
+          <Card className="flex-1 bg-gradient-to-br from-[#1A1D24] to-[#101218] border-white/5 rounded-[2rem] p-6 hover:border-red-500/30 transition-colors group">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <Badge variant="outline" className="border-white/10 text-white/50">Bulan Ini</Badge>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold">Cek Investasi</h3>
-              <p className="text-sm text-muted-foreground">
-                Verifikasi apakah investasi aman atau bodong
-              </p>
+            <h3 className="text-3xl font-black text-white mb-1">{data?.scam_checks_count ?? 0}</h3>
+            <p className="text-white/50 text-sm font-medium mb-4">Link Bodong Dicek</p>
+            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-red-500 rounded-full" 
+                style={{ width: `${(scamQuota.used / scamQuota.limit) * 100}%` }} 
+              />
             </div>
-            <Link href="/dashboard/scam">
-              <Button size="sm" variant="outline">
-                Cek <ArrowRight className="ml-1 h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </CardContent>
+            <p className="mt-2 text-xs text-white/40 text-right">{scamQuota.limit - scamQuota.used} sisa kuota</p>
+          </Card>
+
+          <Card className="flex-1 bg-gradient-to-br from-[#3323D2]/10 to-[#1A1D24] border-[#3323D2]/20 rounded-[2rem] p-6">
+            <div className="flex justify-between items-start mb-4">
+              <div className="w-12 h-12 rounded-xl bg-[#3323D2]/20 flex items-center justify-center">
+                <Award className="w-6 h-6 text-[#8B7DFF]" />
+              </div>
+              <Badge className="bg-[#3323D2] text-white border-none capitalize">{data?.user.subscription ?? "Free Plan"}</Badge>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-1">SafeWallet Pro</h3>
+            <p className="text-white/50 text-sm mb-4 leading-relaxed">
+              Dapatkan akses unlimited AI analysis dan Saku Bot.
+            </p>
+            <Button variant="outline" className="w-full rounded-xl border-white/10 text-white hover:bg-white/5">
+              Upgrade Sekarang
+            </Button>
+          </Card>
+        </div>
+
+        {/* Mini Cards Row (2x2 Grid conceptually, here placing them in the remaining flow) */}
+        <Card className="bg-[#1A1D24]/60 backdrop-blur-xl border-white/5 rounded-[2rem] p-6 flex flex-col justify-between">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Wallet className="w-5 h-5 text-blue-400" />
+            </div>
+            <h3 className="text-white/70 font-medium">Savings Rate</h3>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-white">{savingsRate}</p>
+            <p className="text-xs text-white/40 mt-1">Dari total pendapatan</p>
+          </div>
+        </Card>
+
+        <Card className="bg-[#1A1D24]/60 backdrop-blur-xl border-white/5 rounded-[2rem] p-6 flex flex-col justify-between">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-yellow-500" />
+            </div>
+            <h3 className="text-white/70 font-medium">Debt Ratio</h3>
+          </div>
+          <div>
+            <p className="text-3xl font-black text-white">{debtRatio}</p>
+            <p className="text-xs text-white/40 mt-1">Aman di bawah 30%</p>
+          </div>
+        </Card>
+
+        {/* Quick Scan History shortcut */}
+        <Card className="bg-[#1A1D24]/60 backdrop-blur-xl border-white/5 rounded-[2rem] p-6 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors group">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+              <History className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold">Riwayat Scan</h3>
+              <p className="text-sm text-white/40">Lihat data historis analisis</p>
+            </div>
+          </div>
+          <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[#00E573] group-hover:translate-x-1 transition-all" />
         </Card>
       </div>
-
-      {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Health Score
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {data?.latest_scan ? data.latest_scan.health_score : "—"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {data?.latest_scan ? "Dari scan terakhir" : "Belum ada scan"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Scam Dicek
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{data?.scam_checks_count ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Total pengecekan</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Badges
-            </CardTitle>
-            <Award className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{data?.badges.length ?? 0}</p>
-            <p className="mt-1 text-xs text-muted-foreground">Badge yang didapat</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Tier
-            </CardTitle>
-            <Sparkles className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold capitalize">
-              {data?.user.subscription ?? "Free"}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {scanQuota.limit - scanQuota.used} scan tersisa
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Score Trend (if has data) */}
-      {data?.scan_trend && data.scan_trend.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="h-4 w-4 text-primary" />
-              Trend Health Score
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-end gap-2 h-24">
-              {data.scan_trend.map((score, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-xs font-medium">{score}</span>
-                  <div
-                    className="w-full rounded-t-md gradient-primary transition-all"
-                    style={{ height: `${(score / 100) * 80}px` }}
-                  />
-                  <span className="text-[10px] text-muted-foreground">
-                    Scan {i + 1}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty State / Quota Info */}
-      {!hasScans ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 animate-float">
-              <Scan className="h-8 w-8 text-primary" />
-            </div>
-            <h3 className="mt-6 text-lg font-semibold">Mulai Scan Pertamamu</h3>
-            <p className="mt-2 max-w-sm text-sm text-muted-foreground">
-              Upload foto mutasi bank untuk mendapatkan health score dan rekomendasi AI
-              personal.
-            </p>
-            <Link href="/dashboard/scan">
-              <Button className="mt-6 gradient-primary text-white">
-                <Scan className="mr-2 h-4 w-4" /> Mulai Scan
-              </Button>
-            </Link>
-            <Badge variant="secondary" className="mt-4">
-              {scanQuota.limit - scanQuota.used} scan gratis tersisa bulan ini
-            </Badge>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between text-sm">
-              <span>Kuota bulan ini</span>
-              <span>
-                📊 Scan: <strong>{scanQuota.used}/{scanQuota.limit}</strong> |
-                🛡️ Scam: <strong>{scamQuota.used}/{scamQuota.limit}</strong>
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

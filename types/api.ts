@@ -8,6 +8,7 @@ export type ApiResponse<T> = {
     total?: number;
     remaining_quota?: number;
     new_badges?: string[];
+    needs_education_lock?: boolean;
   };
 };
 
