@@ -1,75 +1,158 @@
-# SafeWallet
+<div align="center">
+  <img src="https://via.placeholder.com/1200x400/101218/00E573?text=SafeWallet+-+AI+Driven+Financial+Recovery+%26+Scam+Protection" alt="SafeWallet Banner" />
 
-![SafeWallet Banner](https://via.placeholder.com/1200x400/101218/00E573?text=SafeWallet+-+AI+Driven+Financial+Recovery+%26+Scam+Protection)
+  <br />
+  <br />
 
-**SafeWallet** adalah platform pemulihan kesehatan finansial dan pelacak investasi bodong (scam) berbasis Artificial Intelligence (AI) terdepan di Indonesia. Dibangun dengan fokus utama pada pemulihan korban jeratan Pinjol & Paylater, serta perlindungan preventif terhadap skema Ponzi investasi bodong.
+  <h1>🛡️ SafeWallet: Benteng Terakhir Keuangan Anda</h1>
+  
+  <p>
+    <strong>"Karena tidak ada yang seharusnya hancur hanya karena ketidaktahuan finansial."</strong>
+  </p>
 
-## 🌟 Fitur Utama
+  <p>
+    Sebuah inisiasi *open-source* berbasis AI yang dirancang sebagai antitesis terhadap epidemi investasi bodong, kebrutalan Pinjaman Online (Pinjol), dan literasi finansial yang stagnan di Indonesia. 
+  </p>
 
-- **🧠 Saku AI Assistant & Health Scanner**: AI canggih yang membedah riwayat transaksi mutasi bank Anda secara mendalam, menilai *Debt-to-Income (DTI) ratio*, pengeluaran impulsive berbunga tinggi, untuk memberikan **Health Score**.
-- **🚨 Scam & Investasi Bodong Checker**: Sistem yang dapat memindai URL atau deskripsi promosi investasi untuk mendeteksi *Red Flags* (ponzi, ketiadaan izin OJK, return tidak wajar).
-- **🔒 Pinjol Rescue & Academy Lock**: Sistem penguncian otomatis (Lock Screen) jika DTI pengguna menembus ambang kritis (>35%). Pengguna wajib membaca dan memahami materi *Debt Snowball* sebelum fitur di-unlock.
-- **🤖 Integrasi Telegram Bot 24/7**: Asisten finansial Saku (@SakuSafeBot) yang terhubung end-to-end secara aman dengan akun SafeWallet, memberikan evaluasi mingguan dan *coaching* finansial langsung di tangan pengguna.
-- **💎 Premium Glassmorphism UI**: Desain antarmuka kelas Enterprise (Neo-Brutalism x Glassmorphism) berbasis pada warna tematik *Dark Onyx*, *Deep Iris*, dan *Neon Emerald* untuk memberikan pengalaman pengguna yang sangat modern, bersih, dan menumbuhkan rasa perlindungan psikologis.
+  <p>
+    <a href="#latar-belakang--rasa"><strong>Pelajari Visi Kami</strong></a> ·
+    <a href="#alur-kerja-workflow"><strong>Alur Kerja</strong></a> ·
+    <a href="#roadmap-masa-depan"><strong>Roadmap</strong></a> ·
+    <a href="#lisensi"><strong>Lisensi</strong></a>
+  </p>
+  <br />
+</div>
 
-## 🚀 Tech Stack
+---
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router, Turbopack)
-- **Bahasa**: [TypeScript](https://www.typescriptlang.org/)
-- **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
-- **Database & Auth**: [Supabase](https://supabase.com/) (PostgreSQL + RLS Policies + Magic Link Auth)
-- **AI Engine**: Google Gemini API (via `@google/genai`)
-- **Deployment**: [Vercel](https://vercel.com)
+## 🖤 Latar Belakang & Rasa (The Emotion Behind the Code)
 
-## 🛡️ Keamanan & Privasi
+SafeWallet tidak dibangun sekadar sebagai entitas perangkat lunak. Ia dilahirkan dari rasa empati dan kemarahan melihat jutaan masyarakat kelas menengah ke bawah hancur karena taktik predatoris *Pinjaman Online Ilegal* dan buaian ilusi *Skema Ponzi/Investasi Bodong*.
 
-Keamanan dan privasi data pengguna adalah tulang punggung SafeWallet:
-- **Zero-knowledge Processing**: File mutasi PDF & Mutasi gambar diproses sementara di Edge Server dan tidak akan pernah disimpan ke database. Algoritma mengekstrak metadata JSON tanpa menyimpan raw data.
-- **Strict Content Security Policy (CSP)**: Dimplementasikan keras untuk menjegal instruksi Remote Code Execution (RCE) / XSS.
-- **100% RLS Coverage**: Supabase beroperasi pada row-level-security penuh di mana pengguna A secara sistem matematis tidak dapat membongkar tabel laporan kesehatan pengguna B.
-- Laporan Keamanan Lengkap tersedia di `AUDIT_REPORT.md` dan `SECURITY.md`.
+Ada begitu banyak cerita tentang air mata, depresi, hingga hilangnya nyawa hanya karena jeratan hutang yang tak berujung. Sistem keuangan modern sering kali membingungkan dan tidak berpihak kepada rakyat kecil. SafeWallet hadir bukan sebagai aplikasi pencatat keuangan biasa, melainkan sebagai **Psikolog Finansial, Detektif Penipuan, dan Teman Seperjuangan** yang akan menuntun Anda keluar dari krisis keuangan, selangkah demi selangkah.
 
-## 📦 Instalasi & Menjalankan Lokal
+Dibangun dengan antarmuka *Glassmorphism* gelap (*Dark Onyx*) dan cahaya hijau neon (*Neon Emerald*), SafeWallet dirancang secara psikologis untuk memberikan rasa **Tenang, Aman, dan Harapan**—bahwa seburuk apapun kondisinya, jalan keluar itu masih ada.
 
-1. **Clone repositori ini:**
+---
+
+## 🧠 Konsep & Filosofi Inti
+
+Konsep SafeWallet berdiri pada tiga pilar utama:
+1. **Pembedahan Radikal (Radical Transparency):** Membedah dokumen PDF Mutasi Rekening Bank secara otomatis menggunakan AI *(Google Gemini)* untuk melacak setiap sen kebocoran impulsif tanpa penghakiman. Cukup *Drag & Drop*.
+2. **Resusitasi Pinjol (Debt-Snowball Rescue):** Sistem mendeteksi otomatis *Debt-to-Income (DTI) Ratio*. Jika telah mencapai ambang batas hancur (>40%), platform memicu protokol "Akademi Darurat" yang menghentikan fitur lain dan memaksa *user* belajar *crisis management* terlebih dahulu.
+3. **Peringatan Preventif (Scam Interceptor):** Sebelum mengirimkan uang ke entitas yang menjanjikan pengembalian 300%, pengguna dapat menganalisis deskripsi investasi tersebut. AI kami akan membedah logika *Ponzi* dari janji tersebut dan membandingkannya dengan perizinan OJK seketika itu juga.
+
+---
+
+## ⚙️ Alur Kerja (Workflow) & Arsitektur
+
+Bagaimana SafeWallet melindungi Anda mulai dari titik awal pendaftaran hingga pemulihan ekonomi harian melalui pendampingan.
+
+### Flowchart Integrasi AI & Keamanan
+
+```mermaid
+graph TD
+    A[Pengguna Mendaftar via Magic Link] --> B(Supabase Auth & RLS Terisolasi)
+    B --> C{Memilih Menu Dashboard}
+    
+    %% Alur Scanner
+    C -->|Health Scanner| D[Upload Mutasi PDF/Gambar]
+    D --> E[Edge Server Ekstraksi Metadata]
+    E --> F[Gemini AI memisahkan Kategori, Rasio Pinjol & Pola Pengeluaran]
+    F --> G{Debt-to-Income > 35% ?}
+    G -- Ya --> H[🚨 TRIGGER SAKU ACADEMY LOCK]
+    G -- Tidak --> I[Tampilkan Health Score & Insight]
+    
+    %% Alur Scam Checker
+    C -->|Detektor Scam| J[Input Text / URL Investasi]
+    J --> K[AI Scam Verification Engine]
+    K --> L[Tampilkan Kartu Identifikasi Bahaya Ponzi]
+    
+    %% Telegram Bot (Daily Coaching)
+    C -->|Integrasi| M[Link Akun ke @SakuSafeBot]
+    M --> N[Notifikasi & Pendampingan Psikologi Finansial Harian via Telegram]
+    I --> N
+    L --> N
+```
+
+---
+
+## 💎 Modul Front-End & UI/UX
+
+Satu-satunya tumpuan *frontend* terletak pada keahlian `Next.js 15` (App Router) dipadukan dengan desain *Neon-Brutalism x Premium Glassmorphism*.
+
+- **Landing Page, Login, & Signup:** Memberikan transisi keagungan *Zero-Friction* onboarding dengan OTP Magic Link.
+- **Bento Box Dashboard:** *Widget* interaktif, dari kalkulasi "Financial Score" *Radial Donut Chart*, hingga riwayat singkat yang responsif untuk Web maupun Mobile.
+- **Twin-Screen Profile:** Modul profil Pengguna yang berdampingan lurus dengan instruksi kode terminal-style `/link` untuk koneksi Telegram Bot.
+
+---
+
+## 🛠 Instalasi Lokal (Bagi Developer Pembela Rakyat)
+
+Bantu kami mengembangkan sistem keselamatan ini. Berikut adalah spesifikasi untuk menjalankan aplikasi secara lokal.
+
+1. **Kloning Benteng**
    ```bash
    git clone https://github.com/kazanaruishere-max/SafeWallet.git
    cd SafeWallet
    ```
 
-2. **Install dependensi:**
+2. **Siapkan Amunisi (Install Dependencies)**
    ```bash
    npm install
    ```
 
-3. **Duplikat `.env.example` ke `.env.local` dan isi nilainya:**
+3. **Injeksi Kunci Aktivasi (Environment Variables)**
+   Duplikat file konfigurasi dan isi kunci sandinya.
    ```bash
    cp .env.example .env.local
+   # Masukkan kredensial Supabase URL, ANON_KEY, dan GEMINI_API_KEY.
    ```
-   *Penting: Anda membutuhkan kunci API dari Supabase (URL & Anon Key), Google Gemini API, dan Token Telegram Bot.*
 
-4. **Jalankan database migration (Supabase):**
+4. **Koneksikan Mesin Waktu Database (Supabase)**
    ```bash
    npx supabase link --project-ref your-project-id
    npx supabase db push
    ```
 
-5. **Jalankan development server:**
+5. **Nyalakan Reaktor (Jalankan Lokal)**
    ```bash
    npm run dev
    ```
-   Aplikasi akan berjalan di `http://localhost:3000`.
-
-## 📖 Syarat dan Ketentuan & Kebijakan Privasi
-SafeWallet tunduk dan mematuhi pilar Undang-Undang Pelindungan Data Pribadi (UU PDP). Silakan baca selengkapnya pada halaman `/syarat-ketentuan` dan `/kebijakan-privasi` di dalam platform.
-
-## 🤝 Kontribusi
-
-Kami sangat terbuka untuk *pull request*. Untuk *major changes*, silakan buka *issue* terlebih dahulu untuk mendiskusikan apa yang spesifik ingin Anda ubah.
-
-## 📄 Lisensi
-
-Berlisensi di bawah Lisensi MIT - lihat file [LICENSE](LICENSE) untuk detailnya.
 
 ---
-*Dibuat untuk mendorong pemulihan ekonomi generasi muda Indonesia.*
+
+## 🚦 Roadmap Masa Depan
+
+Kami baru mulai. Perjalanan untuk membangun *Financial First-Aid* nasional butuh waktu. Berikut adalah rencana ke depan:
+
+- **[Fase 1] V1.0 (Sekarang):** Saku AI Health Scanner (PDF Mutation), Scam Verificator AI, MVP Telegram Integration OTP, Saku Academy (Debt Snowball Learning), Premium Glassmorphism Redesign.
+- **[Fase 2] Algoritma OJK Scrapper:** Sinkronisasi API *Live* setiap 24 jam dengan daftar *Blacklist* SWI (Satgas Waspada Investasi).
+- **[Fase 3] Side-Hustle Matchmaker AI:** Analisis pengeluaran yang dihubungkan dengan RAG pekerjaan *Freelance*. AI akan mencari di database pekerjaan kecil yang persis dapat menutup defisit gaji bulanan *User*.
+- **[Fase 4] Panggilan Krisis Psikologis:** Modul *Panic Button* yang terhubung ke nomor bantuan psikologis gratis jika AI mendeteksi pesan yang mengindikasi depresi absolut dari interaksi Telegram.
+
+---
+
+## ⚖️ Keamanan Inti (Threat Model Zero-Trust)
+
+Aplikasi dibangun tidak hanya aman, tetapi menaruh keraguan tinggi (*Zero Trust*) pada input dokumen:
+- Dokumen mutasi tidak pernah, dan tidak akan pernah **diamankan secara statis**. Eksekusi diproses di *In-Memory Serverless Functions* dan hancur *(garbage collected)* secara natural.
+- Pengaplikasian **100% RLS (Row-Level Security) Supabase**. 
+
+Silakan membaca keseluruhan regulasi penanganan ancaman kami pada [SECURITY.md](SECURITY.md).
+
+---
+
+## 🧑‍💻 Persembahan, Kode, & Sang Kreator
+
+Dibangun dan diarahkan oleh **Kazanaru**. Aplikasi ini adalah bukti dedikasi bahwa kode harus digunakan sebagai perisai, alat keadilan, dan teman di saat masyarakat paling membutuhkan pertolongan struktural.
+
+Jika Anda memiliki dedikasi serupa untuk mengembalikan kemanusiaan lewat kode perangkat lunak, jangan ragu untuk menekan tombol **Star**, membuka **Pull Request**, atau mempelajari cara menolong audiens serupa di negara manapun di dunia.
+
+---
+
+## 📜 Lisensi
+
+Kode sumber dari aplikasi mulia ini dilepaskan sebagai bentuk open-source dan didistribusikan di bawah **Lisensi MIT**. 
+
+Hak Cipta (c) 2026 **Kazanaru** – Lihat berkas [LICENSE](LICENSE) untuk detail hukum secara menyeluruh. Hak Anda bebas untuk menggunakan, meneruskan, memperdagangkan, dan mengubah kode kami. Bantu kami mengubah dunia.
