@@ -143,8 +143,8 @@ export default function SignupPage() {
 
           <p className="text-center text-xs text-white/30 border-t border-white/5 pt-6 mt-4">
             Dengan mendaftar, kamu setuju dengan{" "}
-            <Link href="#" className="underline hover:text-white transition-colors">Syarat & Ketentuan</Link> dan{" "}
-            <Link href="#" className="underline hover:text-white transition-colors">Kebijakan Privasi</Link> kami.
+            <Link href="/syarat-ketentuan" className="underline hover:text-white transition-colors">Syarat & Ketentuan</Link> dan{" "}
+            <Link href="/kebijakan-privasi" className="underline hover:text-white transition-colors">Kebijakan Privasi</Link> kami.
           </p>
         </div>
       </div>
