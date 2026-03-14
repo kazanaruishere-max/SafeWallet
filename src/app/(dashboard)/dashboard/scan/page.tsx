@@ -155,10 +155,10 @@ export default function ScanPage() {
   const getFormatIcon = (fmt: ParsedFile["format"] | null) => {
     switch (fmt) {
       case "pdf": return <FileText className="h-5 w-5 text-red-500" />;
-      case "excel": return <FileSpreadsheet className="h-5 w-5 text-[#00E573]" />;
+      case "excel": return <FileSpreadsheet className="h-5 w-5 text-[#F2A971]" />;
       case "csv": return <FileSpreadsheet className="h-5 w-5 text-blue-500" />;
       case "text": return <File className="h-5 w-5 text-gray-500" />;
-      default: return <FileImage className="h-5 w-5 text-[#00E573]" />;
+      default: return <FileImage className="h-5 w-5 text-[#F2A971]" />;
     }
   };
 
@@ -175,7 +175,7 @@ export default function ScanPage() {
   if (loadingProfile) {
     return (
       <div className="flex justify-center min-h-[60vh] items-center">
-        <Loader2 className="h-10 w-10 animate-spin text-[#00E573]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#F2A971]" />
       </div>
     );
   }
@@ -193,10 +193,10 @@ export default function ScanPage() {
           <p className="text-white/60 text-lg mb-8 leading-relaxed">
             Sistem mendeteksi rasio Cicilan/Pendapatan Anda berada di <span className="text-amber-500 font-bold">Zona Bahaya (&gt;35%)</span>. Ini membuat Anda sangat rentan terhadap jebakan gagal bayar Pinjol predator.
           </p>
-          <div className="bg-[#101218]/50 border border-white/5 rounded-2xl p-6 mb-8 text-left">
+          <div className="bg-[#0B0A08]/50 border border-white/5 rounded-2xl p-6 mb-8 text-left">
             <p className="text-sm text-white/80 font-medium mb-3">Tindakan Wajib:</p>
             <p className="text-sm text-white/50 mb-4">Anda harus menyelesaikan modul mitigasi darurat sebelum memindai mutasi lagi.</p>
-            <Button onClick={() => router.push("/dashboard/academy")} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-[#101218] font-bold rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)]">
+            <Button onClick={() => router.push("/dashboard/academy")} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-[#0B0A08] font-bold rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.3)]">
               Buka Modul SafeWallet Academy <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -209,7 +209,7 @@ export default function ScanPage() {
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
       {/* Background Gradients for Scan Page */}
       <div className="absolute -top-40 -left-64 w-[600px] h-[600px] bg-[#3323D2]/20 blur-[150px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-[#00E573]/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-[#F2A971]/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Health Scanner</h1>
@@ -228,14 +228,14 @@ export default function ScanPage() {
             </div>
           )}
 
-          <GlassCard className="p-2 border-[#00E573]/20 shadow-[0_0_40px_rgba(0,229,115,0.05)]">
+          <GlassCard className="p-2 border-[#F2A971]/20 shadow-[0_0_40px_rgba(242,169,113,0.05)]">
             <div
-              className={`flex flex-col items-center justify-center min-h-[400px] bg-[#101218]/40 border-2 border-dashed border-[#00E573]/30 rounded-[1.5rem] transition-all hover:bg-[#00E573]/5 hover:border-[#00E573]/60 cursor-pointer m-2 relative overflow-hidden group`}
+              className={`flex flex-col items-center justify-center min-h-[400px] bg-[#0B0A08]/40 border-2 border-dashed border-[#F2A971]/30 rounded-[1.5rem] transition-all hover:bg-[#F2A971]/5 hover:border-[#F2A971]/60 cursor-pointer m-2 relative overflow-hidden group`}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileRef.current?.click()}
             >
-              <div className="absolute inset-0 bg-gradient-to-t from-[#00E573]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#F2A971]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <input
                 ref={fileRef}
                 type="file"
@@ -246,8 +246,8 @@ export default function ScanPage() {
                   if (f) handleFile(f);
                 }}
               />
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#00E573]/10 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_30px_rgba(0,229,115,0.2)]">
-                <Upload className="h-10 w-10 text-[#00E573]" />
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#F2A971]/10 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_30px_rgba(242,169,113,0.2)]">
+                <Upload className="h-10 w-10 text-[#F2A971]" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">
                 Drop File Mutasi Di Sini
@@ -269,7 +269,7 @@ export default function ScanPage() {
               { num: "3", title: "Insight Keluar", desc: "Dapatkan analisis Instan" },
             ].map((step, i) => (
               <div key={i} className="flex gap-4 items-start bg-white/5 border border-white/5 rounded-2xl p-5">
-                <div className="w-10 h-10 rounded-full bg-[#00E573]/10 text-[#00E573] border border-[#00E573]/20 flex items-center justify-center font-black text-lg shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#F2A971]/10 text-[#F2A971] border border-[#F2A971]/20 flex items-center justify-center font-black text-lg shrink-0">
                   {step.num}
                 </div>
                 <div>
@@ -290,9 +290,9 @@ export default function ScanPage() {
           </div>
 
           <div className="relative w-32 h-32 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border-t-4 border-[#00E573] animate-spin" />
+            <div className="absolute inset-0 rounded-full border-t-4 border-[#F2A971] animate-spin" />
             <div className="absolute inset-0 rounded-full border-b-4 border-[#3323D2] animate-spin shadow-[0_0_30px_rgba(51,35,210,0.4)]" style={{ animationDirection: 'reverse' }} />
-            <Scan className="w-12 h-12 text-[#00E573] animate-pulse" />
+            <Scan className="w-12 h-12 text-[#F2A971] animate-pulse" />
           </div>
 
           <div>
@@ -306,7 +306,7 @@ export default function ScanPage() {
             <div className="w-full max-w-md">
               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-[#3323D2] to-[#00E573] transition-all duration-300 rounded-full"
+                  className="h-full bg-gradient-to-r from-[#3323D2] to-[#F2A971] transition-all duration-300 rounded-full"
                   style={{ width: `${progress}%` }}
                 />
               </div>
@@ -318,11 +318,11 @@ export default function ScanPage() {
         <div className="space-y-6 max-w-4xl mx-auto">
           {/* Result Header */}
           <GlassCard className="p-8 md:p-12 text-center relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#00E573]/5 to-transparent border-b border-white/5" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#F2A971]/5 to-transparent border-b border-white/5" />
             <div className="relative z-10 flex flex-col items-center">
               <span className="text-white/50 text-sm font-bold tracking-widest uppercase mb-4">Total Health Score</span>
-              <div className="relative flex items-center justify-center w-40 h-40 rounded-full bg-[#101218] border border-white/10 shadow-[0_0_50px_rgba(0,229,115,0.15)] mb-6">
-                <span className={`text-6xl font-black ${result.health_score >= 80 ? 'text-[#00E573]' : result.health_score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
+              <div className="relative flex items-center justify-center w-40 h-40 rounded-full bg-[#0B0A08] border border-white/10 shadow-[0_0_50px_rgba(242,169,113,0.15)] mb-6">
+                <span className={`text-6xl font-black ${result.health_score >= 80 ? 'text-[#F2A971]' : result.health_score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
                   {result.health_score}
                 </span>
               </div>
@@ -346,7 +346,7 @@ export default function ScanPage() {
                         <span className="font-bold">Rp {amount.toLocaleString('id-ID')}</span>
                       </div>
                       <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${i === 0 ? 'bg-[#3323D2]' : i === 1 ? 'bg-[#00E573]' : 'bg-white/20'}`} style={{ width: `${pct}%` }} />
+                        <div className={`h-full rounded-full ${i === 0 ? 'bg-[#3323D2]' : i === 1 ? 'bg-[#F2A971]' : 'bg-white/20'}`} style={{ width: `${pct}%` }} />
                       </div>
                     </div>
                   );
@@ -358,7 +358,7 @@ export default function ScanPage() {
               <GlassCard className="p-6 flex-1 flex flex-col justify-center">
                 <span className="text-white/50 text-sm font-medium mb-1">Savings Rate AI</span>
                 <span className="text-3xl font-black text-white">{Math.round(result.savings_rate * 100)}%</span>
-                <span className="text-xs text-[#00E573] mt-2 bg-[#00E573]/10 self-start px-2 py-1 rounded">Rekomendasi &gt;20%</span>
+                <span className="text-xs text-[#F2A971] mt-2 bg-[#F2A971]/10 self-start px-2 py-1 rounded">Rekomendasi &gt;20%</span>
               </GlassCard>
               <GlassCard className="p-6 flex-1 flex flex-col justify-center border-amber-500/20">
                 <span className="text-white/50 text-sm font-medium mb-1">Debt-to-Income (DTI)</span>
@@ -371,7 +371,7 @@ export default function ScanPage() {
           {(result.recommendations?.length > 0 || result.warnings?.length > 0) && (
             <GlassCard className="p-8">
               <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                <TrendingUp className="text-[#00E573] w-5 h-5" /> AI Actionable Advice
+                <TrendingUp className="text-[#F2A971] w-5 h-5" /> AI Actionable Advice
               </h3>
               <div className="space-y-4">
                 {result.warnings.map((w, i) => (
@@ -381,9 +381,9 @@ export default function ScanPage() {
                   </div>
                 ))}
                 {result.recommendations.map((rec, i) => (
-                  <div key={`r-${i}`} className="flex gap-4 p-4 rounded-xl bg-[#00E573]/5 border border-[#00E573]/10">
-                    <CheckCircle2 className="w-5 h-5 text-[#00E573] mt-0.5 shrink-0" />
-                    <p className="text-[#00E573] font-medium text-sm">{rec}</p>
+                  <div key={`r-${i}`} className="flex gap-4 p-4 rounded-xl bg-[#F2A971]/5 border border-[#F2A971]/10">
+                    <CheckCircle2 className="w-5 h-5 text-[#F2A971] mt-0.5 shrink-0" />
+                    <p className="text-[#F2A971] font-medium text-sm">{rec}</p>
                   </div>
                 ))}
               </div>

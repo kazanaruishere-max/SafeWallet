@@ -53,11 +53,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
             className={cn(
               "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all group",
               isActive
-                ? "bg-[#00E573]/10 text-[#00E573]"
+                ? "bg-[#F2A971]/10 text-[#F2A971]"
                 : "text-white/60 hover:bg-white/5 hover:text-white"
             )}
           >
-            <item.icon className={cn("h-5 w-5", isActive ? "text-[#00E573]" : "text-white/40 group-hover:text-white/80 transition-colors")} />
+            <item.icon className={cn("h-5 w-5", isActive ? "text-[#F2A971]" : "text-white/40 group-hover:text-white/80 transition-colors")} />
             {item.label}
           </Link>
         );
@@ -81,16 +81,16 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex min-h-screen bg-[#101218] text-white selection:bg-[#00E573]/30 font-sans">
+    <div className="flex min-h-screen bg-[#0B0A08] text-white selection:bg-[#F2A971]/30 font-sans">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-72 border-r border-white/5 bg-[#101218] lg:flex lg:flex-col relative z-20">
+      <aside className="hidden w-72 border-r border-white/5 bg-[#0B0A08] lg:flex lg:flex-col relative z-20">
         {/* Glow behind sidebar */}
-        <div className="absolute top-0 right-0 w-full h-32 bg-[#00E573]/5 blur-[60px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-full h-32 bg-[#F2A971]/5 blur-[60px] pointer-events-none" />
         
         {/* Logo */}
         <div className="flex h-20 items-center gap-3 px-8">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#00E573] to-emerald-600 shadow-[0_0_15px_rgba(0,229,115,0.4)]">
-            <Shield className="h-6 w-6 text-[#101218]" fill="currentColor" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#F2A971] to-amber-600 shadow-[0_0_15px_rgba(242,169,113,0.4)]">
+            <Shield className="h-6 w-6 text-[#0B0A08]" fill="currentColor" />
           </div>
           <span className="text-xl font-bold tracking-tight text-white/90">SafeWallet</span>
         </div>
@@ -127,7 +127,7 @@ export default function DashboardLayout({
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col relative overflow-hidden">
         {/* Top Header */}
-        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-white/5 bg-[#101218]/80 backdrop-blur-xl px-6 lg:px-10">
+        <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-white/5 bg-[#0B0A08]/80 backdrop-blur-xl px-6 lg:px-10">
           {/* Mobile menu */}
           <div className="lg:hidden">
             <Sheet>
@@ -135,10 +135,10 @@ export default function DashboardLayout({
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Menu</span>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0 bg-[#101218] border-r border-white/5 text-white">
+              <SheetContent side="left" className="w-72 p-0 bg-[#0B0A08] border-r border-white/5 text-white">
                 <div className="flex h-20 items-center gap-3 px-8">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#00E573] to-emerald-600">
-                    <Shield className="h-6 w-6 text-[#101218]" fill="currentColor" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#F2A971] to-amber-600">
+                    <Shield className="h-6 w-6 text-[#0B0A08]" fill="currentColor" />
                   </div>
                   <span className="text-xl font-bold">SafeWallet</span>
                 </div>
@@ -159,9 +159,9 @@ export default function DashboardLayout({
 
             {/* User menu */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="relative h-10 w-10 rounded-full outline-none ring-2 ring-transparent focus-visible:ring-[#00E573] transition-all">
+              <DropdownMenuTrigger className="relative h-10 w-10 rounded-full outline-none ring-2 ring-transparent focus-visible:ring-[#F2A971] transition-all">
                 <Avatar className="h-10 w-10 border border-white/10 shadow-lg">
-                  <AvatarFallback className="bg-[#1A1D24] text-[#00E573] text-sm font-bold">
+                  <AvatarFallback className="bg-[#1A1D24] text-[#F2A971] text-sm font-bold">
                     SW
                   </AvatarFallback>
                 </Avatar>

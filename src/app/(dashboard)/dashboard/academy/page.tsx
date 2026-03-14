@@ -82,7 +82,7 @@ export default function AcademyPage() {
                 Utang Rp 5.000.000 dengan bunga 2% per bulan akan membengkak tanpa disadari, memicu siklus "gali lubang tutup lubang".
               </p>
             </div>
-            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#101218] group-hover:border-[#3323D2]/30 transition-colors cursor-pointer">
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0B0A08] group-hover:border-[#3323D2]/30 transition-colors cursor-pointer">
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
               <div className="absolute inset-0 flex items-center justify-center z-20">
                 <PlayCircle className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform group-hover:text-[#8B7DFF]" />
@@ -95,9 +95,9 @@ export default function AcademyPage() {
         </GlassCard>
 
         {/* Module 2 */}
-        <GlassCard className="p-8 group hover:border-[#00E573]/50 transition-colors">
+        <GlassCard className="p-8 group hover:border-[#F2A971]/50 transition-colors">
           <div className="flex gap-4 items-center mb-6">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-white/50 group-hover:bg-[#00E573] group-hover:text-[#101218] group-hover:border-[#00E573] transition-colors">2</div>
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-white/50 group-hover:bg-[#F2A971] group-hover:text-[#0B0A08] group-hover:border-[#F2A971] transition-colors">2</div>
             <h2 className="text-2xl font-bold text-white">Metode: Algoritma Debt Snowball</h2>
           </div>
           <p className="text-white/60 mb-6 text-base">Berhentilah meminjam di aplikasi B untuk menutup aplikasi A. Terapkan strategi klasik <strong>Debt Snowball</strong> berikut:</p>
@@ -110,7 +110,7 @@ export default function AcademyPage() {
             ].map((step, idx) => (
               <div key={idx} className="bg-white/5 border border-white/5 rounded-2xl p-5 hover:bg-white/10 transition-colors">
                 <h4 className="font-bold text-white mb-2 flex items-center gap-2">
-                  <span className="text-[#00E573]/70 font-mono">0{idx + 1}</span> {step.title}
+                  <span className="text-[#F2A971]/70 font-mono">0{idx + 1}</span> {step.title}
                 </h4>
                 <p className="text-white/50 text-sm leading-relaxed">{step.desc}</p>
               </div>
@@ -121,10 +121,10 @@ export default function AcademyPage() {
         {/* Module 3 */}
         <GlassCard className="p-8 group hover:border-white/20 transition-colors">
           <div className="flex gap-4 items-center mb-6">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-white/50 group-hover:bg-white group-hover:text-[#101218] transition-colors">3</div>
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-white/50 group-hover:bg-white group-hover:text-[#0B0A08] transition-colors">3</div>
             <h2 className="text-2xl font-bold text-white">Sabotase Diri Secara Positif</h2>
           </div>
-          <div className="bg-[#101218] border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
+          <div className="bg-[#0B0A08] border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center">
             <div className="w-24 h-24 shrink-0 bg-red-500/10 rounded-full flex items-center justify-center border border-red-500/20">
               <ShieldIcon className="w-12 h-12 text-red-500" />
             </div>
@@ -146,7 +146,7 @@ export default function AcademyPage() {
             Dengan menekan tombol di bawah, saya sadar letak masalah finansial saya dan berkomitmen untuk menekan rem dan tidak membuat utang baru.
           </p>
           <Button 
-            className="w-full sm:w-auto px-8 h-14 rounded-2xl bg-[#00E573] text-[#101218] font-black text-lg shadow-[0_0_30px_rgba(0,229,115,0.3)] hover:shadow-[0_0_40px_rgba(0,229,115,0.5)] hover:-translate-y-1 transition-all" 
+            className="w-full sm:w-auto px-8 h-14 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-black text-lg shadow-[0_0_30px_rgba(242,169,113,0.3)] hover:shadow-[0_0_40px_rgba(242,169,113,0.5)] hover:-translate-y-1 transition-all" 
             onClick={handleComplete}
             disabled={completing}
           >

@@ -43,11 +43,11 @@ export default function HistoryPage() {
 
   const getScoreStyle = (score: number) => {
     if (score >= 80) return {
-      color: "text-[#00E573]",
-      bg: "bg-[#00E573]/10",
-      border: "border-[#00E573]/20",
+      color: "text-[#F2A971]",
+      bg: "bg-[#F2A971]/10",
+      border: "border-[#F2A971]/20",
       label: "Health Score Baik",
-      badge: "bg-[#00E573]"
+      badge: "bg-[#F2A971]"
     };
     if (score >= 50) return {
       color: "text-amber-500",
@@ -79,7 +79,7 @@ export default function HistoryPage() {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#00E573]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#F2A971]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -112,7 +112,7 @@ export default function HistoryPage() {
             Upload file mutasi bank Anda untuk mendapatkan jejak riwayat kesehatan finansial bulan demi bulan.
           </p>
           <Link href="/dashboard/scan">
-            <Button className="h-14 px-8 rounded-2xl bg-[#00E573] text-[#101218] font-bold text-lg shadow-[0_0_30px_rgba(0,229,115,0.3)] hover:shadow-[0_0_40px_rgba(0,229,115,0.4)] transition-all">
+            <Button className="h-14 px-8 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-bold text-lg shadow-[0_0_30px_rgba(242,169,113,0.3)] hover:shadow-[0_0_40px_rgba(242,169,113,0.4)] transition-all">
               <Scan className="mr-2 h-5 w-5" /> Mulai Analisis Pertamamu
             </Button>
           </Link>
@@ -169,7 +169,7 @@ export default function HistoryPage() {
                 <div className="shrink-0 flex items-center gap-5 bg-white/5 px-6 py-4 rounded-2xl border border-white/5 h-20 w-full sm:w-auto justify-between sm:justify-center">
                   <div className="flex flex-col items-start sm:items-end">
                     <span className="text-xs uppercase tracking-wider font-bold text-white/30 mb-1">{style.label}</span>
-                    <Badge className={`border-none ${style.badge} text-[#101218] font-black uppercase tracking-wider py-1 px-3 shadow-[0_0_15px_inherit]`}>
+                    <Badge className={`border-none ${style.badge} text-[#0B0A08] font-black uppercase tracking-wider py-1 px-3 shadow-[0_0_15px_inherit]`}>
                       {scan.health_score} / 100
                     </Badge>
                   </div>

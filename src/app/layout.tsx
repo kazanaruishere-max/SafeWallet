@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { PlausibleAnalytics } from "@/components/analytics";
 import "./globals.css";
-
+import { LenisProvider } from "@/components/lenis-provider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -57,13 +57,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}
       >
-        {children}
-        <Toaster position="top-right" richColors />
-        <PlausibleAnalytics />
+        <LenisProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+          <PlausibleAnalytics />
+        </LenisProvider>
       </body>
     </html>
   );

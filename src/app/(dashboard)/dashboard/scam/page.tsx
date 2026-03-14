@@ -72,10 +72,10 @@ export default function ScamPage() {
     switch (verdict) {
       case "SAFE":
         return {
-          bg: "bg-[#00E573]/5",
-          border: "border-[#00E573]/30",
-          text: "text-[#00E573]",
-          icon: <CheckCircle2 className="h-10 w-10 text-[#00E573]" />,
+          bg: "bg-[#F2A971]/5",
+          border: "border-[#F2A971]/30",
+          text: "text-[#F2A971]",
+          icon: <CheckCircle2 className="h-10 w-10 text-[#F2A971]" />,
           label: "VERIFIED AMAN",
         };
       case "CAUTION":
@@ -120,7 +120,7 @@ export default function ScamPage() {
 
       {!result && (
         <GlassCard className="max-w-4xl mx-auto p-1 border-white/10">
-          <div className="bg-[#101218]/80 rounded-[1.8rem] p-6 sm:p-10">
+          <div className="bg-[#0B0A08]/80 rounded-[1.8rem] p-6 sm:p-10">
             {/* Custom Tabs */}
             <div className="flex bg-[#1A1D24] p-1.5 rounded-2xl w-full max-w-sm mb-8">
               <button 
@@ -150,7 +150,7 @@ export default function ScamPage() {
                 <div className="space-y-3">
                   <Label className="text-white/70 font-medium ml-1">Deskripsi Tawaran Investasi</Label>
                   <textarea
-                    className="w-full min-h-[140px] rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E573] focus:border-transparent transition-all resize-none text-lg"
+                    className="w-full min-h-[140px] rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#F2A971] focus:border-transparent transition-all resize-none text-lg"
                     placeholder='Contoh: "Penitipan dana investasi 15% PASTI UNTUNG modal 1 juta cair 5 juta besok..."'
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
@@ -171,7 +171,7 @@ export default function ScamPage() {
                   </div>
                 </div>
                 <Button
-                  className="w-full h-16 rounded-2xl bg-[#00E573] text-[#101218] font-black text-lg shadow-[0_0_30px_rgba(0,229,115,0.3)] hover:shadow-[0_0_40px_rgba(0,229,115,0.5)] hover:-translate-y-1 transition-all"
+                  className="w-full h-16 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-black text-lg shadow-[0_0_30px_rgba(242,169,113,0.3)] hover:shadow-[0_0_40px_rgba(242,169,113,0.5)] hover:-translate-y-1 transition-all"
                   disabled={loading}
                   onClick={() => handleSubmit("text", textInput)}
                 >
@@ -194,12 +194,12 @@ export default function ScamPage() {
                       placeholder="https://exampleinvestasi-cuan.com"
                       value={urlInput}
                       onChange={(e) => setUrlInput(e.target.value)}
-                      className="w-full h-16 rounded-2xl border border-white/10 bg-white/5 pl-14 pr-5 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#00E573] focus:border-transparent transition-all text-lg"
+                      className="w-full h-16 rounded-2xl border border-white/10 bg-white/5 pl-14 pr-5 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#F2A971] focus:border-transparent transition-all text-lg"
                     />
                   </div>
                 </div>
                 <Button
-                  className="w-full h-16 rounded-2xl bg-[#00E573] text-[#101218] font-black text-lg shadow-[0_0_30px_rgba(0,229,115,0.3)] hover:shadow-[0_0_40px_rgba(0,229,115,0.5)] hover:-translate-y-1 transition-all"
+                  className="w-full h-16 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-black text-lg shadow-[0_0_30px_rgba(242,169,113,0.3)] hover:shadow-[0_0_40px_rgba(242,169,113,0.5)] hover:-translate-y-1 transition-all"
                   disabled={loading}
                   onClick={() => handleSubmit("url", urlInput)}
                 >
@@ -237,13 +237,13 @@ export default function ScamPage() {
                   </div>
                   <h3 className={`text-4xl font-black mb-2 tracking-tighter ${style.text}`}>{style.label}</h3>
                   <div className="flex gap-4 mt-8">
-                    <div className="bg-[#101218]/80 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/5">
+                    <div className="bg-[#0B0A08]/80 backdrop-blur-xl px-6 py-4 rounded-2xl border border-white/5">
                       <p className="text-white/40 text-xs font-bold uppercase tracking-widest mb-1">Risk Score</p>
                       <p className={`text-3xl font-black ${style.text}`}>{result.risk_score}<span className="text-lg text-white/30">/100</span></p>
                     </div>
                   </div>
-                  <div className="mt-8 bg-[#101218]/50 px-4 py-2 rounded-xl inline-flex items-center gap-2 border border-white/5">
-                    <Shield className={`w-4 h-4 ${result.ojk_status.registered ? 'text-[#00E573]' : 'text-red-500'}`} />
+                  <div className="mt-8 bg-[#0B0A08]/50 px-4 py-2 rounded-xl inline-flex items-center gap-2 border border-white/5">
+                    <Shield className={`w-4 h-4 ${result.ojk_status.registered ? 'text-[#F2A971]' : 'text-red-500'}`} />
                     <span className="text-white/80 text-sm font-medium">
                       {result.ojk_status.registered ? "Terdaftar di OJK" : "ILLEGAL - TIDAK TERDAFTAR OJK"}
                     </span>
@@ -275,9 +275,9 @@ export default function ScamPage() {
                   </div>
                 </GlassCard>
               ) : (
-                <GlassCard className="p-8 border-[#00E573]/20 flex items-center gap-4">
-                  <div className="w-12 h-12 bg-[#00E573]/10 rounded-full flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-6 h-6 text-[#00E573]" />
+                <GlassCard className="p-8 border-[#F2A971]/20 flex items-center gap-4">
+                  <div className="w-12 h-12 bg-[#F2A971]/10 rounded-full flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-[#F2A971]" />
                   </div>
                   <div>
                     <h4 className="text-xl font-bold text-white">Bebas Red Flags</h4>
@@ -289,14 +289,14 @@ export default function ScamPage() {
               {result.safe_alternatives.length > 0 && (
                 <GlassCard className="p-8">
                   <h4 className="text-xl font-bold flex items-center gap-3 text-white mb-6">
-                    <CheckCircle2 className="text-[#00E573] w-6 h-6" /> Alternatif Legal Tersedia
+                    <CheckCircle2 className="text-[#F2A971] w-6 h-6" /> Alternatif Legal Tersedia
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {result.safe_alternatives.map((alt, i) => (
                       <div key={i} className="p-4 bg-white/5 rounded-xl border border-white/5 hover:bg-white/10 transition-colors">
                         <p className="font-bold text-white mb-2">{alt.name}</p>
                         <div className="flex gap-2">
-                          <Badge className="bg-[#00E573]/10 text-[#00E573] border-none">Return {alt.return}</Badge>
+                          <Badge className="bg-[#F2A971]/10 text-[#F2A971] border-none">Return {alt.return}</Badge>
                           <Badge className="bg-white/10 text-white border-none">{alt.risk}</Badge>
                         </div>
                       </div>

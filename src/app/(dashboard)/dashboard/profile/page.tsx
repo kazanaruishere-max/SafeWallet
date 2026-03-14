@@ -138,7 +138,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-[#00E573]" />
+        <Loader2 className="h-10 w-10 animate-spin text-[#F2A971]" />
       </div>
     );
   }
@@ -164,10 +164,10 @@ export default function ProfilePage() {
           {/* Card: Personal Information */}
           <GlassCard className="p-8">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <User className="text-[#00E573] w-5 h-5" /> Informasi Pribadi
+              <User className="text-[#F2A971] w-5 h-5" /> Informasi Pribadi
             </h2>
             <div className="flex items-center gap-6 mb-8">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#00E573] to-[#3323D2] flex items-center justify-center text-3xl font-black text-white shadow-xl">
+              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F2A971] to-[#3323D2] flex items-center justify-center text-3xl font-black text-white shadow-xl">
                 {profile?.email.charAt(0).toUpperCase()}
               </div>
               <div>
@@ -193,7 +193,7 @@ export default function ProfilePage() {
                     placeholder="+6281234567890"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="bg-white/5 border-white/10 focus:border-[#00E573] text-white pl-12 h-12 rounded-xl transition-colors"
+                    className="bg-white/5 border-white/10 focus:border-[#F2A971] text-white pl-12 h-12 rounded-xl transition-colors"
                   />
                 </div>
               </div>
@@ -207,7 +207,7 @@ export default function ProfilePage() {
                     placeholder="Contoh: 5000000"
                     value={income}
                     onChange={(e) => setIncome(e.target.value)}
-                    className="bg-white/5 border-white/10 focus:border-[#00E573] text-white pl-12 h-12 rounded-xl transition-colors"
+                    className="bg-white/5 border-white/10 focus:border-[#F2A971] text-white pl-12 h-12 rounded-xl transition-colors"
                   />
                 </div>
                 <p className="text-xs text-white/40 leading-relaxed mt-2">
@@ -216,7 +216,7 @@ export default function ProfilePage() {
               </div>
 
               <Button
-                className="w-full h-12 mt-4 rounded-xl bg-[#00E573] text-[#101218] font-bold shadow-[0_0_20px_rgba(0,229,115,0.2)] hover:shadow-[0_0_30px_rgba(0,229,115,0.4)] transition-all"
+                className="w-full h-12 mt-4 rounded-xl bg-[#F2A971] text-[#0B0A08] font-bold shadow-[0_0_20px_rgba(242,169,113,0.2)] hover:shadow-[0_0_30px_rgba(242,169,113,0.4)] transition-all"
                 onClick={handleSave}
                 disabled={saving}
               >
@@ -248,7 +248,7 @@ export default function ProfilePage() {
                 </Button>
               )}
             </div>
-            <div className="bg-[#101218]/40 border border-white/5 rounded-2xl p-4 flex gap-6">
+            <div className="bg-[#0B0A08]/40 border border-white/5 rounded-2xl p-4 flex gap-6">
               <div className="flex-1">
                 <span className="text-white/40 text-xs block mb-1">Health Scanner</span>
                 <span className="text-xl font-black text-white">{scanQuota.limit - scanQuota.used} <span className="text-sm font-normal text-white/50">/ {scanQuota.limit} sisa</span></span>
@@ -276,7 +276,7 @@ export default function ProfilePage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">Bot Saku SafeWallet</h2>
-                <Badge variant="outline" className={`mt-1 border-none font-bold ${profile?.telegram_chat_id ? 'bg-[#00E573]/20 text-[#00E573]' : 'bg-white/10 text-white/50'}`}>
+                <Badge variant="outline" className={`mt-1 border-none font-bold ${profile?.telegram_chat_id ? 'bg-[#F2A971]/20 text-[#F2A971]' : 'bg-white/10 text-white/50'}`}>
                   {profile?.telegram_chat_id ? "STATUS: TERKONEKSI AKTIF" : "STATUS: BELUM TERHUBUNG"}
                 </Badge>
               </div>
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                       Bangkitkan Kode OTP Telegram
                     </Button>
                   ) : (
-                    <div className="bg-[#101218] border border-[#2CA5E0]/30 rounded-2xl p-5 relative overflow-hidden">
+                    <div className="bg-[#0B0A08] border border-[#2CA5E0]/30 rounded-2xl p-5 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-full h-full bg-[#2CA5E0]/5 pointer-events-none" />
                       <h3 className="text-[#2CA5E0] font-bold mb-3 flex items-center gap-2">Langkah Integrasi Final:</h3>
                       <ol className="text-white/60 text-sm space-y-2 ml-4 list-decimal marker:text-white/40 mb-5">
@@ -324,8 +324,8 @@ export default function ProfilePage() {
                   )}
                 </>
               ) : (
-                <div className="bg-[#00E573]/5 border border-[#00E573]/20 rounded-2xl p-6 text-center">
-                  <div className="w-16 h-16 bg-[#00E573]/10 text-[#00E573] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#00E573]/20">
+                <div className="bg-[#F2A971]/5 border border-[#F2A971]/20 rounded-2xl p-6 text-center">
+                  <div className="w-16 h-16 bg-[#F2A971]/10 text-[#F2A971] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#F2A971]/20">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <h3 className="text-white font-bold text-lg mb-2">Bot Sepenuhnya Terhubung</h3>

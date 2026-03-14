@@ -6,7 +6,7 @@ import { ArrowLeft, Scale, AlertOctagon, FileText, CheckCircle2 } from "lucide-r
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-[#101218] text-white selection:bg-[#3323D2]/30">
+    <div className="min-h-screen bg-[#0B0A08] text-white selection:bg-[#3323D2]/30">
       <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-red-500/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
@@ -37,7 +37,7 @@ export default function TermsOfServicePage() {
             </p>
 
             <h2 className="text-2xl font-bold text-white mt-12 mb-4 flex items-center gap-3">
-              <FileText className="w-6 h-6 text-[#00E573]" /> 1. Deskripsi Layanan Platform
+              <FileText className="w-6 h-6 text-[#F2A971]" /> 1. Deskripsi Layanan Platform
             </h2>
             <p>
               SafeWallet menyajikan fitur-fitur analisis finansial dan pencegahan investasi bodong yang digerakkan oleh Artificial Intelligence (AI). Output analisis, *Debt-to-Income Ratio*, tingkat bahaya, dan *Scam Verifications* adalah representasi sistem berdasarkan pengolahan data dokumen (mutasi bank) atau input deskriptif yang Pengguna berikan.
@@ -56,7 +56,7 @@ export default function TermsOfServicePage() {
             </ul>
 
             <h2 className="text-2xl font-bold text-white mt-12 mb-4 flex items-center gap-3">
-              <CheckCircle2 className="w-6 h-6 text-[#00E573]" /> 3. Kuota Penggunaan & Sistem Subscription
+              <CheckCircle2 className="w-6 h-6 text-[#F2A971]" /> 3. Kuota Penggunaan & Sistem Subscription
             </h2>
             <p>
               SafeWallet menerapkan mode proteksi sistem melalui batasan penggunaan harian (<em>Rate Limiting</em>) dan kuota analisis per bulan.

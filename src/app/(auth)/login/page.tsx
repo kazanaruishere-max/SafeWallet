@@ -64,9 +64,9 @@ function LoginContent() {
   if (magicLinkSent) {
     return (
       <div className="w-full rounded-[2rem] bg-white/[0.05] backdrop-blur-2xl border border-white/10 shadow-2xl p-10 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-[#00E573]/20 blur-[100px] rounded-full pointer-events-none" />
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(0,229,115,0.2)]">
-          <Mail className="h-10 w-10 text-[#00E573]" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-[#F2A971]/20 blur-[100px] rounded-full pointer-events-none" />
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-white/5 border border-white/10 shadow-[0_0_30px_rgba(242,169,113,0.2)]">
+          <Mail className="h-10 w-10 text-[#F2A971]" />
         </div>
         <h2 className="text-3xl font-bold text-white mb-3">Cek Email Kamu</h2>
         <p className="text-white/60 mb-8 leading-relaxed">
@@ -82,7 +82,7 @@ function LoginContent() {
   return (
     <div className="w-full rounded-[2.5rem] bg-white/[0.05] backdrop-blur-2xl border border-white/10 shadow-2xl p-8 sm:p-12 relative overflow-hidden">
       {/* Ambient background glow for the card */}
-      <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#00E573]/20 blur-[100px] rounded-full pointer-events-none" />
+      <div className="absolute -top-32 -right-32 w-64 h-64 bg-[#F2A971]/20 blur-[100px] rounded-full pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-[#3323D2]/30 blur-[100px] rounded-full pointer-events-none" />
       
       <div className="relative z-10">
@@ -109,13 +109,13 @@ function LoginContent() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-[#00E573] focus-visible:border-[#00E573] transition-all px-5 text-lg"
+                className="h-14 rounded-2xl bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-[#F2A971] focus-visible:border-[#F2A971] transition-all px-5 text-lg"
               />
             </div>
             
             <Button 
               type="submit" 
-              className="w-full h-14 rounded-2xl bg-[#00E573] text-[#101218] font-bold text-lg shadow-[0_0_20px_rgba(0,229,115,0.3)] hover:shadow-[0_0_30px_rgba(0,229,115,0.5)] hover:bg-[#00E573]/90 hover:-translate-y-0.5 transition-all" 
+              className="w-full h-14 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-bold text-lg shadow-[0_0_20px_rgba(242,169,113,0.3)] hover:shadow-[0_0_30px_rgba(242,169,113,0.5)] hover:bg-[#F2A971]/90 hover:-translate-y-0.5 transition-all" 
               disabled={loading}
             >
               {loading ? (
@@ -149,7 +149,7 @@ function LoginContent() {
 
           <p className="text-center text-sm text-white/40 mt-6">
             Belum punya akun?{" "}
-            <Link href="/signup" className="text-[#00E573] hover:text-emerald-400 hover:underline font-medium transition-colors">
+            <Link href="/signup" className="text-[#F2A971] hover:text-amber-400 hover:underline font-medium transition-colors">
               Daftar gratis
             </Link>
           </p>
@@ -164,7 +164,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-10 w-10 animate-spin text-[#00E573]" />
+          <Loader2 className="h-10 w-10 animate-spin text-[#F2A971]" />
         </div>
       }
     >

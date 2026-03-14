@@ -6,9 +6,9 @@ import { ArrowLeft, ShieldCheck, Database, Lock, UserCheck } from "lucide-react"
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-[#101218] text-white selection:bg-[#00E573]/30">
+    <div className="min-h-screen bg-[#0B0A08] text-white selection:bg-[#F2A971]/30">
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#00E573]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-0 w-[400px] h-[400px] bg-[#F2A971]/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <main className="container mx-auto px-4 py-8 max-w-4xl relative z-10">
         <div className="mb-8">
@@ -21,8 +21,8 @@ export default function PrivacyPolicyPage() {
 
         <div className="bg-[#1A1D24]/80 backdrop-blur-2xl border border-white/5 rounded-3xl shadow-2xl p-8 md:p-12">
           <div className="flex items-center gap-4 mb-8 border-b border-white/10 pb-8">
-            <div className="w-16 h-16 bg-[#00E573]/10 border border-[#00E573]/20 rounded-2xl flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-8 h-8 text-[#00E573]" />
+            <div className="w-16 h-16 bg-[#F2A971]/10 border border-[#F2A971]/20 rounded-2xl flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-8 h-8 text-[#F2A971]" />
             </div>
             <div>
               <h1 className="text-3xl font-black text-white tracking-tight">Kebijakan Privasi</h1>
@@ -42,7 +42,7 @@ export default function PrivacyPolicyPage() {
             <p>
               Saat Anda menggunakan layanan Health Scanner dan integrasi Bot Saku AI di aplikasi SafeWallet, algoritma kami bekerja dengan prinsip perlindungan data minimum (<em>Data Minimization</em>).
             </p>
-            <ul className="list-disc pl-6 space-y-2 mt-4 marker:text-[#00E573]">
+            <ul className="list-disc pl-6 space-y-2 mt-4 marker:text-[#F2A971]">
               <li><strong>Informasi Dasar:</strong> Saat mendaftar via email (Magic Link) atau OAuth, kami menyimpan nama dan alamat email. Nomor ponsel (Telegram/WhatsApp) bersifat opsional.</li>
               <li><strong>Data Mutasi Finansial (Zero-Retention Pattern):</strong> File PDF mutasi bank atau screenshot yang Anda unggah ke sistem Health Scanner diproses sementara hanya pada Random Access Memory (RAM) server tersandikan (End-to-End Encryption). File Asli (Raw File) tersebut <strong>TIDAK PERNAH DISIMPAN</strong> ke dalam database kami.</li>
               <li><strong>Data Turunan:</strong> Kami hanya menyimpan hasil analisis berbentuk matriks kategori JSON (misal: "Pemasukan", "Pengeluaran Cicilan") untuk tujuan kalkulasi <em>Health Score</em> dan <em>Debt-to-Income Ratio</em>.</li>
@@ -54,7 +54,7 @@ export default function PrivacyPolicyPage() {
             <p>
               Kami mengimplementasikan keamanan tingkat Enterprise (*Enterprise-grade Security*):
             </p>
-            <ul className="list-disc pl-6 space-y-2 mt-4 marker:text-[#00E573]">
+            <ul className="list-disc pl-6 space-y-2 mt-4 marker:text-[#F2A971]">
               <li>Seluruh basis data operasi mengandalkan PostgreSQL dengan <strong>Row-Level Security (RLS)</strong> yang 100% diaktifkan. Hal ini secara struktural mencegah kebocoran data silang—server kami tidak bisa membocorkan riwayat scan Anda kepada pengguna lain meski sistem berhasil ditembus (<em>breached</em>).</li>
               <li>Penggunaan Content Security Policy (CSP) untuk memerangi serangan <em>Cross-Site Scripting (XSS)</em>.</li>
               <li>Sistem tidak akan membaca atau mentransmisikan data ke sistem AI Generatif tanpa enkripsi data <em>in-transit</em> dan <em>at-rest</em> (TLS 1.3).</li>
@@ -66,14 +66,14 @@ export default function PrivacyPolicyPage() {
             <p>
               Sejalan dengan regulasi perlindungan data yang berlaku, Anda memegang otonomi mutlak atas jejak digital Anda di SafeWallet:
             </p>
-            <ol className="list-decimal pl-6 space-y-2 mt-4 marker:text-[#00E573] font-medium text-white/80">
+            <ol className="list-decimal pl-6 space-y-2 mt-4 marker:text-[#F2A971] font-medium text-white/80">
               <li><strong>Hak Akses (Right to Access):</strong> Anda berhak mendapatkan salinan data yang Anda berikan. Anda dapat menggunakan fitur "Unduh Rekam Jejak (JSON)" di menu Profil.</li>
               <li><strong>Hak Penghapusan (Right to Erasure/Right to be Forgotten):</strong> Anda dapat menghapus akun beserta seluruh data mutasi, analisis AI, dan kredensial seketika langsung melalui menu Pengaturan Profil kami (Fitur "Hapus Akun Permanen"). Data Anda akan dibersihkan dari server dalam rentang 1-30 hari sesuai protokol sistem.</li>
               <li><strong>Hak Perbaikan (Right to Rectification):</strong> Pilihan untuk merevisi preferensi Telegram Bot dan gaji bulanan Anda kapan saja.</li>
             </ol>
 
             <h2 className="text-2xl font-bold text-white mt-12 mb-4">4. Kebijakan Anti-Penjualan Data</h2>
-            <p className="border-l-4 border-[#00E573] pl-6 py-2 bg-[#00E573]/5 rounded-r-lg">
+            <p className="border-l-4 border-[#F2A971] pl-6 py-2 bg-[#F2A971]/5 rounded-r-lg">
               Kami mendeklarasikan secara eksplisit: <strong>SafeWallet TIDAK PERNAH dan TIDAK AKAN PERNAH menjual, menukar, menyewakan, maupun mengambil profit dari komersialisasi agregat data finansial perorangan</strong> kepada entitas pinjaman online, bank, maupun pihak ketiga lainnya demi keuntungan bisnis.
             </p>
 
