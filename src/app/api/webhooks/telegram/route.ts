@@ -129,7 +129,7 @@ export async function POST(request: Request) {
 
 // Helper function to reply
 async function replyTelegram(chatId: string, text: string) {
-  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+  const telegramToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
   if (!telegramToken) return;
 
   await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
