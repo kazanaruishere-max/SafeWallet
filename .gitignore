@@ -42,3 +42,25 @@ next-env.d.ts
 
 .vercel
 .env*.local
+
+# internal docs & planning (not for public repo)
+mcp.json
+ADR/
+Screenshot*/
+MASTER_PLAN.md
+INSTRUCTIONS.md
+CONVENTIONS.md
+TESTING_STRATEGY.md
+SECURITY_GUIDELINES.md
+API_SPECIFICATION.md
+AUDIT_REPORT.md
+SAFEWALLET_FULL_AUDIT.md
+SAFEWALLET_RESPONSIVE_AUDIT.md
+SafeWallet-PRD*.md
+SafeWallet-DesignDoc.md
+SafeWallet-TechStack.md
+SafeWallet-v2-Premium-Concept.md
+komponen react.md
+spline design.md
+MCP SPLINE.md
+update markdown.md
