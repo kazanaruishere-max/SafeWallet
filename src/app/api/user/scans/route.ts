@@ -52,11 +52,15 @@ export async function GET(request: NextRequest) {
         recommendations: (s.recommendations as string[]) ?? [],
       })) ?? [];
 
-    return NextResponse.json({
-      success: true,
-      data: items,
-      meta: { page, total: total ?? 0 },
-    } satisfies ApiResponse<ScanHistoryItem[]>);
+    // FIX M1: Add Cache-Control
+    return NextResponse.json(
+      {
+        success: true,
+        data: items,
+        meta: { page, total: total ?? 0 },
+      } satisfies ApiResponse<ScanHistoryItem[]>,
+      { headers: { "Cache-Control": "private, max-age=300, stale-while-revalidate=60" } }
+    );
   } catch (error) {
     console.error("Scan history error:", error);
     return NextResponse.json(

@@ -35,7 +35,11 @@ export async function GET() {
       earned_at: earned?.find((b) => b.badge_type === def.type)?.earned_at ?? null,
     }));
 
-    return NextResponse.json({ success: true, data: badges });
+    // FIX M1: Add Cache-Control — badges change infrequently
+    return NextResponse.json(
+      { success: true, data: badges },
+      { headers: { "Cache-Control": "private, max-age=3600, stale-while-revalidate=300" } }
+    );
   } catch (error) {
     console.error("Badges error:", error);
     return NextResponse.json(

@@ -2,6 +2,7 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { gsap } from 'gsap';
+import Link from 'next/link';
 
 interface MenuItemData {
   link: string;
@@ -156,7 +157,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       ref={itemRef}
       style={{ borderTop: isFirst ? 'none' : `1px solid ${borderColor}` }}
     >
-      <a
+      <Link
         className="flex items-center justify-center h-full relative cursor-pointer uppercase no-underline font-semibold text-[4vh]"
         href={link}
         onMouseEnter={handleMouseEnter}
@@ -164,7 +165,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         style={{ color: textColor }}
       >
         {text}
-      </a>
+      </Link>
       <div
         className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none translate-y-[101%]"
         ref={marqueeRef}

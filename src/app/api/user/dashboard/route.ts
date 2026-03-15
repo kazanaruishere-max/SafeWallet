@@ -98,10 +98,18 @@ export async function GET() {
       },
     };
 
-    return NextResponse.json({
-      success: true,
-      data: result,
-    } satisfies ApiResponse<DashboardData>);
+    // FIX M1: Add Cache-Control for browser-side caching
+    return NextResponse.json(
+      {
+        success: true,
+        data: result,
+      } satisfies ApiResponse<DashboardData>,
+      {
+        headers: {
+          "Cache-Control": "private, max-age=300, stale-while-revalidate=60",
+        },
+      }
+    );
   } catch (error) {
     console.error("Dashboard error:", error);
     return NextResponse.json(

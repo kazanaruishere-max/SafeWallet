@@ -1,52 +1,86 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import crypto from "crypto";
 
 /**
  * POST /api/webhooks/midtrans — Midtrans Payment Notification
- * See: API_SPECIFICATION.md § 3.5
+ * FIX C1: Signature verification now ENFORCED.
  *
  * Midtrans sends payment status updates here.
- * Verify signature before processing.
+ * Signature = SHA512(order_id + status_code + gross_amount + server_key)
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // TODO: Verify Midtrans signature
-    // const serverKey = process.env.MIDTRANS_SERVER_KEY;
-    // const expectedSignature = crypto
-    //   .createHash('sha512')
-    //   .update(`${body.order_id}${body.status_code}${body.gross_amount}${serverKey}`)
-    //   .digest('hex');
+    // --- SIGNATURE VERIFICATION (C1 FIX) ---
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    if (!serverKey) {
+      console.error("[Midtrans] MIDTRANS_SERVER_KEY not configured");
+      return NextResponse.json({ status: "error", message: "Server misconfigured" }, { status: 500 });
+    }
 
-    const { order_id, transaction_status } = body;
+    const { order_id, status_code, gross_amount, signature_key, transaction_status } = body;
 
-    console.log(`[Midtrans Webhook] Order: ${order_id}, Status: ${transaction_status}`);
+    if (!order_id || !status_code || !gross_amount || !signature_key) {
+      console.warn("[Midtrans] Missing required fields in webhook body");
+      return NextResponse.json({ status: "error", message: "Invalid payload" }, { status: 400 });
+    }
 
-    // Handle payment status
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(`${order_id}${status_code}${gross_amount}${serverKey}`)
+      .digest("hex");
+
+    if (signature_key !== expectedSignature) {
+      console.error(`[Midtrans] Signature mismatch for order ${order_id}`);
+      return NextResponse.json({ status: "error", message: "Invalid signature" }, { status: 403 });
+    }
+
+    console.log(`[Midtrans] Verified webhook — Order: ${order_id}, Status: ${transaction_status}`);
+
+    // --- HANDLE PAYMENT STATUS ---
+    const supabase = createAdminClient();
+
     switch (transaction_status) {
       case "capture":
-      case "settlement":
+      case "settlement": {
         // Payment successful — activate subscription
-        // await activateSubscription(order_id);
-        console.log(`[Midtrans] Payment success: ${order_id}`);
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({ status: "active", activated_at: new Date().toISOString() })
+          .eq("order_id", order_id);
+
+        if (error) console.error(`[Midtrans] Failed to activate subscription: ${order_id}`, error);
+        else console.log(`[Midtrans] Subscription activated: ${order_id}`);
         break;
+      }
 
       case "deny":
       case "cancel":
-      case "expire":
+      case "expire": {
         // Payment failed — cancel subscription
-        // await cancelSubscription(order_id);
-        console.log(`[Midtrans] Payment failed: ${order_id}`);
+        const { error } = await supabase
+          .from("subscriptions")
+          .update({ status: "cancelled" })
+          .eq("order_id", order_id);
+
+        if (error) console.error(`[Midtrans] Failed to cancel subscription: ${order_id}`, error);
+        else console.log(`[Midtrans] Subscription cancelled: ${order_id}`);
         break;
+      }
 
       case "pending":
         console.log(`[Midtrans] Payment pending: ${order_id}`);
         break;
+
+      default:
+        console.warn(`[Midtrans] Unknown transaction_status: ${transaction_status}`);
     }
 
     return NextResponse.json({ status: "ok" });
   } catch (error) {
-    console.error("Midtrans webhook error:", error);
+    console.error("[Midtrans] Webhook critical error:", error);
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
 }

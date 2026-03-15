@@ -40,6 +40,23 @@ export function sanitizeAIInput(input: string, maxLength = 5000): {
     }
   }
 
+  // FIX H3: Basic PII (Personally Identifiable Information) Stripping
+  // Redact potential Account Numbers, Phone Numbers, and Emails before sending to AI
+  const hasPII = /\b\d{10,16}\b|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(sanitized);
+  if (hasPII) {
+    sanitized = sanitized
+      // Mask 10-16 digit numbers (Bank Accounts / NIK / Phone numbers)
+      .replace(/\b(\d{3})\d{4,10}(\d{3})\b/g, "$1******$2")
+      // Mask 16 digit card numbers specifically
+      .replace(/\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, "****-****-****-****")
+      // Mask emails
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[EMAIL REDACTED]")
+      // Mask common indonesian names following Mr/Mrs/Bpk/Ibu/Sdr
+      .replace(/\b(Bpk|Ibu|Mr|Mrs|Sdr|Sdri)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)*\b/g, "$1 [NAME REDACTED]");
+      
+    warnings.push("Data sensitif (PII) telah disamarkan sebelum dianalisis.");
+  }
+
   // 4. Normalize whitespace (collapse multiple spaces/newlines)
   sanitized = sanitized
     .replace(/\n{3,}/g, "\n\n")

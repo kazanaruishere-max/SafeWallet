@@ -11,11 +11,17 @@ import { generateDailyTip } from "@/lib/coaching";
  */
 export async function POST(request: Request) {
   try {
-    // Verify cron secret (prevent unauthorized calls)
+    // FIX C2: ALWAYS verify cron secret — reject if missing
     const authHeader = request.headers.get("authorization");
     const cronSecret = process.env.CRON_SECRET;
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      console.error("[Cron] CRON_SECRET environment variable is NOT configured");
+      return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      console.warn("[Cron] Unauthorized cron attempt");
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

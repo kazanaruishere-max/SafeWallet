@@ -6,6 +6,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   try {
+    // FIX H5: Verify Telegram webhook secret if configured
+    const webhookSecret = process.env.TELEGRAM_WEBHOOK_SECRET?.trim();
+    if (webhookSecret) {
+      const headerSecret = request.headers.get("x-telegram-bot-api-secret-token");
+      if (headerSecret !== webhookSecret) {
+        console.warn("[Telegram] Invalid webhook secret token");
+        return NextResponse.json({ status: "unauthorized" }, { status: 403 });
+      }
+    }
+
     const supabase = createAdminClient();
     const body = await request.json();
 

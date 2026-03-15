@@ -21,7 +21,11 @@ export async function GET() {
       .eq("id", user.id)
       .single();
 
-    return NextResponse.json({ success: true, data: profile });
+    // FIX M1: Add Cache-Control
+    return NextResponse.json(
+      { success: true, data: profile },
+      { headers: { "Cache-Control": "private, max-age=300, stale-while-revalidate=60" } }
+    );
   } catch (error) {
     console.error("Profile error:", error);
     return NextResponse.json(
@@ -70,9 +74,14 @@ export async function PATCH(request: NextRequest) {
 
     if (error) throw error;
 
+    // Log the profile update
+    const { logAudit } = await import("@/lib/audit-logger");
+    const updated_fields = Object.keys(updates).filter((k) => k !== "updated_at");
+    await logAudit(user.id, "PROFILE_UPDATE", { fields: updated_fields }, "SUCCESS");
+
     return NextResponse.json({
       success: true,
-      data: { updated_fields: Object.keys(updates).filter((k) => k !== "updated_at") },
+      data: { updated_fields },
     });
   } catch (error) {
     console.error("Profile update error:", error);

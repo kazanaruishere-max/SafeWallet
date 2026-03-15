@@ -129,8 +129,12 @@ export async function POST(request: Request) {
       console.error("Failed to save scam check:", insertError);
     }
 
-    // 6. Increment usage + check badges
-    await incrementUsage(user.id, "scam_check");
+    // FIX M5: Only increment usage if DB save succeeded
+    if (!insertError) {
+      await incrementUsage(user.id, "scam_check");
+    } else {
+      console.warn("[Scam] Skipping quota increment — DB save failed");
+    }
     const newBadges = await checkAndAwardBadges(user.id);
 
     // 7. Determine verdict

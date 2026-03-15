@@ -49,6 +49,14 @@ export default function LandingPage() {
         
         gsap.registerPlugin(ScrollTrigger);
 
+        // GLITCH FIX: Global ScrollTrigger config for smoother rendering
+        ScrollTrigger.config({
+          ignoreMobileResize: true, // prevents scroll jumps on mobile viewport changes
+          autoRefreshEvents: "visibilitychange,DOMContentLoaded,load", // avoid resize re-triggers
+        });
+        // End mark: ensure GSAP coordinates with browser's native rendering pipeline
+        gsap.ticker.lagSmoothing(500, 33); // max 500ms catch-up, corrects after 33ms lag
+
         if (!containerRef.current) return;
 
         // Buka Context GSAP untuk proteksi Scope React Unmount
@@ -130,12 +138,13 @@ export default function LandingPage() {
               }
             });
             tlOrbit
-              .fromTo(".orbit-title", { opacity: 0, y: 60, filter: "blur(10px)" }, { opacity: 1, y: 0, filter: "blur(0px)", duration: 2, ease: "power3.out" })
-              .fromTo(".ring-1", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out" }, "<0.5")
-              .fromTo(".ring-2", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out" }, "<0.5")
-              .fromTo(".ring-3", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out" }, "<0.5")
-              .fromTo(".orbit-label", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, stagger: 0.3, duration: 1.5, ease: "back.out(2)" }, 2)
-              .fromTo(".orbit-subtitle", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 2, ease: "power2.out" }, 3);
+              // GLITCH FIX: Removed filter:blur - causes GPU repaints on scrub. Use opacity+y instead.
+              .fromTo(".orbit-title", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 2, ease: "power3.out", force3D: true })
+              .fromTo(".ring-1", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out", force3D: true }, "<0.5")
+              .fromTo(".ring-2", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out", force3D: true }, "<0.5")
+              .fromTo(".ring-3", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 3, ease: "expo.out", force3D: true }, "<0.5")
+              .fromTo(".orbit-label", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, stagger: 0.3, duration: 1.5, ease: "back.out(2)", force3D: true }, 2)
+              .fromTo(".orbit-subtitle", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 2, ease: "power2.out", force3D: true }, 3);
           }
 
           // ==========================================
@@ -154,15 +163,16 @@ export default function LandingPage() {
               }
             });
             tlEye
-              .fromTo(".crosshair-v", { scaleY: 0 }, { scaleY: 1, transformOrigin: "top center", duration: 3, ease: "power2.out" })
-              .fromTo(".crosshair-h", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 3, ease: "power2.out" }, "<")
-              .fromTo(".eye-sclera", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 2, ease: "expo.out" }, 0.5)
-              .fromTo(".eye-iris", { scale: 0 }, { scale: 1, duration: 2, ease: "back.out(2)" }, 1.2)
-              .fromTo(".eye-pupil", { scale: 0 }, { scale: 1, duration: 1.5, ease: "back.out(3)" }, 1.8)
+              .fromTo(".crosshair-v", { scaleY: 0 }, { scaleY: 1, transformOrigin: "top center", duration: 3, ease: "power2.out", force3D: true })
+              .fromTo(".crosshair-h", { scaleX: 0 }, { scaleX: 1, transformOrigin: "left center", duration: 3, ease: "power2.out", force3D: true }, "<")
+              .fromTo(".eye-sclera", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 2, ease: "expo.out", force3D: true }, 0.5)
+              .fromTo(".eye-iris", { scale: 0 }, { scale: 1, duration: 2, ease: "back.out(2)", force3D: true }, 1.2)
+              .fromTo(".eye-pupil", { scale: 0 }, { scale: 1, duration: 1.5, ease: "back.out(3)", force3D: true }, 1.8)
               .to(".eye-pupil", { boxShadow: "0 0 80px #F2A971", backgroundColor: "#F2A971", duration: 0.5 }, 3)
               .fromTo(".neural-line", { strokeDashoffset: 500, opacity: 0 }, { strokeDashoffset: 0, opacity: 0.5, stagger: 0.1, duration: 3, ease: "power1.inOut" }, 1.5)
-              .fromTo(".eye-scan-label", { opacity: 0, letterSpacing: "30px" }, { opacity: 1, letterSpacing: "8px", duration: 2, ease: "power3.out" }, 3)
-              .fromTo(".eye-tagline", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 2, ease: "power3.out" }, 4);
+              .fromTo(".eye-scan-label", { opacity: 0 }, { opacity: 1, duration: 2, ease: "power3.out" }, 3)
+              // GLITCH FIX: letterSpacing on scrub causes layout reflow; removed.
+              .fromTo(".eye-tagline", { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 2, ease: "power3.out", force3D: true }, 4);
           }
 
           // ==========================================
@@ -261,43 +271,43 @@ export default function LandingPage() {
               scrollTrigger: {
                 trigger: cleansingSectionRef.current,
                 start: "top top",
-                end: "+=800%", // Extensively long scroll
+                end: "+=800%",
                 pin: true,
-                scrub: 1.5 
+                anticipatePin: 1, // GLITCH FIX: prevent jump at pin entry
+                scrub: 1.5,
+                invalidateOnRefresh: true,
               }
             });
 
             // Latar belakang perlahan gelap
             tl6.to(cleansingSectionRef.current, { backgroundColor: "#010101", duration: 1 })
-            // Membuka garis horizontal bersinar dari tengah ke seluruh layar
                .fromTo(scannerLineRef.current,
-                 { scaleX: 0, opacity: 0, height: 2 },
-                 { scaleX: 1, opacity: 1, height: 4, duration: 2, ease: "power2.out" }
+                 { scaleX: 0, opacity: 0 },
+                 { scaleX: 1, opacity: 1, duration: 2, ease: "power2.out", force3D: true }
                )
-            // Garis itu turun ke bawah perlahan menyapu layar
                .to(scannerLineRef.current,
-                 { top: "100%", height: 200, opacity: 0.1, duration: 5, ease: "power1.inOut", background: "linear-gradient(to bottom, #F2A971, transparent)" }
+                 { top: "100%", opacity: 0.1, duration: 5, ease: "power1.inOut" }
                )
-            // Elemen teks memunculkan glow saat disapu
-               .fromTo(".scanner-content", 
-                 { opacity: 0, y: 150, filter: "blur(20px)", scale: 0.8 },
-                 { opacity: 1, y: 0, filter: "blur(0px)", scale: 1, duration: 4, ease: "power3.out" },
+            // GLITCH FIX: filter:blur removed on scrubbed element — only use opacity+y
+               .fromTo(".scanner-content",
+                 { opacity: 0, y: 80, scale: 0.95 },
+                 { opacity: 1, y: 0, scale: 1, duration: 4, ease: "power3.out", force3D: true },
                  "-=4"
                )
-            // The shield in the middle scales up and pulses as the scanner finishes
+            // GLITCH FIX: drop-shadow filter removed from scrub; use box-shadow instead
                .to(".scanner-shield",
-                 { scale: 1.5, filter: "drop-shadow(0px 0px 50px rgba(242,169,113,0.8))", duration: 3, ease: "power2.out" },
+                 { scale: 1.5, duration: 3, ease: "power2.out", force3D: true },
                  "-=2"
                );
-            // HexGrid HUD: appears as AI activates
             tl6.fromTo(".hex-grid-item",
               { scale: 0, opacity: 0 },
-              { scale: 1, opacity: 0.8, stagger: { each: 0.04, from: "center" }, duration: 1.5, ease: "back.out(2)" },
+              { scale: 1, opacity: 0.8, stagger: { each: 0.04, from: "center" }, duration: 1.5, ease: "back.out(2)", force3D: true },
               7
             );
+            // GLITCH FIX: letterSpacing on scrub causes layout reflow — removed
             tl6.fromTo(".ai-lock-text",
-              { opacity: 0, letterSpacing: "30px" },
-              { opacity: 1, letterSpacing: "6px", duration: 2, ease: "power3.out" },
+              { opacity: 0 },
+              { opacity: 1, duration: 2, ease: "power3.out" },
               9
             );
           }
@@ -312,15 +322,18 @@ export default function LandingPage() {
               scrollTrigger: {
                 trigger: nodesSectionRef.current,
                 start: "top top",
-                end: "+=1000%", // Extensively long
+                end: "+=1000%",
                 pin: true,
-                scrub: 2
+                anticipatePin: 1, // GLITCH FIX: prevent jump at pin entry
+                scrub: 2,
+                invalidateOnRefresh: true,
               }
             });
 
-            tl7.fromTo(".micro-text", 
-              { opacity: 0, y: 60, filter: "blur(10px)" }, 
-              { opacity: 1, y: 0, filter: "blur(0px)", duration: 2, ease: "power2.out" }
+            // GLITCH FIX: filter:blur removed from scrubbed element
+            tl7.fromTo(".micro-text",
+              { opacity: 0, y: 60 },
+              { opacity: 1, y: 0, duration: 2, ease: "power2.out", force3D: true }
             );
 
             // The nodes explode outward slowly connecting the economy
@@ -374,6 +387,7 @@ export default function LandingPage() {
                 end: "+=1500%", // Deepest and slowest — maximum cinematic pace
                 pin: true,
                 scrub: 3, // Heaviest scrub lag = most fluid 3D sensation
+                anticipatePin: 1, // Prevents jump glitches at pin start
                 invalidateOnRefresh: true,
               }
             });
@@ -388,16 +402,16 @@ export default function LandingPage() {
               ease: "power1.inOut"
             }, 0);
 
-            // ACT 2: User STARTS inside INDONESIA (scale 25)
-            // As they scroll, they slowly pull back/zoom OUT until text is readable
-            gsap.set(".indo-text", { scale: 25, opacity: 0.08, filter: "blur(40px)", letterSpacing: "-5px" });
+            // ACT 2: User STARTS inside INDONESIA (Scale limited to 15 to prevent Webkit raster rendering glitches)
+            gsap.set(".indo-text", { scale: 15, opacity: 0.08, filter: "blur(20px)", letterSpacing: "-5px", force3D: true, transformOrigin: "center center" });
             tl8.to(".indo-text", {
               scale: 1,
               opacity: 1,
               filter: "blur(0px)",
               letterSpacing: "20px",
+              force3D: true,
               duration: 10,
-              ease: "power1.inOut"
+              ease: "power2.inOut"
             }, 0);
 
             // ACT 3: At scale ~4 (midway), a golden forge-sweep light crosses left to right
@@ -415,17 +429,17 @@ export default function LandingPage() {
               ease: "power2.out"
             }, 9);
 
-            // ACT 5: Subtitle drifts up from beneath the crystallized text
+            // ACT 5: Subtitle drifts up from beneath the crystallized text — GLITCH FIX: no blur
             tl8.fromTo(".indo-subtitle",
-              { opacity: 0, y: 80, filter: "blur(10px)" },
-              { opacity: 1, y: 0, filter: "blur(0px)", duration: 3, ease: "power3.out" },
+              { opacity: 0, y: 80 },
+              { opacity: 1, y: 0, duration: 3, ease: "power3.out", force3D: true },
               10
             );
 
-            // ACT 6: CTA button materializes last — the finale reward
+            // ACT 6: CTA button materializes last — the finale reward — GLITCH FIX: no blur
             tl8.fromTo(".indo-cta",
-              { opacity: 0, scale: 0.7, y: 40, filter: "blur(16px)" },
-              { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", ease: "back.out(1.5)", duration: 3 },
+              { opacity: 0, scale: 0.85, y: 40 },
+              { opacity: 1, scale: 1, y: 0, ease: "back.out(1.5)", duration: 3, force3D: true },
               12
             );
           }
@@ -481,9 +495,9 @@ export default function LandingPage() {
   ];
 
   const footerMenu = [
-    { link: '#', text: 'SafeWallet © 2026', image: 'https://picsum.photos/seed/sw1/800/600' },
-    { link: '#', text: 'Kebijakan Privasi', image: 'https://picsum.photos/seed/sw2/800/600' },
-    { link: '#', text: 'Syarat Operasi', image: 'https://picsum.photos/seed/sw3/800/600' }
+    { link: '/', text: 'SafeWallet © 2026', image: 'https://picsum.photos/seed/sw1/800/600' },
+    { link: '/kebijakan-privasi', text: 'Kebijakan Privasi', image: 'https://picsum.photos/seed/sw2/800/600' },
+    { link: '/syarat-ketentuan', text: 'Syarat Operasi', image: 'https://picsum.photos/seed/sw3/800/600' }
   ];
 
   return (

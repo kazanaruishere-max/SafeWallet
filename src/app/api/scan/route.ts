@@ -328,14 +328,14 @@ export async function POST(request: Request) {
       },
     } satisfies ApiResponse<ScanResult>);
   } catch (error) {
-    console.error("Scan error:", error);
+    console.error("[Scan] Internal error:", error);
     return NextResponse.json(
       {
         success: false,
         error: {
           code: "INTERNAL_ERROR",
           message: "Terjadi kesalahan internal. Silakan coba lagi.",
-          details: { hint: String(error) },
+          // FIX H6: No error details sent to client — logged server-side only
         },
       } satisfies ApiError,
       { status: 500 }

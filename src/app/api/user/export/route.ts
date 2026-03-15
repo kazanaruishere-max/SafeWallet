@@ -38,11 +38,15 @@ export async function GET() {
       coaching_logs: coachRes.data ?? [],
     };
 
+    // FIX M2: Add rate limit header to discourage rapid re-exports
     return new NextResponse(JSON.stringify(exportData, null, 2), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         "Content-Disposition": `attachment; filename="safewallet-export-${new Date().toISOString().split("T")[0]}.json"`,
+        "Cache-Control": "private, max-age=60",
+        "X-RateLimit-Limit": "1",
+        "X-RateLimit-Window": "60s",
       },
     });
   } catch (error) {

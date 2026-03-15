@@ -88,17 +88,25 @@ export async function callAI(
       "application/json";
   }
 
-  // Use both header and query key for maximum compatibility
-  const endpoint = `${GEMINI_URL}/${model}:generateContent?key=${apiKey}`;
+  // FIX C3: API key in header, NOT in URL query string
+  const endpoint = `${GEMINI_URL}/${model}:generateContent`;
 
   try {
+    // FIX L2: AbortController timeout — prevent indefinite hangs
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
+
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
       },
       body: JSON.stringify(body),
+      signal: controller.signal,
     });
+
+    clearTimeout(timeout);
 
     if (!response.ok) {
       const errorText = await response.text();
