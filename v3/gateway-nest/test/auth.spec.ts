@@ -28,6 +28,11 @@ describe('JwtStrategy', () => {
   it('should validate and return payload', async () => {
     const payload = { sub: 'user-123', email: 'test@example.com', tenantId: 'tenant-1' };
     const result = await strategy.validate(payload);
-    expect(result).toEqual({ userId: 'user-123', email: 'test@example.com', tenantId: 'tenant-1' });
+    expect(result).toEqual({ 
+      userId: 'user-123', 
+      email: 'test@example.com', 
+      tenantId: 'tenant-1',
+      mfaVerified: false 
+    });
   });
 });
