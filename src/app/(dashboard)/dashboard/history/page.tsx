@@ -12,7 +12,8 @@ import {
   Scan,
   FileText,
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  Lock
 } from "lucide-react";
 import type { ScanHistoryItem } from "@/types/api";
 
@@ -145,6 +146,11 @@ export default function HistoryPage() {
                         year: "numeric",
                       })}
                     </span>
+                    {scan.blockchain_tx_id && (
+                      <Badge variant="outline" className="text-[10px] uppercase font-bold px-2 py-0 border-emerald-500/20 bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" /> Proof-of-Integrity
+                      </Badge>
+                    )}
                   </div>
                   
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">

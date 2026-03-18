@@ -47,14 +47,17 @@ export type ScanResult = {
   recommendations: string[];
   warnings: string[];
   processing_time_ms: number;
+  blockchain_tx_id?: string;
+  blockchain_hash?: string;
 };
 
 export type ScanHistoryItem = {
-  scan_id: string;
+  id: string; // Changed from scan_id to match actual DB result
   health_score: number;
   created_at: string;
   categories: Record<string, number>;
   recommendations: string[];
+  blockchain_tx_id?: string;
 };
 
 // === Scam Check Types ===
@@ -86,7 +89,12 @@ export type DashboardData = {
     subscription: string;
     member_since: string;
   };
-  latest_scan: { health_score: number; date: string } | null;
+  latest_scan: { 
+    health_score: number; 
+    date: string;
+    debt_to_income_ratio?: number;
+    savings_rate?: number;
+  } | null;
   scan_trend: number[];
   scam_checks_count: number;
   badges: Array<{

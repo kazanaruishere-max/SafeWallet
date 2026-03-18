@@ -115,16 +115,16 @@ export async function callAI(
       // Handle specific status codes
       switch (response.status) {
         case 429: {
-          // Rate limit — retry once after delay
-          if (retryCount < 1) {
-            console.warn("Rate limited, retrying in 2s...");
-            await delay(2000);
+          // Rate limit — retry with exponential backoff
+          if (retryCount < 2) {
+            const backoff = Math.pow(2, retryCount) * 1000;
+            console.warn(`Rate limited, retrying in ${backoff}ms...`);
+            await delay(backoff);
             return callAI(messages, { ...options, _retryCount: retryCount + 1 });
           }
-          // Try fallback model
+          // Try fallback model if backoff retries fail
           if (model === PRIMARY_MODEL) {
-            console.warn("Rate limited on primary, trying fallback model...");
-            await delay(1000);
+            console.warn("Rate limited on primary after retries, trying fallback model...");
             return callAI(messages, { ...options, model: FALLBACK_MODEL, _retryCount: 0 });
           }
           throw new AIError(

@@ -32,7 +32,7 @@ export async function GET() {
           .single(),
         supabase
           .from("scans")
-          .select("health_score, created_at")
+          .select("health_score, created_at, debt_to_income_ratio, savings_rate")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -82,6 +82,8 @@ export async function GET() {
         ? {
             health_score: latestScan.health_score,
             date: latestScan.created_at,
+            debt_to_income_ratio: latestScan.debt_to_income_ratio,
+            savings_rate: latestScan.savings_rate,
           }
         : null,
       scan_trend: scanTrend?.map((s) => s.health_score).reverse() ?? [],

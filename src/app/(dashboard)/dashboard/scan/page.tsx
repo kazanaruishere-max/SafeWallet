@@ -27,6 +27,8 @@ import {
 } from "@/lib/file-parser";
 import { useRouter } from "next/navigation";
 
+import { SecurityDisclosure } from "@/components/security-disclosure";
+
 // --- Components ---
 const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
   <div className={`bg-[#1A1D24]/60 backdrop-blur-2xl border border-white/5 rounded-[2rem] shadow-2xl relative overflow-hidden ${className}`}>
@@ -48,6 +50,7 @@ export default function ScanPage() {
   const [fileFormat, setFileFormat] = useState<ParsedFile["format"] | null>(null);
   const [progress, setProgress] = useState(0);
   const [progressMsg, setProgressMsg] = useState("");
+  const [acknowledged, setAcknowledged] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -93,30 +96,13 @@ export default function ScanPage() {
       setPreview(null);
     }
 
-    setState("parsing");
-    setProgress(0);
-
-    let parsedText: string;
-    try {
-      const parsed = await parseFile(file, (p, msg) => {
-        setProgress(p);
-        setProgressMsg(msg);
-      });
-      parsedText = parsed.text;
-    } catch (parseError) {
-      setError(parseError instanceof Error ? parseError.message : "Gagal membaca file. Coba format lain.");
-      setState("error");
-      return;
-    }
-
     setState("analyzing");
     setProgress(0);
-    setProgressMsg("Menganalisis dengan Gemini AI...");
+    setProgressMsg("Mengunggah dan Menganalisis (Server-Side Security)...");
 
     try {
       const formData = new FormData();
       formData.append("image", file);
-      formData.append("ocr_text", parsedText);
 
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -230,10 +216,10 @@ export default function ScanPage() {
 
           <GlassCard className="p-2 border-[#F2A971]/20 shadow-[0_0_40px_rgba(242,169,113,0.05)]">
             <div
-              className={`flex flex-col items-center justify-center min-h-[400px] bg-[#0B0A08]/40 border-2 border-dashed border-[#F2A971]/30 rounded-[1.5rem] transition-all hover:bg-[#F2A971]/5 hover:border-[#F2A971]/60 cursor-pointer m-2 relative overflow-hidden group`}
-              onDrop={handleDrop}
+              className={`flex flex-col items-center justify-center min-h-[400px] bg-[#0B0A08]/40 border-2 border-dashed border-[#F2A971]/30 rounded-[1.5rem] transition-all ${acknowledged ? 'hover:bg-[#F2A971]/5 hover:border-[#F2A971]/60 cursor-pointer' : 'opacity-50 cursor-not-allowed'} m-2 relative overflow-hidden group`}
+              onDrop={(e) => acknowledged && handleDrop(e)}
               onDragOver={(e) => e.preventDefault()}
-              onClick={() => fileRef.current?.click()}
+              onClick={() => acknowledged && fileRef.current?.click()}
             >
               <div className="absolute inset-0 bg-gradient-to-t from-[#F2A971]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <input
@@ -241,6 +227,7 @@ export default function ScanPage() {
                 type="file"
                 accept={getSupportedExtensions()}
                 className="hidden"
+                disabled={!acknowledged}
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleFile(f);
@@ -255,11 +242,36 @@ export default function ScanPage() {
               <p className="text-white/50 text-center max-w-sm mb-8 leading-relaxed">
                 Mendukung gambar, PDF e-statement, Excel, CSV, atau TXT. Max ukuran file 20MB.
               </p>
-              <Button className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/5 backdrop-blur-md transition-all">
+              {!acknowledged && (
+                <p className="text-amber-500 text-sm font-medium mb-4 animate-pulse">
+                  * Harap setujui Disclaimer & Batasan di bawah untuk mulai.
+                </p>
+              )}
+              <Button disabled={!acknowledged} className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/5 backdrop-blur-md transition-all">
                 <FileImage className="mr-3 h-5 w-5" /> Pilih File dari Perangkat
               </Button>
             </div>
           </GlassCard>
+
+          {/* Security Disclosure & Checkbox */}
+          <div className="mt-8 space-y-6">
+            <SecurityDisclosure />
+            
+            <label className="flex items-center gap-3 p-4 rounded-2xl bg-[#1A1D24]/40 border border-white/5 cursor-pointer hover:bg-white/5 transition-colors group">
+              <div className="relative flex items-center">
+                <input 
+                  type="checkbox" 
+                  checked={acknowledged}
+                  onChange={(e) => setAcknowledged(e.target.checked)}
+                  className="peer h-6 w-6 appearance-none rounded-lg border-2 border-white/20 bg-transparent checked:bg-[#F2A971] checked:border-[#F2A971] transition-all cursor-pointer"
+                />
+                <CheckCircle2 className="absolute h-4 w-4 text-[#0B0A08] left-1 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+              </div>
+              <span className="text-white/70 text-sm group-hover:text-white transition-colors">
+                Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini).
+              </span>
+            </label>
+          </div>
 
           {/* Steps Indicator directly below as requested by design prompt */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
@@ -315,84 +327,127 @@ export default function ScanPage() {
           )}
         </GlassCard>
       ) : result ? (
-        <div className="space-y-6 max-w-4xl mx-auto">
-          {/* Result Header */}
-          <GlassCard className="p-8 md:p-12 text-center relative">
-            <div className="absolute inset-0 bg-gradient-to-b from-[#F2A971]/5 to-transparent border-b border-white/5" />
-            <div className="relative z-10 flex flex-col items-center">
-              <span className="text-white/50 text-sm font-bold tracking-widest uppercase mb-4">Total Health Score</span>
-              <div className="relative flex items-center justify-center w-40 h-40 rounded-full bg-[#0B0A08] border border-white/10 shadow-[0_0_50px_rgba(242,169,113,0.15)] mb-6">
-                <span className={`text-6xl font-black ${result.health_score >= 80 ? 'text-[#F2A971]' : result.health_score >= 50 ? 'text-amber-500' : 'text-red-500'}`}>
-                  {result.health_score}
-                </span>
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-10 duration-700">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Health Score Main Card */}
+            <GlassCard className="lg:col-span-4 p-10 flex flex-col items-center justify-center text-center overflow-visible">
+              <div className="absolute top-0 right-0 p-4">
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                  Integrity Verified
+                </Badge>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">
-                {result.health_score >= 80 ? 'Kondisi Keuangan Prima' : result.health_score >= 50 ? 'Perlu Optimalisasi' : 'Kritis & Bahaya'}
-              </h2>
-            </div>
-          </GlassCard>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <GlassCard className="p-8 flex flex-col gap-2">
-              <span className="text-white/50 text-sm font-medium">Insights Pengeluaran</span>
-              <div className="space-y-4 mt-4">
-                {Object.entries(result.categories).sort(([,a], [,b]) => b - a).map(([cat, amount], i) => {
-                  const total = Object.values(result.categories).reduce((sum, val) => sum + val, 0);
-                  const pct = total > 0 ? Math.round((amount / total) * 100) : 0;
-                  return (
-                    <div key={i} className="space-y-2">
-                      <div className="flex justify-between text-sm text-white/90">
-                        <span>{cat}</span>
-                        <span className="font-bold">Rp {amount.toLocaleString('id-ID')}</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${i === 0 ? 'bg-[#3323D2]' : i === 1 ? 'bg-[#F2A971]' : 'bg-white/20'}`} style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="relative mb-8">
+                <div className="w-48 h-48 rounded-full border-8 border-white/5 flex items-center justify-center">
+                  <span className={`text-7xl font-black ${result.health_score > 70 ? 'text-emerald-400' : result.health_score > 40 ? 'text-amber-400' : 'text-red-400'}`}>
+                    {result.health_score}
+                  </span>
+                </div>
+                {/* Score Label */}
+                <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-white/10 backdrop-blur-xl rounded-full border border-white/10 text-xs font-bold tracking-widest uppercase text-white/60">
+                  Health Score
+                </div>
               </div>
+              <h3 className="text-2xl font-bold text-white mb-2">
+                {result.health_score > 70 ? "Keuangan Sehat!" : result.health_score > 40 ? "Perlu Perhatian" : "Kritis"}
+              </h3>
+              <p className="text-white/40 text-sm leading-relaxed max-w-[200px]">
+                Berdasarkan analisis AI terhadap mutasi bank Anda.
+              </p>
             </GlassCard>
 
-            <div className="flex flex-col gap-6">
-              <GlassCard className="p-6 flex-1 flex flex-col justify-center">
-                <span className="text-white/50 text-sm font-medium mb-1">Savings Rate AI</span>
-                <span className="text-3xl font-black text-white">{Math.round(result.savings_rate * 100)}%</span>
-                <span className="text-xs text-[#F2A971] mt-2 bg-[#F2A971]/10 self-start px-2 py-1 rounded">Rekomendasi &gt;20%</span>
+            {/* Metrics Breakdown */}
+            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <GlassCard className="p-8 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+                      <TrendingUp className="w-5 h-5 text-red-400 rotate-180" />
+                    </div>
+                    <span className="text-white/40 text-sm font-medium uppercase tracking-wider">Debt-to-Income</span>
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">
+                    {Math.round(result.debt_to_income_ratio * 100)}%
+                  </div>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full transition-all duration-1000 ${result.debt_to_income_ratio * 100 > 35 ? 'bg-red-500' : 'bg-emerald-500'}`} 
+                    style={{ width: `${Math.min(result.debt_to_income_ratio * 100, 100)}%` }}
+                  />
+                </div>
               </GlassCard>
-              <GlassCard className="p-6 flex-1 flex flex-col justify-center border-amber-500/20">
-                <span className="text-white/50 text-sm font-medium mb-1">Debt-to-Income (DTI)</span>
-                <span className="text-3xl font-black text-amber-500">{Math.round(result.debt_to_income_ratio * 100)}%</span>
-                <span className="text-xs text-amber-500 mt-2 bg-amber-500/10 self-start px-2 py-1 rounded">Awas bahaya di atas 35%</span>
+
+              <GlassCard className="p-8 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <span className="text-white/40 text-sm font-medium uppercase tracking-wider">Savings Rate</span>
+                  </div>
+                  <div className="text-4xl font-black text-white mb-2">
+                    {Math.round(result.savings_rate * 100)}%
+                  </div>
+                </div>
+                <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-1000" 
+                    style={{ width: `${Math.min(result.savings_rate * 100, 100)}%` }}
+                  />
+                </div>
               </GlassCard>
             </div>
           </div>
 
-          {(result.recommendations?.length > 0 || result.warnings?.length > 0) && (
-            <GlassCard className="p-8">
-              <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                <TrendingUp className="text-[#F2A971] w-5 h-5" /> AI Actionable Advice
-              </h3>
-              <div className="space-y-4">
-                {result.warnings.map((w, i) => (
-                  <div key={`w-${i}`} className="flex gap-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20">
-                    <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-                    <p className="text-red-200 text-sm">{w}</p>
-                  </div>
-                ))}
+          {/* Recommendations & Warnings */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <GlassCard className="p-10 border-emerald-500/10">
+              <h4 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                Rekomendasi Strategis
+              </h4>
+              <ul className="space-y-4">
                 {result.recommendations.map((rec, i) => (
-                  <div key={`r-${i}`} className="flex gap-4 p-4 rounded-xl bg-[#F2A971]/5 border border-[#F2A971]/10">
-                    <CheckCircle2 className="w-5 h-5 text-[#F2A971] mt-0.5 shrink-0" />
-                    <p className="text-[#F2A971] font-medium text-sm">{rec}</p>
-                  </div>
+                  <li key={i} className="flex gap-4 items-start group">
+                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-400/50 group-hover:bg-emerald-400 transition-colors shrink-0" />
+                    <span className="text-white/60 leading-relaxed group-hover:text-white/90 transition-colors">
+                      {rec}
+                    </span>
+                  </li>
                 ))}
+              </ul>
+            </GlassCard>
+
+            <GlassCard className="p-10 border-red-500/10">
+              <h4 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
+                <AlertTriangle className="w-6 h-6 text-red-400" />
+                Peringatan Dini
+              </h4>
+              <div className="space-y-4">
+                {result.warnings.length > 0 ? (
+                  result.warnings.map((warn, i) => (
+                    <div key={i} className="p-4 rounded-2xl bg-red-500/5 border border-red-500/10 text-red-400/80 text-sm leading-relaxed">
+                      {warn}
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400/80 text-sm leading-relaxed">
+                    Tidak ada peringatan kritis terdeteksi untuk saat ini.
+                  </div>
+                )}
               </div>
             </GlassCard>
-          )}
+          </div>
+          
+          <SecurityDisclosure />
 
-          <div className="flex justify-center pt-4 border-t border-white/5">
-            <Button onClick={resetScan} variant="outline" className="h-14 px-8 rounded-xl bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors">
-              <Scan className="w-5 h-5 mr-3" /> Lakukan Scan Lainnya
+          <div className="flex justify-center pt-8">
+            <Button 
+              variant="outline" 
+              onClick={resetScan}
+              className="bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white rounded-2xl px-8 h-12"
+            >
+              Scan File Baru
             </Button>
           </div>
         </div>

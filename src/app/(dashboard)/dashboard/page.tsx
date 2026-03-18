@@ -49,9 +49,8 @@ export default function DashboardPage() {
   const scamQuota = data?.quota.scam_checks ?? { used: 0, limit: 5 };
   const healthScore = data?.latest_scan?.health_score ?? 0;
   
-  // Dummy values based on design prompt if no real data
-  const savingsRate = "20%";
-  const debtRatio = "15%";
+  const savingsRate = data?.latest_scan?.savings_rate ? `${data.latest_scan.savings_rate}%` : "—";
+  const debtRatio = data?.latest_scan?.debt_to_income_ratio ? `${data.latest_scan.debt_to_income_ratio}%` : "—";
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">

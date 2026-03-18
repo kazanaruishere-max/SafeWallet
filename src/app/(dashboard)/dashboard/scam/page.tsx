@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import type { ScamCheckResult } from "@/types/api";
 
+import { SecurityDisclosure } from "@/components/security-disclosure";
+
 const GlassCard = ({ children, className = "", style }: { children: React.ReactNode, className?: string, style?: React.CSSProperties }) => (
   <div className={`bg-[#1A1D24]/60 backdrop-blur-2xl border border-white/5 rounded-[2rem] shadow-xl relative overflow-hidden ${className}`} style={style}>
     {children}
@@ -32,8 +34,13 @@ export default function ScamPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<ScamCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [acknowledged, setAcknowledged] = useState(false);
 
   const handleSubmit = async (inputType: "text" | "url", content: string) => {
+    if (!acknowledged) {
+      setError("Harap setujui Disclaimer & Batasan di bawah untuk mulai.");
+      return;
+    }
     if (content.trim().length < 10) {
       setError("Konten minimal 10 karakter untuk dianalisis.");
       return;
@@ -333,6 +340,29 @@ export default function ScamPage() {
           </div>
         </div>
       )}
+
+      <div className="mt-12 space-y-6">
+        <SecurityDisclosure />
+        
+        <label className="flex items-center gap-3 p-4 rounded-2xl bg-[#1A1D24]/40 border border-white/5 cursor-pointer hover:bg-white/5 transition-colors group">
+          <div className="relative flex items-center">
+            <input 
+              type="checkbox" 
+              checked={acknowledged}
+              onChange={(e) => setAcknowledged(e.target.checked)}
+              className="peer h-6 w-6 appearance-none rounded-lg border-2 border-white/20 bg-transparent checked:bg-[#F2A971] checked:border-[#F2A971] transition-all cursor-pointer"
+            />
+            <CheckCircle2 className="absolute h-4 w-4 text-[#0B0A08] left-1 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
+          </div>
+          <span className="text-white/70 text-sm group-hover:text-white transition-colors">
+            Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini).
+          </span>
+        </label>
+      </div>
+
+      {/* Floating Gradient for ambiance */}
+      <div className="fixed -bottom-[30%] -left-[10%] w-[60%] h-[60%] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="fixed -top-[20%] -right-[10%] w-[50%] h-[50%] bg-blue-500/10 blur-[120px] rounded-full pointer-events-none -z-10" />
     </div>
   );
 }

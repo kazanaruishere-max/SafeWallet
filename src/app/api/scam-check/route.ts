@@ -6,6 +6,8 @@ import { checkQuota, incrementUsage } from "@/lib/rate-limit";
 import { checkAndAwardBadges } from "@/lib/gamification";
 import { sanitizeScamInput } from "@/lib/sanitize";
 import { parseAIResponse, ScamAnalysisSchema } from "@/lib/ai/schemas";
+import { encrypt } from "@/lib/encryption";
+import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
 import type { ApiResponse, ApiError, ScamCheckResult } from "@/types/api";
 
 const VALID_INPUT_TYPES = ["text", "url", "screenshot"] as const;
@@ -32,20 +34,26 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Quota check
-    const quota = await checkQuota(user.id, "scam_check");
-    if (!quota.allowed) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: "QUOTA_EXCEEDED",
-            message: "Batas 5 cek scam gratis/bulan tercapai. Upgrade ke Premium?",
-            details: { current: quota.used, limit: quota.limit },
-          },
-        } satisfies ApiError,
-        { status: 429 }
-      );
+    // 2. Atomic Quota Management (V2 Update)
+    let quotaInfo;
+    try {
+      const { incrementQuotaAtomic } = await import("@/lib/rate-limit");
+      quotaInfo = await incrementQuotaAtomic(user.id, "scam_check");
+      if (!quotaInfo.allowed) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "QUOTA_EXCEEDED",
+              message: "Batas 5 cek scam gratis/bulan tercapai. Upgrade ke Premium?",
+              details: { current: quotaInfo.used, limit: quotaInfo.limit },
+            },
+          } satisfies ApiError,
+          { status: 429 }
+        );
+      }
+    } catch (quotaErr) {
+      console.warn("Quota system failed, allowing scan (Fail-Open):", quotaErr);
     }
 
     // 3. Parse & validate
@@ -111,12 +119,32 @@ export async function POST(request: Request) {
     }
 
     // 5. Store in database
+    let blockchainTxId: string | undefined;
+    const integrityHash: string = generateIntegrityHash(analysisResult);
+
+    // v2 Update: Encrypt sensitive data
+    const encryptedContent = encrypt(content.substring(0, 5000));
+
+    // v2 Update: Record integrity proof
+    try {
+      const blockchainRecord = await recordOnBlockchain(user.id, integrityHash, {
+        feature: "scam-check",
+        risk_score: analysisResult.risk_score
+      });
+      blockchainTxId = blockchainRecord.tx_id;
+    } catch (bcErr) {
+      console.warn("Blockchain recording failed, proceeding with DB save:", bcErr);
+    }
+
     const { data: check, error: insertError } = await supabase
       .from("scam_checks")
       .insert({
         user_id: user.id,
         input_type,
-        input_content: content.substring(0, 5000),
+        input_content: "[ENCRYPTED_V2]",
+        encrypted_input_content: encryptedContent,
+        blockchain_hash: integrityHash,
+        blockchain_tx_id: blockchainTxId,
         risk_score: analysisResult.risk_score,
         confidence: analysisResult.confidence,
         red_flags: analysisResult.red_flags,
@@ -129,12 +157,6 @@ export async function POST(request: Request) {
       console.error("Failed to save scam check:", insertError);
     }
 
-    // FIX M5: Only increment usage if DB save succeeded
-    if (!insertError) {
-      await incrementUsage(user.id, "scam_check");
-    } else {
-      console.warn("[Scam] Skipping quota increment — DB save failed");
-    }
     const newBadges = await checkAndAwardBadges(user.id);
 
     // 7. Determine verdict
@@ -162,7 +184,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       data: result,
-      meta: { remaining_quota: quota.remaining - 1, new_badges: newBadges },
+      meta: { remaining_quota: quotaInfo?.remaining ?? 0, new_badges: newBadges },
     } satisfies ApiResponse<ScamCheckResult>);
   } catch (error) {
     console.error("Scam check error:", error);

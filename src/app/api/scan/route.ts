@@ -4,6 +4,9 @@ import { callAI, AIError } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
 import { sanitizeAIInput } from "@/lib/sanitize";
 import { parseAIResponse, HealthAnalysisSchema } from "@/lib/ai/schemas";
+import { encrypt } from "@/lib/encryption";
+import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
+import { parseFileServer } from "@/lib/server/file-parser";
 import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
 
 export async function POST(request: Request) {
@@ -30,13 +33,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Quota check (non-blocking — works even if DB tables missing)
-    let quotaRemaining = 2;
+    // 2. Atomic Quota Management (V2 Update for Security & Stability)
+    let quotaInfo;
     try {
-      const { checkQuota } = await import("@/lib/rate-limit");
-      const quota = await checkQuota(user.id, "scan");
-      quotaRemaining = quota.remaining;
-      if (!quota.allowed) {
+      const { incrementQuotaAtomic } = await import("@/lib/rate-limit");
+      quotaInfo = await incrementQuotaAtomic(user.id, "scan");
+      if (!quotaInfo.allowed) {
         return NextResponse.json(
           {
             success: false,
@@ -49,8 +51,7 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.warn("Quota check failed (tables may not exist), allowing scan:", quotaErr);
-      // Allow scan to proceed if quota system fails
+      console.warn("Quota system failed, allowing scan (Fail-Open for UX):", quotaErr);
     }
 
     // 3. Parse request body
@@ -142,8 +143,24 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Get OCR text from client
-    const ocrText = formData.get("ocr_text") as string | null;
+    // 5. Server-Side Parsing (V2 Update for Security)
+    let ocrText: string;
+    try {
+      const parsedFile = await parseFileServer(buffer, verifiedMime, image.name);
+      ocrText = parsedFile.text;
+    } catch (parseErr) {
+      console.error("Server-side parsing failed:", parseErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "OCR_FAILED",
+            message: "Gagal memproses file di server keamanan kami. Coba lagi.",
+          },
+        } satisfies ApiError,
+        { status: 422 }
+      );
+    }
 
     if (!ocrText || ocrText.trim().length < 10) {
       return NextResponse.json(
@@ -205,14 +222,29 @@ export async function POST(request: Request) {
     // 8. Store scan in database & deduct quota atomically via Node-level flow
     let scanId: string = "fallback-" + crypto.randomUUID();
     let dbSuccess = false;
+    let blockchainTxId: string | undefined;
+    const integrityHash: string = generateIntegrityHash(analysisResult);
 
     try {
+      // v2 Update: Encrypt sensitive data before storage
+      const encryptedOcrText = encrypt(ocrText.substring(0, 5000));
+      
+      // v2 Update: Record integrity proof on "Blockchain"
+      const blockchainRecord = await recordOnBlockchain(user.id, integrityHash, {
+        feature: "health-scan",
+        score: analysisResult.health_score
+      });
+      blockchainTxId = blockchainRecord.tx_id;
+
       const { data: scan, error: insertError } = await supabase
         .from("scans")
         .insert({
           user_id: user.id,
           image_url: "client-side-only",
-          ocr_raw_text: ocrText.substring(0, 5000),
+          ocr_raw_text: "[ENCRYPTED_V2]", // Placeholder to replace old plain text
+          encrypted_ocr_text: encryptedOcrText,
+          blockchain_hash: integrityHash,
+          blockchain_tx_id: blockchainTxId,
           health_score: analysisResult.health_score,
           categories: analysisResult.categories,
           recommendations: analysisResult.recommendations,
@@ -229,41 +261,28 @@ export async function POST(request: Request) {
       console.warn("Failed to save scan to DB (Dirty State Prevented). Skipping quota deduction:", dbErr);
     }
 
-    // 9. Increment usage ONLY if scan was successfully appended to history
-    if (dbSuccess) {
-      try {
-        const { incrementUsage } = await import("@/lib/rate-limit");
-        await incrementUsage(user.id, "scan");
-      } catch (incErr) {
-        console.warn("Quota increment failed after save.", incErr);
-      }
-    }
-
-    // 9.5 PINJOL RESCUE: Check Debt Ratio and Lock if > 35%
-    let needs_education_lock = false;
-    // Note: AI returns percentage as whole number usually (e.g. 40 for 40%) or decimal. Safe interpretation: > 35 (assuming it meant 35%)
-    const dtiRatio = analysisResult.debt_to_income_ratio ?? 0;
-    if (dbSuccess && dtiRatio > 35) {
-      if (user) { 
-        try {
-          await supabase.from("users").update({
-            debt_ratio: dtiRatio,
-            needs_education_lock: true
-          }).eq("id", user.id);
-          needs_education_lock = true;
-        } catch (err) {
-          console.warn("Failed to apply Pinjol Education Lock", err);
-        }
-      }
-    }
-
-    // 10. Badge check (non-blocking)
+    // 9. Badges & Intervention (Non-blocking)
     let newBadges: string[] = [];
     try {
       const { checkAndAwardBadges } = await import("@/lib/gamification");
       newBadges = await checkAndAwardBadges(user.id);
     } catch {
       // Badge failure shouldn't block results
+    }
+
+    // 9.5 PINJOL RESCUE: Check Debt Ratio and Lock if > 35%
+    let needs_education_lock = false;
+    const dtiRatio = analysisResult.debt_to_income_ratio ?? 0;
+    if (dbSuccess && dtiRatio > 35) {
+      try {
+        await supabase.from("users").update({
+          debt_ratio: dtiRatio,
+          needs_education_lock: true
+        }).eq("id", user.id);
+        needs_education_lock = true;
+      } catch (err) {
+        console.warn("Failed to apply Pinjol Education Lock", err);
+      }
     }
 
     // 10.5 JUDOL TRACKER: Telegram Crisis Coaching Intervention (Asynchronous)
@@ -322,7 +341,7 @@ export async function POST(request: Request) {
       success: true,
       data: result,
       meta: { 
-        remaining_quota: quotaRemaining - 1, 
+        remaining_quota: quotaInfo?.remaining ?? 0, 
         new_badges: newBadges,
         needs_education_lock
       },

@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     // Get scans
     const { data: scans, error } = await supabase
       .from("scans")
-      .select("id, health_score, created_at, categories, recommendations")
+      .select("id, health_score, created_at, categories, recommendations, blockchain_tx_id")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1);
@@ -45,11 +45,12 @@ export async function GET(request: NextRequest) {
 
     const items: ScanHistoryItem[] =
       scans?.map((s) => ({
-        scan_id: s.id,
+        id: s.id,
         health_score: s.health_score,
         created_at: s.created_at,
         categories: (s.categories as Record<string, number>) ?? {},
         recommendations: (s.recommendations as string[]) ?? [],
+        blockchain_tx_id: s.blockchain_tx_id,
       })) ?? [];
 
     // FIX M1: Add Cache-Control
