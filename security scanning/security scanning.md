@@ -6,6 +6,114 @@ SafeWallet menggunakan comprehensive security scanning pipeline untuk mendeteksi
 - Dependencies (npm packages)
 - Source code (SAST - Static Application Security Testing)
 - Container images (Docker)
+- GitHub Actions (Dependabot automated updates)
+
+---
+
+## 🚨 Known Issues & Resolved Errors
+
+### Issue #30: Dependabot PR - Bump actions/checkout from v3 to v6
+
+**Status:** ⚠️ Requires Manual Intervention  
+**Severity:** Medium  
+**Affected Files:** `.github/workflows/v3_pipeline.yml`
+
+#### Problem Description
+
+Dependabot automatically creates PRs untuk update GitHub Actions versions:
+```
+build(deps): bump actions/checkout from 3 to 6
+```
+
+**Error yang terjadi:**
+```yaml
+Error: GitHub Actions v6 menggunakan syntax yang berbeda
+Error: Node.js version mismatch
+Error: Breaking changes in actions/checkout@v6
+```
+
+#### Root Cause
+
+1. **Breaking Changes v3 → v6:**
+   - v6 menggunakan Node.js 20+ (v3 menggunakan Node.js 16)
+   - Perubahan parameter syntax (`fetch-depth` default berubah)
+   - Permission model yang lebih strict
+
+2. **Compatibility Issues:**
+   ```yaml
+   # ❌ OLD (v3 syntax)
+   - uses: actions/checkout@v3
+     with:
+       fetch-depth: 0
+   
+   # ✅ NEW (v6 syntax)
+   - uses: actions/checkout@v6
+     with:
+       fetch-depth: 0
+       persist-credentials: true  # New required parameter
+   ```
+
+3. **Workflow Conflicts:**
+   - Others actions (setup-node, codeql-action) harus compatible
+   - GitHub Enterprise Server version requirements
+
+#### Solution
+
+**Option A: Gradual Upgrade (Recommended)**
+
+```yaml
+# Step 1: Update to v4 first (compatible with existing workflow)
+- uses: actions/checkout@v4
+
+# Step 2: Test workflow thoroughly
+# Step 3: Update to v5 when ready
+- uses: actions/checkout@v5
+
+# Step 4: Finally to v6
+- uses: actions/checkout@v6
+  with:
+    persist-credentials: true  # Required for v6
+    show-progress: true        # New in v5+
+```
+
+**Option B: Pin to Specific Version**
+
+```yaml
+# Pin to stable v4 (safe choice)
+- uses: actions/checkout@v4.2.2  # Specific stable version
+
+# Or pin to v3 if v4 breaks something
+- uses: actions/checkout@v3.6.0
+```
+
+**Option C: Disable Auto-Update for GitHub Actions**
+
+Update `.github/dependabot.yml`:
+```yaml
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: "monthly"
+  open-pull-requests-limit: 0  # Disable auto PRs
+  # Or review manually before merge
+```
+
+#### Verification Checklist
+
+```
+□ Update all actions to compatible versions
+□ Test workflow in staging branch first
+□ Verify checkout permissions work correctly
+□ Check codeql-action compatibility
+□ Review GitHub release notes for breaking changes
+□ Update documentation with new version numbers
+```
+
+#### Related Issues
+
+- Issue #31: `bump actions/setup-node from 3 to 4`
+- Issue #32: `bump github/codeql-action from v2 to v3`
+- Issue #33: `bump snyk/actions from master to node`
 
 ---
 
