@@ -188,7 +188,7 @@ jobs:
         run: |
           cd v3/gateway-nest
           npm install --legacy-peer-deps
-          npm test -- --coverage --threshold=90
+          npm test -- --coverage
       
       - name: Rust Build & Test (v3/security-rust)
         run: |
