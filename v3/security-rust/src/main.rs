@@ -90,7 +90,7 @@ async fn encrypt_handler(Json(payload): Json<EncryptRequest>) -> Json<EncryptRes
         .expect("Encryption failed");
 
     // Calculate HMAC for integrity
-    let mut mac = HmacSha256::new_from_slice(&key_bytes).expect("HMAC key error");
+    let mut mac = <HmacSha256 as KeyInit>::new_from_slice(&key_bytes).expect("HMAC key error");
     mac.update(&ciphertext);
     let hmac_result = mac.finalize().into_bytes();
 
@@ -108,7 +108,7 @@ async fn decrypt_handler(Json(payload): Json<DecryptRequest>) -> Json<DecryptRes
     let hmac_bytes = hex::decode(payload.hmac).expect("Invalid hmac hex");
     
     // Verify HMAC first
-    let mut mac = HmacSha256::new_from_slice(&key_bytes).expect("HMAC key error");
+    let mut mac = <HmacSha256 as KeyInit>::new_from_slice(&key_bytes).expect("HMAC key error");
     mac.update(&cipher_bytes);
     mac.verify_slice(&hmac_bytes).expect("HMAC verification failed");
 
@@ -145,9 +145,9 @@ mod tests {
         assert_eq!(encrypt_res.hmac.len(), 64);
 
         let decrypt_req = DecryptRequest {
-            ciphertext: encrypt_res.ciphertext,
-            nonce: encrypt_res.nonce,
-            hmac: encrypt_res.hmac,
+            ciphertext: encrypt_res.ciphertext.clone(),
+            nonce: encrypt_res.nonce.clone(),
+            hmac: encrypt_res.hmac.clone(),
             key: key.to_string(),
         };
         let decrypt_res = decrypt_handler(Json(decrypt_req)).await;
@@ -170,8 +170,8 @@ mod tests {
 
         let decrypt_req = DecryptRequest {
             ciphertext: hex::encode(tampered_cipher),
-            nonce: encrypt_res.nonce,
-            hmac: encrypt_res.hmac,
+            nonce: encrypt_res.nonce.clone(),
+            hmac: encrypt_res.hmac.clone(),
             key: key.to_string(),
         };
         decrypt_handler(Json(decrypt_req)).await;
