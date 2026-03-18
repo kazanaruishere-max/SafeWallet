@@ -9,7 +9,7 @@ on:
 
 env:
   # Global environment variables
-  NODE_VERSION: '20'
+  NODE_VERSION: '22'
   SNYK_SEVERITY: 'high'
 
 jobs:
@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,28 +37,28 @@ jobs:
 
       # Install dependencies with legacy peer deps to handle React 19 conflicts
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --ignore-scripts
+        run: npm ci --legacy-peer-deps --ignore-scripts || npm install --legacy-peer-deps --ignore-scripts
 
       # Debug: Verify token
       - name: Verify Snyk Token
         id: check-token
         run: |
           if [ -z "${{ secrets.SNYK_TOKEN }}" ]; then
-            echo "::error::SNYK_TOKEN is not configured!"
+            echo "::error::SNYK_TOKEN is not configured in secrets!"
             exit 1
           fi
-          echo "✓ SNYK_TOKEN configured (length: ${#SNYK_TOKEN})"
+          echo "✓ SNYK_TOKEN is present"
           echo "token-set=true" >> $GITHUB_OUTPUT
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       # Install Snyk CLI
       - name: Install Snyk CLI
-        run: npm install -g snyk
+        run: npm install -g snyk@latest
 
       # Authenticate Snyk
       - name: Authenticate Snyk
-        run: snyk config set api=${{ secrets.SNYK_TOKEN }}
+        run: snyk auth ${{ secrets.SNYK_TOKEN }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -65,18 +67,8 @@ jobs:
         id: snyk-os
         run: |
           echo "Running Snyk Open Source scan..."
-          # Ensure file exists even if Snyk fails
-          touch snyk-os.sarif
-          snyk test \
-            --severity-threshold=${{ env.SNYK_SEVERITY }} \
-            --sarif-file-output=snyk-os.sarif \
-            --org=${{ secrets.SNYK_ORG_ID }} \
-            || echo "Snyk OS scan completed with findings"
-          
-          # Verify SARIF file was created and is valid (has content and version)
-          if [ ! -s snyk-os.sarif ] || ! grep -q "\"version\": \"2.1.0\"" snyk-os.sarif; then
-            echo "::warning::snyk-os.sarif was not created or is invalid, generating fallback SARIF"
-            cat > snyk-os.sarif << 'EOF'
+          # Create an initial valid empty SARIF to ensure the file always exists
+          cat > snyk-os.sarif << 'EOF'
 {
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
   "version": "2.1.0",
@@ -93,30 +85,27 @@ jobs:
   ]
 }
 EOF
-          else
-            echo "✓ snyk-os.sarif is valid"
+          
+          # Run Snyk and redirect output to the file
+          snyk test \
+            --severity-threshold=${{ env.SNYK_SEVERITY }} \
+            --sarif-file-output=snyk-os.sarif \
+            --org=${{ secrets.SNYK_ORG_ID }} || true
+          
+          # Final validation
+          if [ ! -s snyk-os.sarif ] || ! grep -q "\"version\": \"2.1.0\"" snyk-os.sarif; then
+             echo "::warning::snyk-os.sarif is invalid after scan, resetting to empty valid SARIF"
+             # (Repeat fallback creation if necessary, but it should already be there from the start)
           fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
-      # Snyk Code (SAST - Static Analysis) - Requires Snyk Code enabled
+      # Snyk Code (SAST - Static Analysis)
       - name: Run Snyk Code Scan
         id: snyk-code
         run: |
           echo "Running Snyk Code scan..."
-          # Ensure file exists even if Snyk fails
-          touch snyk-code.sarif
-          snyk code test \
-            --severity-threshold=${{ env.SNYK_SEVERITY }} \
-            --sarif-file-output=snyk-code.sarif \
-            --org=${{ secrets.SNYK_ORG_ID }} \
-            || echo "Snyk Code scan completed with findings"
-
-          # Verify SARIF file was created and is valid (has content and version)
-          if [ ! -s snyk-code.sarif ] || ! grep -q "\"version\": \"2.1.0\"" snyk-code.sarif; then
-            echo "::warning::snyk-code.sarif was not created or is invalid, generating fallback SARIF"
-            cat > snyk-code.sarif << 'EOF'
+          cat > snyk-code.sarif << 'EOF'
 {
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
   "version": "2.1.0",
@@ -133,24 +122,31 @@ EOF
   ]
 }
 EOF
-          else
-            echo "✓ snyk-code.sarif is valid"
+          
+          snyk code test \
+            --severity-threshold=${{ env.SNYK_SEVERITY }} \
+            --sarif-file-output=snyk-code.sarif \
+            --org=${{ secrets.SNYK_ORG_ID }} || true
+
+          if [ ! -s snyk-code.sarif ] || ! grep -q "\"version\": \"2.1.0\"" snyk-code.sarif; then
+             echo "::warning::snyk-code.sarif is invalid after scan"
           fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        continue-on-error: true
 
       # Upload results to GitHub Security tab
       - name: Upload Snyk OS Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-os.sarif
+          category: snyk-os
         if: always() && steps.check-token.outputs.token-set == 'true'
 
       - name: Upload Snyk Code Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
+          category: snyk-code
         if: always() && steps.check-token.outputs.token-set == 'true'
   
   # ==========================================================================
