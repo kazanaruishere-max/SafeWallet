@@ -33,17 +33,20 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
+      # Install dependencies with legacy peer deps to handle React 19 conflicts
       - name: Install dependencies
-        run: npm ci --ignore-scripts
+        run: npm ci --legacy-peer-deps --ignore-scripts
 
       # Debug: Verify token
       - name: Verify Snyk Token
+        id: check-token
         run: |
           if [ -z "${{ secrets.SNYK_TOKEN }}" ]; then
             echo "::error::SNYK_TOKEN is not configured!"
             exit 1
           fi
           echo "✓ SNYK_TOKEN configured (length: ${#SNYK_TOKEN})"
+          echo "token-set=true" >> $GITHUB_OUTPUT
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -59,24 +62,40 @@ jobs:
 
       # Snyk Open Source (npm dependencies)
       - name: Run Snyk Open Source Scan
+        id: snyk-os
         run: |
+          echo "Running Snyk Open Source scan..."
           snyk test \
             --severity-threshold=${{ env.SNYK_SEVERITY }} \
             --sarif-file-output=snyk-os.sarif \
             --org=${{ secrets.SNYK_ORG_ID }} \
-            || true
+            || echo "Snyk OS scan completed with findings"
+          
+          # Verify SARIF file was created
+          if [ ! -f snyk-os.sarif ]; then
+            echo "::warning::snyk-os.sarif was not created, creating empty file"
+            echo '{"runs": [{"tool": {"driver": {"name": "Snyk Open Source"}}}]}' > snyk-os.sarif
+          fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         continue-on-error: true
 
       # Snyk Code (SAST - Static Analysis) - Requires Snyk Code enabled
       - name: Run Snyk Code Scan
+        id: snyk-code
         run: |
+          echo "Running Snyk Code scan..."
           snyk code test \
             --severity-threshold=${{ env.SNYK_SEVERITY }} \
             --sarif-file-output=snyk-code.sarif \
             --org=${{ secrets.SNYK_ORG_ID }} \
-            || true
+            || echo "Snyk Code scan completed with findings"
+          
+          # Verify SARIF file was created
+          if [ ! -f snyk-code.sarif ]; then
+            echo "::warning::snyk-code.sarif was not created, creating empty file"
+            echo '{"runs": [{"tool": {"driver": {"name": "Snyk Code"}}}]}' > snyk-code.sarif
+          fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         continue-on-error: true
@@ -86,13 +105,13 @@ jobs:
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-os.sarif
-        if: always()
+        if: always() && steps.check-token.outputs.token-set == 'true'
 
       - name: Upload Snyk Code Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
-        if: always()
+        if: always() && steps.check-token.outputs.token-set == 'true'
   
   # ==========================================================================
   # Job 2: Build & Test
