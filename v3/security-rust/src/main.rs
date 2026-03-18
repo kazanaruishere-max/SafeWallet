@@ -1,5 +1,11 @@
+<<<<<<< HEAD
+// v3/security-rust/src/main.rs
+use axum::{
+    routing::{post, get},
+=======
 use axum::{
     routing::post,
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
@@ -8,19 +14,35 @@ use aes_gcm::{
     Aes256Gcm, Nonce,
 };
 use hmac::{Hmac, Mac};
+<<<<<<< HEAD
+use sha2::Sha256;
+use std::net::SocketSocketAddr;
+use dotenvy::dotenv;
+use std::env;
+
+type HmacSha256 = Hmac<Sha256>;
+=======
 use rand::{RngCore, thread_rng};
 use sha2::{Sha256, Digest};
 use std::net::SocketAddr;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tower_http::cors::CorsLayer;
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 
 #[derive(Deserialize)]
 struct EncryptRequest {
     plaintext: String,
+<<<<<<< HEAD
+    key: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+=======
     key: String, // 32 bytes hex string
 }
 
 #[derive(Serialize)]
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 struct EncryptResponse {
     ciphertext: String,
     nonce: String,
@@ -40,6 +62,18 @@ struct DecryptResponse {
     plaintext: String,
 }
 
+<<<<<<< HEAD
+async fn encrypt_handler(Json(payload): Json<EncryptRequest>) -> Json<EncryptResponse> {
+    let key_bytes = hex::decode(&payload.key).expect("Invalid key hex");
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Invalid key length");
+    
+    let nonce_bytes = rand::random::<[u8; 12]>();
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    
+    let ciphertext = cipher
+        .encrypt(nonce, payload.plaintext.as_bytes().as_ref())
+        .expect("Encryption failure");
+=======
 #[derive(Deserialize)]
 struct HashRequest {
     data: String,
@@ -88,6 +122,7 @@ async fn encrypt_handler(Json(payload): Json<EncryptRequest>) -> Json<EncryptRes
     let ciphertext = cipher
         .encrypt(nonce, payload.plaintext.as_bytes())
         .expect("Encryption failed");
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 
     // Calculate HMAC for integrity
     let mut mac = <HmacSha256 as KeyInit>::new_from_slice(&key_bytes).expect("HMAC key error");
@@ -102,16 +137,58 @@ async fn encrypt_handler(Json(payload): Json<EncryptRequest>) -> Json<EncryptRes
 }
 
 async fn decrypt_handler(Json(payload): Json<DecryptRequest>) -> Json<DecryptResponse> {
+<<<<<<< HEAD
+    let key_bytes = hex::decode(&payload.key).expect("Invalid key hex");
+    let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Invalid key length");
+    
+    let cipher_bytes = hex::decode(&payload.ciphertext).expect("Invalid ciphertext hex");
+    let nonce_bytes = hex::decode(&payload.nonce).expect("Invalid nonce hex");
+    let hmac_bytes = hex::decode(&payload.hmac).expect("Invalid hmac hex");
+=======
     let key_bytes = hex::decode(payload.key).expect("Invalid key hex");
     let nonce_bytes = hex::decode(payload.nonce).expect("Invalid nonce hex");
     let cipher_bytes = hex::decode(payload.ciphertext).expect("Invalid ciphertext hex");
     let hmac_bytes = hex::decode(payload.hmac).expect("Invalid hmac hex");
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
     
     // Verify HMAC first
     let mut mac = <HmacSha256 as KeyInit>::new_from_slice(&key_bytes).expect("HMAC key error");
     mac.update(&cipher_bytes);
     mac.verify_slice(&hmac_bytes).expect("HMAC verification failed");
 
+<<<<<<< HEAD
+    let nonce = Nonce::from_slice(&nonce_bytes);
+    
+    let plaintext_bytes = cipher
+        .decrypt(nonce, cipher_bytes.as_ref())
+        .expect("Decryption failure");
+
+    DecryptResponse {
+        plaintext: String::from_utf8(plaintext_bytes).expect("Invalid UTF-8"),
+    }
+}
+
+async fn health_check() -> &'static str {
+    "Security Module OK"
+}
+
+#[tokio::main]
+async fn main() {
+    dotenv().ok();
+    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
+    let addr = format!("0.0.0.0:{}", port).parse::<SocketAddr>().unwrap();
+
+    let app = Router::new()
+        .route("/health", get(health_check))
+        .route("/encrypt", post(encrypt_handler))
+        .route("/decrypt", post(decrypt_handler));
+
+    println!("Security service running on {}", addr);
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+=======
     let cipher = Aes256Gcm::new_from_slice(&key_bytes).expect("Invalid key length");
     let nonce = Nonce::from_slice(&nonce_bytes);
     
@@ -122,11 +199,27 @@ async fn decrypt_handler(Json(payload): Json<DecryptRequest>) -> Json<DecryptRes
     Json(DecryptResponse {
         plaintext: String::from_utf8(plaintext).expect("Invalid UTF-8"),
     })
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+<<<<<<< HEAD
+    use ax_test_helper::TestClient; // Hypothetical, but common pattern
+
+    #[tokio::test]
+    async fn test_encryption_decryption_flow() {
+        let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+        let plaintext = "SafeWallet-Secret-Message";
+
+        let encrypt_req = EncryptRequest {
+            plaintext: plaintext.to_string(),
+            key: key.to_string(),
+        };
+
+        let encrypt_res = encrypt_handler(Json(encrypt_req)).await;
+=======
     use hex;
 
     #[tokio::test]
@@ -141,6 +234,7 @@ mod tests {
         let encrypt_res = encrypt_handler(Json(encrypt_req)).await;
 
         assert!(!encrypt_res.ciphertext.is_empty());
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
         assert_eq!(encrypt_res.nonce.len(), 24);
         assert_eq!(encrypt_res.hmac.len(), 64);
 
@@ -151,11 +245,27 @@ mod tests {
             key: key.to_string(),
         };
         let decrypt_res = decrypt_handler(Json(decrypt_req)).await;
+<<<<<<< HEAD
+=======
 
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
         assert_eq!(decrypt_res.plaintext, plaintext);
     }
 
     #[tokio::test]
+<<<<<<< HEAD
+    #[should_panic]
+    async fn test_tampered_hmac() {
+        let key = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+        let encrypt_req = EncryptRequest {
+            plaintext: "Secret".to_string(),
+            key: key.to_string(),
+        };
+
+        let encrypt_res = encrypt_handler(Json(encrypt_req)).await;
+        let mut tampered_cipher = hex::decode(&encrypt_res.ciphertext).unwrap();
+        tampered_cipher[0] ^= 1;
+=======
     #[should_panic(expected = "HMAC verification failed")]
     async fn test_decryption_negative_tampered_ciphertext() {
         let key = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -167,6 +277,7 @@ mod tests {
         // Tamper with ciphertext
         let mut tampered_cipher = hex::decode(&encrypt_res.ciphertext).unwrap();
         tampered_cipher[0] ^= 0xFF; // Flip bits
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 
         let decrypt_req = DecryptRequest {
             ciphertext: hex::encode(tampered_cipher),
@@ -174,6 +285,11 @@ mod tests {
             hmac: encrypt_res.hmac.clone(),
             key: key.to_string(),
         };
+<<<<<<< HEAD
+        
+        decrypt_handler(Json(decrypt_req)).await;
+    }
+=======
         decrypt_handler(Json(decrypt_req)).await;
     }
 
@@ -219,4 +335,5 @@ async fn hash_handler(Json(payload): Json<HashRequest>) -> Json<HashResponse> {
     Json(HashResponse {
         hash: hex::encode(result),
     })
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 }

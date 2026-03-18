@@ -1,4 +1,18 @@
 Run if [ -d "v3/worker-python" ]; then
+<<<<<<< HEAD
+  if [ -d "v3/worker-python" ]; then
+    cd v3/worker-python
+    pip install -r requirements.txt
+    python -m unittest discover test/
+  else
+    echo "v3/worker-python not found, skipping..."
+  fi
+  shell: /usr/bin/bash -e {0}
+  env:
+    NODE_VERSION: 22
+    SNYK_SEVERITY: high
+=======
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 Defaulting to user installation because normal site-packages is not writeable
 Collecting fastapi==0.110.0 (from -r requirements.txt (line 1))
   Downloading fastapi-0.110.0-py3-none-any.whl.metadata (25 kB)
@@ -12,7 +26,11 @@ Collecting python-multipart==0.0.9 (from -r requirements.txt (line 5))
   Downloading python_multipart-0.0.9-py3-none-any.whl.metadata (2.5 kB)
 Collecting pydantic==2.6.3 (from -r requirements.txt (line 6))
   Downloading pydantic-2.6.3-py3-none-any.whl.metadata (84 kB)
+<<<<<<< HEAD
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.4/84.4 kB 2.4 MB/s eta 0:00:00
+=======
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 84.4/84.4 kB 4.5 MB/s eta 0:00:00
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 Requirement already satisfied: requests==2.31.0 in /usr/lib/python3/dist-packages (from -r requirements.txt (line 7)) (2.31.0)
 Collecting python-dotenv==1.0.1 (from -r requirements.txt (line 8))
   Downloading python_dotenv-1.0.1-py3-none-any.whl.metadata (23 kB)
@@ -20,7 +38,11 @@ Collecting rq==1.16.1 (from -r requirements.txt (line 9))
   Downloading rq-1.16.1-py3-none-any.whl.metadata (5.7 kB)
 Collecting rq-dashboard==0.6.1 (from -r requirements.txt (line 10))
   Downloading rq-dashboard-0.6.1.tar.gz (103 kB)
+<<<<<<< HEAD
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.2/103.2 kB 8.3 MB/s eta 0:00:00
+=======
      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.2/103.2 kB 15.9 MB/s eta 0:00:00
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
   Preparing metadata (setup.py): started
   Preparing metadata (setup.py): finished with status 'done'
 Collecting pillow==10.2.0 (from -r requirements.txt (line 11))
@@ -67,6 +89,52 @@ Collecting werkzeug>=3.1.0 (from Flask->rq-dashboard==0.6.1->-r requirements.txt
   Downloading werkzeug-3.1.6-py3-none-any.whl.metadata (4.0 kB)
 Requirement already satisfied: idna>=2.8 in /usr/lib/python3/dist-packages (from anyio<5,>=3.4.0->starlette<0.37.0,>=0.36.3->fastapi==0.110.0->-r requirements.txt (line 1)) (3.6)
 Downloading fastapi-0.110.0-py3-none-any.whl (92 kB)
+<<<<<<< HEAD
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 92.1/92.1 kB 14.2 MB/s eta 0:00:00
+Downloading uvicorn-0.27.1-py3-none-any.whl (60 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.8/60.8 kB 12.5 MB/s eta 0:00:00
+Downloading redis-5.0.1-py3-none-any.whl (250 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 250.3/250.3 kB 8.3 MB/s eta 0:00:00
+Downloading pytesseract-0.3.10-py3-none-any.whl (14 kB)
+Downloading python_multipart-0.0.9-py3-none-any.whl (22 kB)
+Downloading pydantic-2.6.3-py3-none-any.whl (395 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 395.2/395.2 kB 29.7 MB/s eta 0:00:00
+Downloading python_dotenv-1.0.1-py3-none-any.whl (19 kB)
+Downloading rq-1.16.1-py3-none-any.whl (89 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 89.7/89.7 kB 34.5 MB/s eta 0:00:00
+Downloading pillow-10.2.0-cp312-cp312-manylinux_2_28_x86_64.whl (4.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 61.3 MB/s eta 0:00:00
+Downloading aioredis-2.0.1-py3-none-any.whl (71 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.2/71.2 kB 28.4 MB/s eta 0:00:00
+Downloading sentry_sdk-1.40.0-py2.py3-none-any.whl (257 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 257.5/257.5 kB 78.5 MB/s eta 0:00:00
+Downloading prometheus_fastapi_instrumentator-6.1.0-py3-none-any.whl (18 kB)
+Downloading pydantic_core-2.16.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.2/2.2 MB 153.8 MB/s eta 0:00:00
+Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Downloading h11-0.16.0-py3-none-any.whl (37 kB)
+Downloading prometheus_client-0.24.1-py3-none-any.whl (64 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 64.1/64.1 kB 24.6 MB/s eta 0:00:00
+Downloading starlette-0.36.3-py3-none-any.whl (71 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 71.5/71.5 kB 27.4 MB/s eta 0:00:00
+Downloading arrow-1.4.0-py3-none-any.whl (68 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.8/68.8 kB 26.7 MB/s eta 0:00:00
+Downloading async_timeout-5.0.1-py3-none-any.whl (6.2 kB)
+Downloading flask-3.1.3-py3-none-any.whl (103 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 103.4/103.4 kB 40.0 MB/s eta 0:00:00
+Downloading anyio-4.12.1-py3-none-any.whl (113 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 113.6/113.6 kB 38.6 MB/s eta 0:00:00
+Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+Downloading werkzeug-3.1.6-py3-none-any.whl (225 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 225.2/225.2 kB 51.3 MB/s eta 0:00:00
+Downloading tzdata-2025.3-py2.py3-none-any.whl (348 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 348.5/348.5 kB 93.6 MB/s eta 0:00:00
+Building wheels for collected packages: rq-dashboard
+  Building wheel for rq-dashboard (setup.py): started
+  Building wheel for rq-dashboard (setup.py): finished with status 'done'
+  Created wheel for rq-dashboard: filename=rq_dashboard-0.6.1-py2.py3-none-any.whl size=105247 sha256=f14db0b7b9da0c75e93c96680f9e2569c4c25379a96e841b2367995af9ba0b24
+=======
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 92.1/92.1 kB 25.7 MB/s eta 0:00:00
 Downloading uvicorn-0.27.1-py3-none-any.whl (60 kB)
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 60.8/60.8 kB 22.1 MB/s eta 0:00:00
@@ -111,6 +179,7 @@ Building wheels for collected packages: rq-dashboard
   Building wheel for rq-dashboard (setup.py): started
   Building wheel for rq-dashboard (setup.py): finished with status 'done'
   Created wheel for rq-dashboard: filename=rq_dashboard-0.6.1-py2.py3-none-any.whl size=105247 sha256=1f61777c6cc87bd15a81b2495f54067e929717f00fba7b4aa5ee2f34febb8154
+>>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
   Stored in directory: /home/runner/.cache/pip/wheels/d2/d4/40/23603cac3db12752aec3af5b7bbb4f588559004ebfbb6ca8d7
 Successfully built rq-dashboard
 Installing collected packages: werkzeug, tzdata, sentry-sdk, redis, python-multipart, python-dotenv, pydantic-core, prometheus-client, pillow, itsdangerous, h11, blinker, async-timeout, anyio, annotated-types, uvicorn, starlette, rq, pytesseract, pydantic, Flask, arrow, aioredis, rq-dashboard, fastapi, prometheus-fastapi-instrumentator
