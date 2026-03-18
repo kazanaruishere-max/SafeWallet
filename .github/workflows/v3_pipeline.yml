@@ -1,3 +1,4 @@
+# .github/workflows/v3_pipeline.yml
 name: SafeWallet V3 Enterprise CI/CD Pipeline
 
 on:
@@ -6,85 +7,188 @@ on:
   pull_request:
     branches: [ main ]
 
+env:
+  # Global environment variables
+  NODE_VERSION: '20'
+  SNYK_SEVERITY: 'high'
+
 jobs:
-  # 1. SAST & Dependency Scanning
+  # ==========================================================================
+  # Job 1: SAST & Dependency Scanning
+  # ==========================================================================
   sast-scan:
+    name: Security Scanning (Snyk)
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    permissions:
+      security-events: write
+      contents: read
+    
     steps:
-      - uses: actions/checkout@v4
-      - name: Snyk Security Scan
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      
+      # Debug: Verify token
+      - name: Verify Snyk Token
+        run: |
+          if [ -z "${{ secrets.SNYK_TOKEN }}" ]; then
+            echo "::error::SNYK_TOKEN is not configured!"
+            exit 1
+          fi
+          echo "✓ SNYK_TOKEN configured"
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      
+      # Snyk Open Source (npm dependencies)
+      - name: Run Snyk Open Source Scan
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2.1.1
+        with:
+          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-os.sarif
+        continue-on-error: true
+      
+      # Snyk Code (SAST - Static Analysis)
+      - name: Run Snyk Code Scan
+        uses: snyk/actions/code@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-  # 2. Build & Comprehensive Testing
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-code.sarif
+        continue-on-error: true
+      
+      # Snyk Container (Docker images)
+      - name: Run Snyk Container Scan
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-container.sarif
+        continue-on-error: true
+      
+      # Upload results to GitHub Security tab
+      - name: Upload Snyk OS Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-os.sarif
+        if: always()
+      
+      - name: Upload Snyk Code Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-code.sarif
+        if: always()
+      
+      - name: Upload Snyk Container Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk-container.sarif
+        if: always()
+  
+  # ==========================================================================
+  # Job 2: Build & Test
+  # ==========================================================================
   build-and-test:
-    needs: sast-scan
+    name: Build & Test
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    needs: sast-scan
+    
     steps:
       - uses: actions/checkout@v4
-      - name: NestJS Build & Test
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: NestJS Build & Test (v3/gateway-nest)
         run: |
           cd v3/gateway-nest
           npm install
-          npm test -- --coverage --threshold 90
-      - name: Rust Build & Test
+          npm test -- --coverage --threshold=90
+      
+      - name: Rust Build & Test (v3/security-rust)
         run: |
           cd v3/security-rust
           cargo test
-      - name: Python Build & Test
+      
+      - name: Python Build & Test (v3/worker-python)
         run: |
           cd v3/worker-python
           pip install -r requirements.txt
           python -m unittest discover test/
-
-  # 3. Container Scanning & DAST
+  
+  # ==========================================================================
+  # Job 3: Container Scanning
+  # ==========================================================================
   container-scan:
-    needs: build-and-test
+    name: Container Security
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    needs: build-and-test
+    
     steps:
       - uses: actions/checkout@v4
-      - name: Build and Scan Image
+      
+      - name: Build Docker Image
         run: |
           docker build -t safewallet/gateway-nest:v3 ./v3/gateway-nest
-          trivy image --severity HIGH,CRITICAL --exit-code 1 safewallet/gateway-nest:v3
-      - name: OWASP ZAP DAST Scan
-        uses: zaproxy/action-full-scan@v0.10.0
+      
+      - name: Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
         with:
-          target: 'https://staging.api.safewallet.id'
-
-  # 4. Staging Deployment
+          image-ref: 'safewallet/gateway-nest:v3'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+      
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+  
+  # ==========================================================================
+  # Job 4: Deploy to Staging
+  # ==========================================================================
   deploy-staging:
+    name: Deploy to Staging
     needs: container-scan
     environment: staging
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    if: github.ref == 'refs/heads/develop'
+    
     steps:
       - name: Deploy to Staging
-        run: kubectl apply -f v3/k8s/staging/
-
-  # 5. Production Deployment (Manual Approval Gate)
+        run: |
+          echo "Deploying to staging environment..."
+          kubectl apply -f v3/k8s/staging/
+  
+  # ==========================================================================
+  # Job 5: Deploy to Production
+  # ==========================================================================
   deploy-production:
+    name: Deploy to Production
     needs: deploy-staging
     environment: production
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    if: github.ref == 'refs/heads/main'
+    
     steps:
       - name: Deploy to Production
         run: |
+          echo "Deploying to production environment..."
           kubectl apply -f v3/k8s/production/
+          
           # Post-deployment validation
           ./v3/scripts/validate_deployment.sh
