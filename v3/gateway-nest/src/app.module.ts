@@ -3,7 +3,8 @@ import { BullModule } from '@nestjs/bull';
 import { ScanController } from './scan.controller';
 import { ScanService } from './scan.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerStorageRedisService } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { AuthModule } from './auth/auth.module';
 import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
@@ -29,7 +30,7 @@ import { TerminusModule } from '@nestjs/terminus';
         storage: new ThrottlerStorageRedisService({
           host: config.get('REDIS_HOST'),
           port: config.get('REDIS_PORT'),
-        }),
+        }) as any,
       }),
     }),
     BullModule.forRootAsync({
