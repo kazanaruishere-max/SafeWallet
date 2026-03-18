@@ -1,7 +1,13 @@
 "use client";
 
 import { ShieldCheck, Lock, Cpu, Globe, AlertTriangle } from "lucide-react";
-import { GlassCard } from "@/components/ui/card"; // Assuming GlassCard exists based on previous file reads
+
+// Inline GlassCard component since it's not exported from @/components/ui/card
+const GlassCard = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => (
+  <div className={`bg-[#1A1D24]/60 backdrop-blur-2xl border border-white/5 rounded-[2rem] shadow-2xl relative overflow-hidden ${className}`}>
+    {children}
+  </div>
+);
 
 export function SecurityDisclosure() {
   return (

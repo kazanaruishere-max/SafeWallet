@@ -106,9 +106,7 @@ export default withSentryConfig(nextConfig, {
   widenClientFileUpload: true,
 
   // Automatically annotate React components to show their full name in breadcrumbs and session replay
-  reactComponentAnnotation: {
-    enabled: true,
-  },
+  reactComponentAnnotation: { enabled: true },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
@@ -118,4 +116,12 @@ export default withSentryConfig(nextConfig, {
 
   // Enables automatic instrumentation of Vercel Cron Monitors.
   automaticVercelMonitors: true,
+
+  // Sentry SDK options for the webpack plugin
+  // Note: ini dipindahkan ke sini sesuai anjuran deprecation warning, 
+  // namun tetap mempertahankan opsi top-level untuk kompatibilitas Turbopack jika diperlukan.
+  webpack: {
+    reactComponentAnnotation: { enabled: true },
+    automaticVercelMonitors: true,
+  }
 });

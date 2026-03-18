@@ -128,7 +128,7 @@ export default function HistoryPage() {
               .slice(0, 3);
 
             return (
-              <GlassCard key={scan.scan_id || i} className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-6 cursor-pointer">
+              <GlassCard key={scan.id || i} className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-6 cursor-pointer">
                 {/* Left Thumbnail */}
                 <div className={`w-20 h-20 shrink-0 rounded-2xl border flex flex-col items-center justify-center shadow-lg transition-transform group-hover:scale-105 ${style.bg} ${style.border}`}>
                   <FileText className={`h-8 w-8 ${style.color}`} />
