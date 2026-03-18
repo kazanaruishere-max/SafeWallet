@@ -10,14 +10,16 @@ jobs:
   # 1. SAST & Dependency Scanning
   sast-scan:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - name: Snyk Security Scan
-        uses: snyk/actions/node@master
+        uses: snyk/actions/node@0.5.0
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
+        uses: SonarSource/sonarcloud-github-action@v2.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -26,6 +28,8 @@ jobs:
   build-and-test:
     needs: sast-scan
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - name: NestJS Build & Test
@@ -47,6 +51,8 @@ jobs:
   container-scan:
     needs: build-and-test
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - name: Build and Scan Image
@@ -54,7 +60,7 @@ jobs:
           docker build -t safewallet/gateway-nest:v3 ./v3/gateway-nest
           trivy image --severity HIGH,CRITICAL --exit-code 1 safewallet/gateway-nest:v3
       - name: OWASP ZAP DAST Scan
-        uses: zaproxy/action-full-scan@v0.4.0
+        uses: zaproxy/action-full-scan@v0.10.0
         with:
           target: 'https://staging.api.safewallet.id'
 
@@ -63,6 +69,8 @@ jobs:
     needs: container-scan
     environment: staging
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Deploy to Staging
         run: kubectl apply -f v3/k8s/staging/
@@ -72,7 +80,8 @@ jobs:
     needs: deploy-staging
     environment: production
     runs-on: ubuntu-latest
-    # This environment 'production' in GitHub should be configured with required reviewers
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - name: Deploy to Production
         run: |
