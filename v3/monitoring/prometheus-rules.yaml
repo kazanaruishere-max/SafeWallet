@@ -1,0 +1,68 @@
+groups:
+  - name: safewallet_enterprise_alerts
+    rules:
+      # 1. Latency Alerts (SLA Compliance)
+      - alert: HighLatencyP95
+        expr: histogram_quantile(0.95, sum by (le, service) (rate(http_request_duration_seconds_bucket[5m]))) > 0.2
+        for: 2m
+        labels:
+          severity: critical
+          channel: slack-alerts
+        annotations:
+          summary: "SLA BREACH: p95 Latency > 200ms on {{ $labels.service }}"
+          description: "p95 response time is {{ $value | printf \"%.2f\" }}s, exceeding 200ms threshold."
+
+      # 2. Error Rate Alerts
+      - alert: HighErrorRate
+        expr: sum by (service) (rate(http_requests_total{status=~"5.."}[5m])) / sum by (service) (rate(http_requests_total[5m])) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+          channel: slack-alerts
+        annotations:
+          summary: "CRITICAL: Error Rate > 1% on {{ $labels.service }}"
+          description: "Service error rate is {{ $value | humanizePercentage }}."
+
+      # 3. Resource Utilization Alerts
+      - alert: PodCpuUsageHigh
+        expr: (sum by (pod) (rate(container_cpu_usage_seconds_total[5m])) / sum by (pod) (container_spec_cpu_quota / 100000)) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: High CPU Usage on {{ $labels.pod }}"
+
+      - alert: PodMemoryUsageHigh
+        expr: (container_memory_usage_bytes / container_spec_memory_limit_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: High Memory Usage on {{ $labels.pod }}"
+
+      # 4. Service Availability
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+          channel: slack-alerts
+        annotations:
+          summary: "CRITICAL: Service {{ $labels.service }} is DOWN"
+
+      # 5. Disk I/O & Network Alerts
+      - alert: HighDiskIO
+        expr: rate(container_fs_writes_bytes_total[5m]) > 10000000 # 10MB/s
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: High Disk I/O on {{ $labels.pod }}"
+
+      - alert: HighNetworkTraffic
+        expr: rate(container_network_receive_bytes_total[5m]) > 50000000 # 50MB/s
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Warning: High Network Traffic on {{ $labels.pod }}"

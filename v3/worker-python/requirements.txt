@@ -1,0 +1,14 @@
+fastapi==0.110.0
+uvicorn==0.27.1
+redis==5.0.1
+pytesseract==0.3.10
+python-multipart==0.0.9
+pydantic==2.6.3
+requests==2.31.0
+python-dotenv==1.0.1
+rq==1.16.1
+rq-dashboard==0.6.1
+pillow==10.2.0
+aioredis==2.0.1
+sentry-sdk[fastapi]==1.40.0
+prometheus-fastapi-instrumentator==6.1.0
