@@ -80,22 +80,22 @@ jobs:
           echo "Running Snyk Open Source scan..."
           # Create an initial valid empty SARIF to ensure the file always exists
           cat > snyk-os.sarif << 'EOF'
-{
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
-  "runs": [
-    {
-      "tool": {
-        "driver": {
-          "name": "Snyk Open Source",
-          "rules": []
-        }
-      },
-      "results": []
-    }
-  ]
-}
-EOF
+          {
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.1.0",
+            "runs": [
+              {
+                "tool": {
+                  "driver": {
+                    "name": "Snyk Open Source",
+                    "rules": []
+                  }
+                },
+                "results": []
+              }
+            ]
+          }
+          EOF
           
           # Run Snyk and redirect output to the file
           snyk test \
@@ -118,22 +118,22 @@ EOF
           echo "Checking if Snyk Code is enabled..."
           # Pre-create valid empty SARIF
           cat > snyk-code.sarif << 'EOF'
-{
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
-  "runs": [
-    {
-      "tool": {
-        "driver": {
-          "name": "Snyk Code",
-          "rules": []
-        }
-      },
-      "results": []
-    }
-  ]
-}
-EOF
+          {
+            "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+            "version": "2.1.0",
+            "runs": [
+              {
+                "tool": {
+                  "driver": {
+                    "name": "Snyk Code",
+                    "rules": []
+                  }
+                },
+                "results": []
+              }
+            ]
+          }
+          EOF
           
           # Attempt to run Snyk Code, handle 403 Forbidden gracefully
           if snyk code test --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-code.sarif --org=${{ secrets.SNYK_ORG_ID }}; then
