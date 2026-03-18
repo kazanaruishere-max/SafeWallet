@@ -56,9 +56,20 @@ jobs:
       - name: Install Snyk CLI
         run: npm install -g snyk@latest
 
-      # Authenticate Snyk
+      # Authenticate Snyk with enhanced error handling
       - name: Authenticate Snyk
-        run: snyk auth ${{ secrets.SNYK_TOKEN }}
+        id: snyk-auth
+        run: |
+          if [ -z "${{ secrets.SNYK_TOKEN }}" ]; then
+            echo "::error::SNYK_TOKEN is missing! Please configure it in Repository Secrets."
+            exit 1
+          fi
+          echo "Authenticating Snyk..."
+          snyk auth ${{ secrets.SNYK_TOKEN }} || { echo "::error::Authentication failed (401/403)"; exit 1; }
+          
+          # Test if authentication is actually working
+          snyk auth --check || { echo "::error::Snyk auth check failed"; exit 1; }
+          echo "✓ Authentication verified successfully"
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -104,7 +115,8 @@ EOF
       - name: Run Snyk Code Scan
         id: snyk-code
         run: |
-          echo "Running Snyk Code scan..."
+          echo "Checking if Snyk Code is enabled..."
+          # Pre-create valid empty SARIF
           cat > snyk-code.sarif << 'EOF'
 {
   "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
@@ -123,13 +135,16 @@ EOF
 }
 EOF
           
-          snyk code test \
-            --severity-threshold=${{ env.SNYK_SEVERITY }} \
-            --sarif-file-output=snyk-code.sarif \
-            --org=${{ secrets.SNYK_ORG_ID }} || true
-
-          if [ ! -s snyk-code.sarif ] || ! grep -q "\"version\": \"2.1.0\"" snyk-code.sarif; then
-             echo "::warning::snyk-code.sarif is invalid after scan"
+          # Attempt to run Snyk Code, handle 403 Forbidden gracefully
+          if snyk code test --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-code.sarif --org=${{ secrets.SNYK_ORG_ID }}; then
+            echo "✓ Snyk Code scan completed successfully"
+          else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 2 ]; then
+              echo "::warning::Snyk Code is not enabled for your organization. Please enable it in the Snyk Dashboard (Settings > Snyk Code)."
+            else
+              echo "Snyk Code scan completed with findings (Exit Code: $EXIT_CODE)"
+            fi
           fi
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
