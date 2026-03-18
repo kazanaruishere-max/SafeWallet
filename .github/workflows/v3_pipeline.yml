@@ -60,7 +60,7 @@ jobs:
           docker build -t safewallet/gateway-nest:v3 ./v3/gateway-nest
           trivy image --severity HIGH,CRITICAL --exit-code 1 safewallet/gateway-nest:v3
       - name: OWASP ZAP DAST Scan
-        uses: zaproxy/action-full-scan@v0.10.0
+        uses: zaproxy/action-full-scan@v0.13.0
         with:
           target: 'https://staging.api.safewallet.id'
 
