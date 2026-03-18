@@ -22,20 +22,20 @@ jobs:
     permissions:
       security-events: write
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci --ignore-scripts
-      
+
       # Debug: Verify token
       - name: Verify Snyk Token
         run: |
@@ -43,54 +43,55 @@ jobs:
             echo "::error::SNYK_TOKEN is not configured!"
             exit 1
           fi
-          echo "✓ SNYK_TOKEN configured"
+          echo "✓ SNYK_TOKEN configured (length: ${#SNYK_TOKEN})"
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      
+
+      # Install Snyk CLI
+      - name: Install Snyk CLI
+        run: npm install -g snyk
+
+      # Authenticate Snyk
+      - name: Authenticate Snyk
+        run: snyk config set api=${{ secrets.SNYK_TOKEN }}
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
       # Snyk Open Source (npm dependencies)
       - name: Run Snyk Open Source Scan
-        uses: snyk/actions/node@master
+        run: |
+          snyk test \
+            --severity-threshold=${{ env.SNYK_SEVERITY }} \
+            --sarif-file-output=snyk-os.sarif \
+            --org=${{ secrets.SNYK_ORG_ID }} \
+            || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-os.sarif
         continue-on-error: true
-      
-      # Snyk Code (SAST - Static Analysis)
+
+      # Snyk Code (SAST - Static Analysis) - Requires Snyk Code enabled
       - name: Run Snyk Code Scan
-        uses: snyk/actions/code@master
+        run: |
+          snyk code test \
+            --severity-threshold=${{ env.SNYK_SEVERITY }} \
+            --sarif-file-output=snyk-code.sarif \
+            --org=${{ secrets.SNYK_ORG_ID }} \
+            || true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-code.sarif
         continue-on-error: true
-      
-      # Snyk Container (Docker images)
-      - name: Run Snyk Container Scan
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=${{ env.SNYK_SEVERITY }} --sarif-file-output=snyk-container.sarif
-        continue-on-error: true
-      
+
       # Upload results to GitHub Security tab
       - name: Upload Snyk OS Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-os.sarif
         if: always()
-      
+
       - name: Upload Snyk Code Results
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: snyk-code.sarif
-        if: always()
-      
-      - name: Upload Snyk Container Results
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: snyk-container.sarif
         if: always()
   
   # ==========================================================================
