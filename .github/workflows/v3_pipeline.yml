@@ -11,7 +11,7 @@ jobs:
   sast-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Snyk Security Scan
         uses: snyk/actions/node@master
         env:
@@ -27,7 +27,7 @@ jobs:
     needs: sast-scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: NestJS Build & Test
         run: |
           cd v3/gateway-nest
@@ -48,7 +48,7 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Build and Scan Image
         run: |
           docker build -t safewallet/gateway-nest:v3 ./v3/gateway-nest
