@@ -2,12 +2,15 @@
 
 import { useRef, useEffect } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Shield, Sparkles, ArrowRight, Server, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LightRays from "@/components/light-rays";
-import ScrollVelocity from "@/components/scroll-velocity";
-import CircularGallery from "@/components/circular-gallery";
-import FlowingMenu from "@/components/flowing-menu";
+
+// Performance Optimization: Dynamic Imports for Heavy Components
+const LightRays = dynamic(() => import("@/components/light-rays"), { ssr: false });
+const ScrollVelocity = dynamic(() => import("@/components/scroll-velocity"), { ssr: false });
+const CircularGallery = dynamic(() => import("@/components/circular-gallery"), { ssr: false });
+const FlowingMenu = dynamic(() => import("@/components/flowing-menu"), { ssr: false });
 
 export default function LandingPage() {
   const containerRef = useRef<HTMLDivElement>(null);

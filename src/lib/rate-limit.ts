@@ -5,11 +5,59 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-const TIER_LIMITS: Record<string, Record<string, number>> = {
+export const TIER_LIMITS: Record<string, Record<string, number>> = {
   free: { scan: 5, scam_check: 10 },
   premium: { scan: 999999, scam_check: 999999 },
   family: { scan: 999999, scam_check: 999999 },
 };
+
+/**
+ * v2 Update: Atomic Quota Check & Increment
+ * Uses Supabase RPC to prevent race conditions in high-traffic scenarios.
+ */
+export async function incrementQuotaAtomic(
+  userId: string,
+  feature: "scan" | "scam_check"
+): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+}> {
+  const supabase = await createClient();
+  const period = getCurrentPeriod();
+
+  // Get user tier to determine limit
+  const { data: user } = await supabase
+    .from("users")
+    .select("subscription_tier")
+    .eq("id", userId)
+    .single();
+
+  const tier = user?.subscription_tier ?? "free";
+  const limit = TIER_LIMITS[tier]?.[feature] ?? (feature === "scan" ? 5 : 10);
+
+  // Call the atomic RPC function
+  const { data, error } = await supabase.rpc("increment_quota_atomic", {
+    p_user_id: userId,
+    p_feature: feature,
+    p_period: period,
+    p_limit: limit,
+  });
+
+  if (error) {
+    console.error(`[RateLimit] RPC Error for ${feature}:`, error.message);
+    // Fallback to non-atomic check if RPC fails
+    return checkQuota(userId, feature);
+  }
+
+  return {
+    allowed: data.success,
+    used: data.current,
+    limit: data.limit,
+    remaining: data.remaining ?? 0,
+  };
+}
 
 export async function checkQuota(
   userId: string,
