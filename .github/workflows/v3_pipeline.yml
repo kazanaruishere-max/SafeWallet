@@ -1,0 +1,81 @@
+name: SafeWallet V3 Enterprise CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # 1. SAST & Dependency Scanning
+  sast-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # 2. Build & Comprehensive Testing
+  build-and-test:
+    needs: sast-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: NestJS Build & Test
+        run: |
+          cd v3/gateway-nest
+          npm install
+          npm test -- --coverage --threshold 90
+      - name: Rust Build & Test
+        run: |
+          cd v3/security-rust
+          cargo test
+      - name: Python Build & Test
+        run: |
+          cd v3/worker-python
+          pip install -r requirements.txt
+          python -m unittest discover test/
+
+  # 3. Container Scanning & DAST
+  container-scan:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build and Scan Image
+        run: |
+          docker build -t safewallet/gateway-nest:v3 ./v3/gateway-nest
+          trivy image --severity HIGH,CRITICAL --exit-code 1 safewallet/gateway-nest:v3
+      - name: OWASP ZAP DAST Scan
+        uses: zaproxy/action-full-scan@v0.4.0
+        with:
+          target: 'https://staging.api.safewallet.id'
+
+  # 4. Staging Deployment
+  deploy-staging:
+    needs: container-scan
+    environment: staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Staging
+        run: kubectl apply -f v3/k8s/staging/
+
+  # 5. Production Deployment (Manual Approval Gate)
+  deploy-production:
+    needs: deploy-staging
+    environment: production
+    runs-on: ubuntu-latest
+    # This environment 'production' in GitHub should be configured with required reviewers
+    steps:
+      - name: Deploy to Production
+        run: |
+          kubectl apply -f v3/k8s/production/
+          # Post-deployment validation
+          ./v3/scripts/validate_deployment.sh
