@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Shield } from "lucide-react";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export default function AuthLayout({
   children,
@@ -16,6 +17,9 @@ export default function AuthLayout({
           <span className="text-xl font-bold tracking-tight">SafeWallet</span>
         </Link>
       </div>
+      <div className="absolute right-8 top-8 hidden md:block">
+        <LanguageSwitcher />
+      </div>
       
       <div className="w-full max-w-md">
         <div className="mb-8 flex justify-center md:hidden">
@@ -25,6 +29,9 @@ export default function AuthLayout({
             </div>
             <span className="text-xl font-bold tracking-tight">SafeWallet</span>
           </Link>
+        </div>
+        <div className="mb-6 flex justify-center md:hidden">
+          <LanguageSwitcher />
         </div>
         {children}
       </div>

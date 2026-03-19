@@ -1,0 +1,116 @@
+export const id = {
+  switcher: {
+    ariaLabel: "Pengalih bahasa",
+    shortLabel: "Bahasa",
+    options: {
+      id: "Indonesia",
+      en: "Inggris",
+    },
+  },
+  auth: {
+    login: {
+      checkEmailTitle: "Cek Email Kamu",
+      checkEmailDescriptionPrefix: "Kami telah mengirimkan magic link rahasia ke",
+      checkEmailDescriptionSuffix:
+        "Klik tautan tersebut untuk masuk ke dalam Vault.",
+      useAnotherEmail: "Gunakan email lain",
+      title: "Masuk ke Vault",
+      subtitle: "Gunakan email untuk masuk dengan aman",
+      authFailed: "Akses ditolak atau sesi kedaluwarsa. Silakan coba lagi.",
+      sendMagicLink: "Kirim Magic Link",
+      openingVault: "Membuka Vault...",
+      or: "Atau",
+      continueWithGoogle: "Lanjutkan dengan Google",
+      noAccount: "Belum punya akun?",
+      createFree: "Daftar gratis",
+      toastMagicLinkSent: "Magic link terkirim! Cek email kamu.",
+      toastMagicLinkFailed: "Gagal mengirim magic link",
+      toastGoogleFailed: "Gagal login dengan Google",
+    },
+    signup: {
+      checkEmailTitle: "Cek Email Kamu",
+      checkEmailDescriptionPrefix: "Kami telah mengirimkan link pembuatan akun ke",
+      checkEmailDescriptionSuffix:
+        "Klik tautan tersebut untuk masuk pertama kali ke dalam Vault.",
+      useAnotherEmail: "Gunakan email lain",
+      title: "Buat Akun SafeWallet",
+      subtitle: "Gratis selamanya tanpa kartu kredit",
+      signupWithGoogle: "Daftar dengan Google",
+      orEmailLink: "Atau email link",
+      processing: "Memproses...",
+      createFree: "Daftar Gratis",
+      alreadyHaveAccount: "Sudah punya akun?",
+      signInHere: "Masuk di sini",
+      termsPrefix: "Dengan mendaftar, kamu setuju dengan",
+      terms: "Syarat & Ketentuan",
+      and: "dan",
+      privacy: "Kebijakan Privasi",
+      termsSuffix: "kami.",
+      toastSignupSent: "Link registrasi terkirim! Cek email kamu.",
+      toastSignupFailed: "Gagal mendaftar",
+      toastGoogleFailed: "Gagal daftar dengan Google",
+    },
+  },
+  dashboardLayout: {
+    mainMenu: "Menu Utama",
+    upgradeTitle: "Upgrade Premium",
+    upgradeDescription:
+      "Unlimited scan, deteksi scam tanpa henti & AI coaching.",
+    upgradePrice: "Mulai Rp 29K/bln",
+    accountTitle: "Akun Anda",
+    accountSubtitle: "User SafeWallet",
+    profile: "Profil Pengguna",
+    signOut: "Keluar",
+    nav: {
+      history: "Riwayat Scan",
+      profile: "Profil Pengguna",
+    },
+  },
+  dashboardHome: {
+    title: "Financial Overview",
+    subtitle: "Pantau AI Health Score dan aktivitas keamananmu hari ini.",
+    startNewScan: "Mulai Scan Baru",
+    healthyTitle: "Keuangan Anda Sehat",
+    warningTitle: "Perlu Perhatian Khusus",
+    noDataTitle: "Belum Ada Data",
+    healthyDescription:
+      "Tidak terdeteksi adanya indikasi aktivitas pinjaman online predator atau transaksi perjudian online dalam 30 hari terakhir.",
+    noDataDescription:
+      "Upload mutasi bank Anda untuk mendapatkan laporan instan tentang kesehatan finansial dan deteksi anomali.",
+    scanNow: "Scan sekarang",
+    thisMonth: "Bulan Ini",
+    scamLinksChecked: "Link Bodong Dicek",
+    quotaLeftSuffix: "sisa kuota",
+    proDescription: "Dapatkan akses unlimited AI analysis dan Saku Bot.",
+    upgradeNow: "Upgrade Sekarang",
+    savingsRateLabel: "Savings Rate",
+    savingsRateHint: "Dari total pendapatan",
+    debtRatioLabel: "Debt Ratio",
+    debtRatioHint: "Aman di bawah 30%",
+    historyTitle: "Riwayat Scan",
+    historyDescription: "Lihat data historis analisis",
+  },
+  securityDisclosure: {
+    riskTitle: "Peringatan Risiko AI & Disclaimer Finansial",
+    riskOne:
+      "Analisis deteksi scam dan pola Ponzi dihasilkan oleh kecerdasan buatan yang bersifat probabilistik. Sistem dapat menghasilkan false positives atau false negatives.",
+    riskTwo:
+      "Layanan ini disediakan hanya untuk tujuan informasi dan edukasi. SafeWallet tidak memberikan saran investasi, pajak, atau hukum yang diatur oleh Otoritas Jasa Keuangan (OJK).",
+    riskThree:
+      "Pengguna bertanggung jawab penuh atas keputusan finansial yang diambil. Jangan mengambil tindakan finansial hanya berdasarkan output dari sistem ini tanpa verifikasi manusia yang kompeten.",
+    privacyTitle: "Transparansi Privasi Data",
+    privacyIntro: "Kami berkomitmen menjaga privasi Anda dengan langkah-langkah berikut:",
+    privacyOne:
+      "Data pribadi sensitif (seperti NIK, Email, No. HP) disamarkan secara otomatis sebelum diproses.",
+    privacyTwo:
+      "Hasil analisis disimpan dalam bentuk terenkripsi AES-256-GCM yang hanya dapat diakses oleh Anda.",
+    privacyThree:
+      "Data transisi diproses menggunakan Google Gemini API. Meskipun kami meminimalkan pengiriman data mentah, penggunaan layanan ini tunduk pada kebijakan privasi penyedia AI tersebut.",
+    piiTitle: "Redaksi PII",
+    encryptionTitle: "Enkripsi End-to-End",
+    thirdPartyTitle: "Pemrosesan Pihak Ketiga",
+    riskOneTitle: "Sifat Probabilistik AI",
+    riskTwoTitle: "Bukan Saran Finansial",
+    riskThreeTitle: "Keputusan Mandiri",
+  },
+} as const;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,8 @@ const GlassCard = ({ children, className = "", style }: { children: React.ReactN
 );
 
 export default function ScamPage() {
+  const { locale } = useLocale();
+  const isEnglish = locale === "en";
   const [activeTab, setActiveTab] = useState<"text" | "url">("text");
   const [textInput, setTextInput] = useState("");
   const [urlInput, setUrlInput] = useState("");
@@ -38,11 +41,19 @@ export default function ScamPage() {
 
   const handleSubmit = async (inputType: "text" | "url", content: string) => {
     if (!acknowledged) {
-      setError("Harap setujui Disclaimer & Batasan di bawah untuk mulai.");
+      setError(
+        isEnglish
+          ? "Please accept the disclaimer and limitations below before starting."
+          : "Harap setujui Disclaimer & Batasan di bawah untuk mulai."
+      );
       return;
     }
     if (content.trim().length < 10) {
-      setError("Konten minimal 10 karakter untuk dianalisis.");
+      setError(
+        isEnglish
+          ? "Content must be at least 10 characters for analysis."
+          : "Konten minimal 10 karakter untuk dianalisis."
+      );
       return;
     }
 
@@ -64,12 +75,17 @@ export default function ScamPage() {
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error?.message ?? "Gagal menganalisis. Silakan coba lagi nanti.");
+        setError(
+          json.error?.message ??
+            (isEnglish
+              ? "Analysis failed. Please try again later."
+              : "Gagal menganalisis. Silakan coba lagi nanti.")
+        );
       } else {
         setResult(json.data as ScamCheckResult);
       }
     } catch {
-      setError("Gagal terhubung ke server SafeWallet.");
+      setError(isEnglish ? "Failed to connect to SafeWallet." : "Gagal terhubung ke server SafeWallet.");
     } finally {
       setLoading(false);
     }
@@ -83,7 +99,7 @@ export default function ScamPage() {
           border: "border-[#F2A971]/30",
           text: "text-[#F2A971]",
           icon: <CheckCircle2 className="h-10 w-10 text-[#F2A971]" />,
-          label: "VERIFIED AMAN",
+          label: isEnglish ? "VERIFIED SAFE" : "VERIFIED AMAN",
         };
       case "CAUTION":
         return {
@@ -91,7 +107,7 @@ export default function ScamPage() {
           border: "border-amber-500/30",
           text: "text-amber-500",
           icon: <AlertTriangle className="h-10 w-10 text-amber-500" />,
-          label: "HATI-HATI",
+          label: isEnglish ? "CAUTION" : "HATI-HATI",
         };
       default:
         return {
@@ -121,7 +137,9 @@ export default function ScamPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-white tracking-tight">Scam Checker</h1>
         <p className="mt-2 text-white/50 text-lg max-w-2xl">
-          Verifikasi investasi bodong sebelum menyesal. Cek URL atau isi deskripsi investasi yang ditawarkan.
+          {isEnglish
+            ? "Check suspicious investments before it is too late. Analyze a URL or the offer description."
+            : "Verifikasi investasi bodong sebelum menyesal. Cek URL atau isi deskripsi investasi yang ditawarkan."}
         </p>
       </div>
 
@@ -134,7 +152,7 @@ export default function ScamPage() {
                 onClick={() => setActiveTab("text")}
                 className={`flex-1 flex justify-center items-center py-2.5 rounded-xl text-sm font-bold transition-all ${activeTab === 'text' ? 'bg-[#3323D2] text-white shadow-lg' : 'text-white/40 hover:text-white'}`}
               >
-                <FileText className="w-4 h-4 mr-2" /> Deskripsi
+                <FileText className="w-4 h-4 mr-2" /> {isEnglish ? "Description" : "Deskripsi"}
               </button>
               <button 
                 onClick={() => setActiveTab("url")}
@@ -144,18 +162,22 @@ export default function ScamPage() {
               </button>
             </div>
 
-            {error && (
-              <div className="mb-6 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-200">
-                <AlertTriangle className="w-5 h-5 shrink-0 text-red-500" />
-                <p className="font-medium text-sm flex-1">{error}</p>
-                <Button variant="ghost" size="sm" className="hover:bg-red-500/20 text-red-200 h-8" onClick={() => setError(null)}>Tutup</Button>
-              </div>
-            )}
+              {error && (
+                <div className="mb-6 flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-200">
+                  <AlertTriangle className="w-5 h-5 shrink-0 text-red-500" />
+                  <p className="font-medium text-sm flex-1">{error}</p>
+                  <Button variant="ghost" size="sm" className="hover:bg-red-500/20 text-red-200 h-8" onClick={() => setError(null)}>
+                    {isEnglish ? "Close" : "Tutup"}
+                  </Button>
+                </div>
+              )}
 
             {activeTab === "text" ? (
               <div className="space-y-6 animate-in slide-in-from-right-4">
                 <div className="space-y-3">
-                  <Label className="text-white/70 font-medium ml-1">Deskripsi Tawaran Investasi</Label>
+                  <Label className="text-white/70 font-medium ml-1">
+                    {isEnglish ? "Investment Offer Description" : "Deskripsi Tawaran Investasi"}
+                  </Label>
                   <textarea
                     className="w-full min-h-[140px] rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-[#F2A971] focus:border-transparent transition-all resize-none text-lg"
                     placeholder='Contoh: "Penitipan dana investasi 15% PASTI UNTUNG modal 1 juta cair 5 juta besok..."'
@@ -183,9 +205,15 @@ export default function ScamPage() {
                   onClick={() => handleSubmit("text", textInput)}
                 >
                   {loading ? (
-                    <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Memeriksa Red Flags...</>
+                    <>
+                      <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                      {isEnglish ? "Checking Red Flags..." : "Memeriksa Red Flags..."}
+                    </>
                   ) : (
-                    <><Search className="mr-3 h-6 w-6" /> Periksa Indikasi Scam</>
+                    <>
+                      <Search className="mr-3 h-6 w-6" />
+                      {isEnglish ? "Check Scam Signals" : "Periksa Indikasi Scam"}
+                    </>
                   )}
                 </Button>
               </div>
@@ -211,9 +239,15 @@ export default function ScamPage() {
                   onClick={() => handleSubmit("url", urlInput)}
                 >
                   {loading ? (
-                    <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Menganalisis Domain...</>
+                    <>
+                      <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                      {isEnglish ? "Analyzing Domain..." : "Menganalisis Domain..."}
+                    </>
                   ) : (
-                    <><Search className="mr-3 h-6 w-6" /> Periksa Website</>
+                    <>
+                      <Search className="mr-3 h-6 w-6" />
+                      {isEnglish ? "Check Website" : "Periksa Website"}
+                    </>
                   )}
                 </Button>
               </div>
@@ -226,9 +260,11 @@ export default function ScamPage() {
       {result && (
         <div className="animate-in zoom-in-95 duration-500">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white tracking-tight">Hasil Analisis</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">
+              {isEnglish ? "Analysis Result" : "Hasil Analisis"}
+            </h2>
             <Button onClick={() => setResult(null)} variant="ghost" className="text-white/50 hover:text-white hover:bg-white/10">
-              <Search className="w-4 h-4 mr-2" /> Pengecekan Baru
+              <Search className="w-4 h-4 mr-2" /> {isEnglish ? "New Check" : "Pengecekan Baru"}
             </Button>
           </div>
           
@@ -252,7 +288,13 @@ export default function ScamPage() {
                   <div className="mt-8 bg-[#0B0A08]/50 px-4 py-2 rounded-xl inline-flex items-center gap-2 border border-white/5">
                     <Shield className={`w-4 h-4 ${result.ojk_status.registered ? 'text-[#F2A971]' : 'text-red-500'}`} />
                     <span className="text-white/80 text-sm font-medium">
-                      {result.ojk_status.registered ? "Terdaftar di OJK" : "ILLEGAL - TIDAK TERDAFTAR OJK"}
+                      {isEnglish
+                        ? result.ojk_status.registered
+                          ? "Registered with OJK"
+                          : "ILLEGAL - NOT REGISTERED WITH OJK"
+                        : result.ojk_status.registered
+                          ? "Terdaftar di OJK"
+                          : "ILLEGAL - TIDAK TERDAFTAR OJK"}
                     </span>
                   </div>
                 </GlassCard>
@@ -264,7 +306,7 @@ export default function ScamPage() {
               {result.red_flags.length > 0 ? (
                 <GlassCard className="p-8 border-red-500/10">
                   <h4 className="text-xl font-bold flex items-center gap-3 text-white mb-6">
-                    <AlertTriangle className="text-red-500 w-6 h-6" /> Red Flags Terdeteksi ({result.red_flags.length})
+                    <AlertTriangle className="text-red-500 w-6 h-6" /> {isEnglish ? "Red Flags Detected" : "Red Flags Terdeteksi"} ({result.red_flags.length})
                   </h4>
                   <div className="space-y-4">
                     {result.red_flags.map((flag, i) => (
@@ -287,8 +329,14 @@ export default function ScamPage() {
                     <CheckCircle2 className="w-6 h-6 text-[#F2A971]" />
                   </div>
                   <div>
-                    <h4 className="text-xl font-bold text-white">Bebas Red Flags</h4>
-                    <p className="text-white/50">Tidak ditemukan indikasi penipuan investasi umum pada deskripsi ini.</p>
+                    <h4 className="text-xl font-bold text-white">
+                      {isEnglish ? "No Red Flags" : "Bebas Red Flags"}
+                    </h4>
+                    <p className="text-white/50">
+                      {isEnglish
+                        ? "No common investment scam indicators were found in this description."
+                        : "Tidak ditemukan indikasi penipuan investasi umum pada deskripsi ini."}
+                    </p>
                   </div>
                 </GlassCard>
               )}
@@ -296,7 +344,7 @@ export default function ScamPage() {
               {result.safe_alternatives.length > 0 && (
                 <GlassCard className="p-8">
                   <h4 className="text-xl font-bold flex items-center gap-3 text-white mb-6">
-                    <CheckCircle2 className="text-[#F2A971] w-6 h-6" /> Alternatif Legal Tersedia
+                    <CheckCircle2 className="text-[#F2A971] w-6 h-6" /> {isEnglish ? "Available Legal Alternatives" : "Alternatif Legal Tersedia"}
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {result.safe_alternatives.map((alt, i) => (
@@ -321,7 +369,9 @@ export default function ScamPage() {
         <div className="mt-12 pt-12 border-t border-white/5">
           <div className="mb-6 flex items-center gap-3">
             <AlertTriangle className="text-white/30 w-5 h-5" />
-            <h3 className="text-white/50 font-medium">Buku Panduan: Definisi Investasi Bodong</h3>
+            <h3 className="text-white/50 font-medium">
+              {isEnglish ? "Guidebook: Common Scam Investment Signals" : "Buku Panduan: Definisi Investasi Bodong"}
+            </h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {[
@@ -355,7 +405,9 @@ export default function ScamPage() {
             <CheckCircle2 className="absolute h-4 w-4 text-[#0B0A08] left-1 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
           </div>
           <span className="text-white/70 text-sm group-hover:text-white transition-colors">
-            Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini).
+            {isEnglish
+              ? "I understand that SafeWallet is an educational tool, not financial advice, and that my data will be processed by a third-party AI provider (Gemini)."
+              : "Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini)."}
           </span>
         </label>
       </div>

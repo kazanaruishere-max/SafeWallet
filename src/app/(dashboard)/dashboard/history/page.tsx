@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -24,6 +25,8 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 );
 
 export default function HistoryPage() {
+  const { locale } = useLocale();
+  const isEnglish = locale === "en";
   const [scans, setScans] = useState<ScanHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -90,15 +93,19 @@ export default function HistoryPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">Riwayat Scan</h1>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">
+              {isEnglish ? "Scan History" : "Riwayat Scan"}
+            </h1>
             <p className="text-white/50 text-lg">
-              {total} dokumen mutasi dianalisis sejauh ini.
+              {isEnglish
+                ? `${total} bank statement documents analyzed so far.`
+                : `${total} dokumen mutasi dianalisis sejauh ini.`}
             </p>
           </div>
         </div>
         <Link href="/dashboard/scan">
           <Button className="h-12 px-6 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all font-bold">
-            <Scan className="w-5 h-5 mr-2" /> Scan Dokumen Baru
+            <Scan className="w-5 h-5 mr-2" /> {isEnglish ? "Scan New Document" : "Scan Dokumen Baru"}
           </Button>
         </Link>
       </div>
@@ -108,13 +115,17 @@ export default function HistoryPage() {
           <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-white/5 border border-white/10 mb-8 shadow-2xl">
             <Scan className="h-12 w-12 text-white/40" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">Belum ada riwayat</h3>
+          <h3 className="text-2xl font-bold text-white mb-2">
+            {isEnglish ? "No history yet" : "Belum ada riwayat"}
+          </h3>
           <p className="max-w-md text-white/50 mb-8 leading-relaxed">
-            Upload file mutasi bank Anda untuk mendapatkan jejak riwayat kesehatan finansial bulan demi bulan.
+            {isEnglish
+              ? "Upload your bank statement to build a month-by-month financial history."
+              : "Upload file mutasi bank Anda untuk mendapatkan jejak riwayat kesehatan finansial bulan demi bulan."}
           </p>
           <Link href="/dashboard/scan">
             <Button className="h-14 px-8 rounded-2xl bg-[#F2A971] text-[#0B0A08] font-bold text-lg shadow-[0_0_30px_rgba(242,169,113,0.3)] hover:shadow-[0_0_40px_rgba(242,169,113,0.4)] transition-all">
-              <Scan className="mr-2 h-5 w-5" /> Mulai Analisis Pertamamu
+              <Scan className="mr-2 h-5 w-5" /> {isEnglish ? "Start Your First Analysis" : "Mulai Analisis Pertamamu"}
             </Button>
           </Link>
         </GlassCard>
@@ -199,11 +210,11 @@ export default function HistoryPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((p) => p - 1)}
               >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Prev
+                <ArrowLeft className="w-4 h-4 mr-2" /> {isEnglish ? "Previous" : "Prev"}
               </Button>
               <div className="px-4 py-2 rounded-xl bg-white/5 border border-white/10">
                 <span className="text-sm font-bold text-white">
-                  Hal {page} <span className="text-white/30 mx-1">/</span> {Math.ceil(total / 10)}
+                  {isEnglish ? "Page" : "Hal"} {page} <span className="text-white/30 mx-1">/</span> {Math.ceil(total / 10)}
                 </span>
               </div>
               <Button

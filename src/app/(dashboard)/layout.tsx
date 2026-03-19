@@ -4,10 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,19 +28,32 @@ import {
   History,
   Sparkles
 } from "lucide-react";
+import { type Messages } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/scan", label: "Health Scanner", icon: Scan },
-  { href: "/dashboard/scam", label: "Scam Checker", icon: AlertTriangle },
-  { href: "/dashboard/history", label: "Riwayat Scan", icon: History },
-  { href: "/dashboard/profile", label: "Profil Pengguna", icon: User },
-];
+function getNavItems(messages: Messages) {
+  return [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/dashboard/scan", label: "Health Scanner", icon: Scan },
+    { href: "/dashboard/scam", label: "Scam Checker", icon: AlertTriangle },
+    {
+      href: "/dashboard/history",
+      label: messages.dashboardLayout.nav.history,
+      icon: History,
+    },
+    {
+      href: "/dashboard/profile",
+      label: messages.dashboardLayout.nav.profile,
+      icon: User,
+    },
+  ];
+}
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+  const { messages } = useLocale();
   const pathname = usePathname();
+  const navItems = getNavItems(messages);
 
   return (
     <nav className="flex flex-col gap-2 px-4">
@@ -71,6 +85,8 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { messages } = useLocale();
+  const copy = messages.dashboardLayout;
   const router = useRouter();
 
   const handleLogout = async () => {
@@ -101,7 +117,9 @@ export default function DashboardLayout({
 
         {/* Nav */}
         <div className="flex-1 py-4">
-          <div className="px-6 mb-4 text-xs font-semibold text-white/30 tracking-wider uppercase">Menu Utama</div>
+          <div className="px-6 mb-4 text-xs font-semibold text-white/30 tracking-wider uppercase">
+            {copy.mainMenu}
+          </div>
           <SidebarNav />
         </div>
 
@@ -111,14 +129,12 @@ export default function DashboardLayout({
             <div className="absolute -top-10 -right-10 w-24 h-24 bg-[#3323D2]/30 blur-[40px] rounded-full pointer-events-none group-hover:bg-[#3323D2]/50 transition-colors" />
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="h-4 w-4 text-[#8B7DFF]" />
-              <p className="text-sm font-bold text-white/90">Upgrade Premium</p>
+              <p className="text-sm font-bold text-white/90">{copy.upgradeTitle}</p>
             </div>
-            <p className="text-xs text-white/50 mb-4 leading-relaxed">
-              Unlimited scan, deteksi scam tanpa henti & AI coaching.
-            </p>
+            <p className="text-xs text-white/50 mb-4 leading-relaxed">{copy.upgradeDescription}</p>
             <Button size="sm" className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/5 h-9 rounded-xl text-xs transition-colors">
               <CreditCard className="mr-2 h-3.5 w-3.5" />
-              Mulai Rp 29K/bln
+              {copy.upgradePrice}
             </Button>
           </div>
         </div>
@@ -143,6 +159,9 @@ export default function DashboardLayout({
                   <span className="text-xl font-bold">SafeWallet</span>
                 </div>
                 <div className="px-6 py-2"><div className="h-px w-full bg-white/5" /></div>
+                <div className="px-6 pt-4">
+                  <LanguageSwitcher className="w-full justify-center" />
+                </div>
                 <div className="py-4">
                   <SidebarNav />
                 </div>
@@ -155,6 +174,7 @@ export default function DashboardLayout({
           </div>
 
           <div className="flex items-center gap-4">
+            <LanguageSwitcher />
             <ThemeToggle />
 
             {/* User menu */}
@@ -168,16 +188,16 @@ export default function DashboardLayout({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 mt-2 bg-[#1A1D24] border border-white/10 rounded-2xl shadow-2xl text-white">
                 <div className="px-4 py-3 border-b border-white/5">
-                  <p className="text-sm font-medium text-white/90">Akun Anda</p>
-                  <p className="text-xs text-white/50 truncate">User SafeWallet</p>
+                  <p className="text-sm font-medium text-white/90">{copy.accountTitle}</p>
+                  <p className="text-xs text-white/50 truncate">{copy.accountSubtitle}</p>
                 </div>
                 <div className="p-2">
                   <DropdownMenuItem onClick={() => router.push("/dashboard/profile")} className="cursor-pointer rounded-xl focus:bg-white/10 focus:text-white px-3 py-2.5">
-                    <User className="mr-3 h-4 w-4 text-white/50" /> Profil Pengguna
+                    <User className="mr-3 h-4 w-4 text-white/50" /> {copy.profile}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator className="bg-white/5 my-1" />
                   <DropdownMenuItem onClick={handleLogout} className="cursor-pointer rounded-xl focus:bg-red-500/20 focus:text-red-400 px-3 py-2.5 text-red-400">
-                    <LogOut className="mr-3 h-4 w-4" /> Keluar
+                    <LogOut className="mr-3 h-4 w-4" /> {copy.signOut}
                   </DropdownMenuItem>
                 </div>
               </DropdownMenuContent>

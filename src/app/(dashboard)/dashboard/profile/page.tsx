@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +26,8 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 );
 
 export default function ProfilePage() {
+  const { locale } = useLocale();
+  const isEnglish = locale === "en";
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,12 +75,12 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success("Profil berhasil disimpan!");
+        toast.success(isEnglish ? "Profile saved." : "Profil berhasil disimpan!");
       } else {
-        toast.error(json.error?.message ?? "Gagal menyimpan.");
+        toast.error(json.error?.message ?? (isEnglish ? "Failed to save." : "Gagal menyimpan."));
       }
     } catch {
-      toast.error("Gagal terhubung ke server.");
+      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
     } finally {
       setSaving(false);
     }
@@ -90,13 +93,13 @@ export default function ProfilePage() {
       const res = await fetch("/api/user/delete", { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
-        toast.success("Akun berhasil dihapus.");
+        toast.success(isEnglish ? "Account deleted." : "Akun berhasil dihapus.");
         router.push("/");
       } else {
-        toast.error(json.error?.message ?? "Gagal menghapus akun.");
+        toast.error(json.error?.message ?? (isEnglish ? "Failed to delete account." : "Gagal menghapus akun."));
       }
     } catch {
-      toast.error("Gagal terhubung ke server.");
+      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
     }
   };
 
@@ -111,9 +114,9 @@ export default function ProfilePage() {
       a.download = `safewallet-export-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Data berhasil diunduh!");
+      toast.success(isEnglish ? "Data downloaded." : "Data berhasil diunduh!");
     } catch {
-      toast.error("Gagal mengunduh data.");
+      toast.error(isEnglish ? "Failed to download data." : "Gagal mengunduh data.");
     }
   };
 
@@ -124,12 +127,14 @@ export default function ProfilePage() {
       const json = await res.json();
       if (json.success) {
         setLinkCode(json.code);
-        toast.success("Kode OTP Telegram berhasil dibuat!");
+        toast.success(
+          isEnglish ? "Telegram OTP created." : "Kode OTP Telegram berhasil dibuat!"
+        );
       } else {
-        toast.error(json.error?.message ?? "Gagal mendapatkan kode.");
+        toast.error(json.error?.message ?? (isEnglish ? "Failed to get code." : "Gagal mendapatkan kode."));
       }
     } catch {
-      toast.error("Gagal terhubung ke server.");
+      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
     } finally {
       setLinking(false);
     }
@@ -151,9 +156,13 @@ export default function ProfilePage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
 
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Profil & Pengaturan</h1>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">
+          {isEnglish ? "Profile & Settings" : "Profil & Pengaturan"}
+        </h1>
         <p className="mt-2 text-white/50 text-lg">
-          Kustomisasi informasi personal dan integrasi keamanan Anda.
+          {isEnglish
+            ? "Customize your personal information and security integrations."
+            : "Kustomisasi informasi personal dan integrasi keamanan Anda."}
         </p>
       </div>
 
@@ -164,7 +173,7 @@ export default function ProfilePage() {
           {/* Card: Personal Information */}
           <GlassCard className="p-8">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <User className="text-[#F2A971] w-5 h-5" /> Informasi Pribadi
+              <User className="text-[#F2A971] w-5 h-5" /> {isEnglish ? "Personal Information" : "Informasi Pribadi"}
             </h2>
             <div className="flex items-center gap-6 mb-8">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F2A971] to-[#3323D2] flex items-center justify-center text-3xl font-black text-white shadow-xl">
@@ -221,9 +230,15 @@ export default function ProfilePage() {
                 disabled={saving}
               >
                 {saving ? (
-                  <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Merekam Data...</>
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    {isEnglish ? "Saving..." : "Merekam Data..."}
+                  </>
                 ) : (
-                  <><Save className="mr-2 h-5 w-5" /> Simpan Perubahan Profil</>
+                  <>
+                    <Save className="mr-2 h-5 w-5" />
+                    {isEnglish ? "Save Profile Changes" : "Simpan Perubahan Profil"}
+                  </>
                 )}
               </Button>
             </div>

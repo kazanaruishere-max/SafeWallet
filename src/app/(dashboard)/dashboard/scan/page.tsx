@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -39,6 +40,8 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 type ScanState = "idle" | "parsing" | "analyzing" | "done" | "error";
 
 export default function ScanPage() {
+  const { locale } = useLocale();
+  const isEnglish = locale === "en";
   const router = useRouter();
   const [isLocked, setIsLocked] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -74,12 +77,16 @@ export default function ScanPage() {
   const handleFile = useCallback(async (file: File) => {
     const format = getFileFormat(file);
     if (!format) {
-      setError("Format tidak didukung. Gunakan: JPEG, PNG, PDF, Excel (.xlsx/.xls), CSV, atau TXT.");
+      setError(
+        isEnglish
+          ? "Unsupported format. Use JPEG, PNG, PDF, Excel (.xlsx/.xls), CSV, or TXT."
+          : "Format tidak didukung. Gunakan: JPEG, PNG, PDF, Excel (.xlsx/.xls), CSV, atau TXT."
+      );
       return;
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      setError("Ukuran file maksimum 20MB.");
+      setError(isEnglish ? "Maximum file size is 20MB." : "Ukuran file maksimum 20MB.");
       return;
     }
 
@@ -98,7 +105,11 @@ export default function ScanPage() {
 
     setState("analyzing");
     setProgress(0);
-    setProgressMsg("Mengunggah dan Menganalisis (Server-Side Security)...");
+    setProgressMsg(
+      isEnglish
+        ? "Uploading and analyzing with server-side security..."
+        : "Mengunggah dan Menganalisis (Server-Side Security)..."
+    );
 
     try {
       const formData = new FormData();
@@ -112,7 +123,7 @@ export default function ScanPage() {
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error?.message ?? "Gagal menganalisis. Coba lagi.");
+        setError(json.error?.message ?? (isEnglish ? "Analysis failed. Try again." : "Gagal menganalisis. Coba lagi."));
         setState("error");
         return;
       }
@@ -124,10 +135,10 @@ export default function ScanPage() {
       setResult(json.data as ScanResult);
       setState("done");
     } catch {
-      setError("Gagal terhubung ke server.");
+      setError(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
       setState("error");
     }
-  }, []);
+  }, [isEnglish]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -198,11 +209,13 @@ export default function ScanPage() {
       <div className="absolute top-20 right-0 w-[400px] h-[400px] bg-[#F2A971]/10 blur-[120px] rounded-full pointer-events-none -z-10" />
 
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">Health Scanner</h1>
-        <p className="mt-2 text-white/50 text-lg">
-          Upload file mutasi bank. Biarkan AI kami menganalisis jejak pengeluaranmu.
-        </p>
-      </div>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">Health Scanner</h1>
+          <p className="mt-2 text-white/50 text-lg">
+            {isEnglish
+              ? "Upload a bank statement file and let our AI analyze your spending footprint."
+              : "Upload file mutasi bank. Biarkan AI kami menganalisis jejak pengeluaranmu."}
+          </p>
+        </div>
 
       {state === "idle" || state === "error" ? (
         <div className="max-w-4xl mx-auto space-y-6">
@@ -210,7 +223,9 @@ export default function ScanPage() {
             <div className="flex items-center gap-3 p-4 bg-red-500/10 border border-red-500/30 rounded-2xl text-red-200">
               <AlertTriangle className="w-6 h-6 shrink-0 text-red-500" />
               <p className="font-medium flex-1">{error}</p>
-              <Button variant="outline" size="sm" className="border-red-500/30 hover:bg-red-500/20 text-red-200" onClick={() => setError(null)}>Tutup</Button>
+              <Button variant="outline" size="sm" className="border-red-500/30 hover:bg-red-500/20 text-red-200" onClick={() => setError(null)}>
+                {isEnglish ? "Close" : "Tutup"}
+              </Button>
             </div>
           )}
 
@@ -237,18 +252,22 @@ export default function ScanPage() {
                 <Upload className="h-10 w-10 text-[#F2A971]" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">
-                Drop File Mutasi Di Sini
+                {isEnglish ? "Drop Your Statement Here" : "Drop File Mutasi Di Sini"}
               </h3>
               <p className="text-white/50 text-center max-w-sm mb-8 leading-relaxed">
-                Mendukung gambar, PDF e-statement, Excel, CSV, atau TXT. Max ukuran file 20MB.
+                {isEnglish
+                  ? "Supports images, PDF e-statements, Excel, CSV, or TXT. Max file size 20MB."
+                  : "Mendukung gambar, PDF e-statement, Excel, CSV, atau TXT. Max ukuran file 20MB."}
               </p>
               {!acknowledged && (
                 <p className="text-amber-500 text-sm font-medium mb-4 animate-pulse">
-                  * Harap setujui Disclaimer & Batasan di bawah untuk mulai.
+                  {isEnglish
+                    ? "* Please accept the disclaimer and limitations below before starting."
+                    : "* Harap setujui Disclaimer & Batasan di bawah untuk mulai."}
                 </p>
               )}
               <Button disabled={!acknowledged} className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/5 backdrop-blur-md transition-all">
-                <FileImage className="mr-3 h-5 w-5" /> Pilih File dari Perangkat
+                <FileImage className="mr-3 h-5 w-5" /> {isEnglish ? "Choose File from Device" : "Pilih File dari Perangkat"}
               </Button>
             </div>
           </GlassCard>
@@ -268,7 +287,9 @@ export default function ScanPage() {
                 <CheckCircle2 className="absolute h-4 w-4 text-[#0B0A08] left-1 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
               </div>
               <span className="text-white/70 text-sm group-hover:text-white transition-colors">
-                Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini).
+                {isEnglish
+                  ? "I understand that SafeWallet is an educational tool, not financial advice, and that my data will be processed by a third-party AI provider (Gemini)."
+                  : "Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini)."}
               </span>
             </label>
           </div>
@@ -276,9 +297,21 @@ export default function ScanPage() {
           {/* Steps Indicator directly below as requested by design prompt */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
             {[
-              { num: "1", title: "Upload Mutasi", desc: "Format dokumen lengkap didukung" },
-              { num: "2", title: "Ekstraksi AI", desc: "Membaca transaksi secara mendalam" },
-              { num: "3", title: "Insight Keluar", desc: "Dapatkan analisis Instan" },
+              {
+                num: "1",
+                title: isEnglish ? "Upload Statement" : "Upload Mutasi",
+                desc: isEnglish ? "Full document formats supported" : "Format dokumen lengkap didukung",
+              },
+              {
+                num: "2",
+                title: isEnglish ? "AI Extraction" : "Ekstraksi AI",
+                desc: isEnglish ? "Deep transaction reading" : "Membaca transaksi secara mendalam",
+              },
+              {
+                num: "3",
+                title: isEnglish ? "Get Insights" : "Insight Keluar",
+                desc: isEnglish ? "Receive instant analysis" : "Dapatkan analisis Instan",
+              },
             ].map((step, i) => (
               <div key={i} className="flex gap-4 items-start bg-white/5 border border-white/5 rounded-2xl p-5">
                 <div className="w-10 h-10 rounded-full bg-[#F2A971]/10 text-[#F2A971] border border-[#F2A971]/20 flex items-center justify-center font-black text-lg shrink-0">
@@ -309,9 +342,15 @@ export default function ScanPage() {
 
           <div>
             <h3 className="text-2xl font-bold text-white mb-2">
-              {state === "parsing" ? "Membaca Struktur File..." : "AI Cognitive Analysis..."}
+              {state === "parsing"
+                ? isEnglish
+                  ? "Reading File Structure..."
+                  : "Membaca Struktur File..."
+                : "AI Cognitive Analysis..."}
             </h3>
-            <p className="text-white/50">{progressMsg || "Memproses dataset finansial"}</p>
+            <p className="text-white/50">
+              {progressMsg || (isEnglish ? "Processing financial dataset" : "Memproses dataset finansial")}
+            </p>
           </div>
 
           {state === "parsing" && (
@@ -348,10 +387,22 @@ export default function ScanPage() {
                 </div>
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">
-                {result.health_score > 70 ? "Keuangan Sehat!" : result.health_score > 40 ? "Perlu Perhatian" : "Kritis"}
+                {result.health_score > 70
+                  ? isEnglish
+                    ? "Financially Healthy"
+                    : "Keuangan Sehat!"
+                  : result.health_score > 40
+                    ? isEnglish
+                      ? "Needs Attention"
+                      : "Perlu Perhatian"
+                    : isEnglish
+                      ? "Critical"
+                      : "Kritis"}
               </h3>
               <p className="text-white/40 text-sm leading-relaxed max-w-[200px]">
-                Berdasarkan analisis AI terhadap mutasi bank Anda.
+                {isEnglish
+                  ? "Based on AI analysis of your bank statement."
+                  : "Berdasarkan analisis AI terhadap mutasi bank Anda."}
               </p>
             </GlassCard>
 
@@ -404,7 +455,7 @@ export default function ScanPage() {
             <GlassCard className="p-10 border-emerald-500/10">
               <h4 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                Rekomendasi Strategis
+                {isEnglish ? "Strategic Recommendations" : "Rekomendasi Strategis"}
               </h4>
               <ul className="space-y-4">
                 {result.recommendations.map((rec, i) => (
@@ -421,7 +472,7 @@ export default function ScanPage() {
             <GlassCard className="p-10 border-red-500/10">
               <h4 className="text-xl font-bold text-white mb-8 flex items-center gap-3">
                 <AlertTriangle className="w-6 h-6 text-red-400" />
-                Peringatan Dini
+                {isEnglish ? "Early Warnings" : "Peringatan Dini"}
               </h4>
               <div className="space-y-4">
                 {result.warnings.length > 0 ? (
@@ -432,7 +483,9 @@ export default function ScanPage() {
                   ))
                 ) : (
                   <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 text-emerald-400/80 text-sm leading-relaxed">
-                    Tidak ada peringatan kritis terdeteksi untuk saat ini.
+                    {isEnglish
+                      ? "No critical warnings detected at the moment."
+                      : "Tidak ada peringatan kritis terdeteksi untuk saat ini."}
                   </div>
                 )}
               </div>
@@ -447,7 +500,7 @@ export default function ScanPage() {
               onClick={resetScan}
               className="bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white rounded-2xl px-8 h-12"
             >
-              Scan File Baru
+              {isEnglish ? "Scan Another File" : "Scan File Baru"}
             </Button>
           </div>
         </div>

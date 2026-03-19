@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/language-provider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,8 @@ import {
 import type { DashboardData } from "@/types/api";
 
 export default function DashboardPage() {
+  const { messages } = useLocale();
+  const copy = messages.dashboardHome;
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,15 +60,13 @@ export default function DashboardPage() {
       {/* Welcome Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Financial Overview</h1>
-          <p className="mt-2 text-white/50 text-lg">
-            Pantau AI Health Score dan aktivitas keamananmu hari ini.
-          </p>
+          <h1 className="text-3xl font-extrabold text-white tracking-tight">{copy.title}</h1>
+          <p className="mt-2 text-white/50 text-lg">{copy.subtitle}</p>
         </div>
         <div className="flex gap-3">
           <Link href="/dashboard/scan">
             <Button className="bg-[#F2A971] text-[#0B0A08] hover:bg-[#F2A971]/90 font-bold rounded-xl shadow-[0_0_20px_rgba(242,169,113,0.3)]">
-              <Scan className="w-4 h-4 mr-2" /> Mulai Scan Baru
+              <Scan className="w-4 h-4 mr-2" /> {copy.startNewScan}
             </Button>
           </Link>
         </div>
@@ -113,17 +114,21 @@ export default function DashboardPage() {
                 <Sparkles className="w-3.5 h-3.5" /> AI Analysis Active
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                {hasScans ? (healthScore >= 70 ? "Keuangan Anda Sehat" : "Perlu Perhatian Khusus") : "Belum Ada Data"}
+                {hasScans
+                  ? healthScore >= 70
+                    ? copy.healthyTitle
+                    : copy.warningTitle
+                  : copy.noDataTitle}
               </h2>
               <p className="text-white/60 leading-relaxed max-w-md">
                 {hasScans 
-                  ? "Tidak terdeteksi adanya indikasi aktivitas pinjaman online predator atau transaksi perjudian online dalam 30 hari terakhir."
-                  : "Upload mutasi bank Anda untuk mendapatkan laporan instan tentang kesehatan finansial dan deteksi anomali."}
+                  ? copy.healthyDescription
+                  : copy.noDataDescription}
               </p>
               
               {!hasScans && (
                 <Link href="/dashboard/scan" className="mt-6 inline-flex items-center text-[#F2A971] text-sm font-semibold hover:text-amber-400 group/link">
-                  Scan sekarang <ArrowRight className="ml-1.5 w-4 h-4 transition-transform group-hover/link:translate-x-1" />
+                  {copy.scanNow} <ArrowRight className="ml-1.5 w-4 h-4 transition-transform group-hover/link:translate-x-1" />
                 </Link>
               )}
             </div>
@@ -137,17 +142,19 @@ export default function DashboardPage() {
               <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center">
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
-              <Badge variant="outline" className="border-white/10 text-white/50">Bulan Ini</Badge>
+              <Badge variant="outline" className="border-white/10 text-white/50">{copy.thisMonth}</Badge>
             </div>
             <h3 className="text-3xl font-black text-white mb-1">{data?.scam_checks_count ?? 0}</h3>
-            <p className="text-white/50 text-sm font-medium mb-4">Link Bodong Dicek</p>
+            <p className="text-white/50 text-sm font-medium mb-4">{copy.scamLinksChecked}</p>
             <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-red-500 rounded-full" 
                 style={{ width: `${(scamQuota.used / scamQuota.limit) * 100}%` }} 
               />
             </div>
-            <p className="mt-2 text-xs text-white/40 text-right">{scamQuota.limit - scamQuota.used} sisa kuota</p>
+            <p className="mt-2 text-xs text-white/40 text-right">
+              {scamQuota.limit - scamQuota.used} {copy.quotaLeftSuffix}
+            </p>
           </Card>
 
           <Card className="flex-1 bg-gradient-to-br from-[#3323D2]/10 to-[#1A1D24] border-[#3323D2]/20 rounded-[2rem] p-6">
@@ -158,11 +165,9 @@ export default function DashboardPage() {
               <Badge className="bg-[#3323D2] text-white border-none capitalize">{data?.user.subscription ?? "Free Plan"}</Badge>
             </div>
             <h3 className="text-xl font-bold text-white mb-1">SafeWallet Pro</h3>
-            <p className="text-white/50 text-sm mb-4 leading-relaxed">
-              Dapatkan akses unlimited AI analysis dan Saku Bot.
-            </p>
+            <p className="text-white/50 text-sm mb-4 leading-relaxed">{copy.proDescription}</p>
             <Button variant="outline" className="w-full rounded-xl border-white/10 text-white hover:bg-white/5">
-              Upgrade Sekarang
+              {copy.upgradeNow}
             </Button>
           </Card>
         </div>
@@ -173,11 +178,11 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
               <Wallet className="w-5 h-5 text-blue-400" />
             </div>
-            <h3 className="text-white/70 font-medium">Savings Rate</h3>
+            <h3 className="text-white/70 font-medium">{copy.savingsRateLabel}</h3>
           </div>
           <div>
             <p className="text-3xl font-black text-white">{savingsRate}</p>
-            <p className="text-xs text-white/40 mt-1">Dari total pendapatan</p>
+            <p className="text-xs text-white/40 mt-1">{copy.savingsRateHint}</p>
           </div>
         </Card>
 
@@ -186,11 +191,11 @@ export default function DashboardPage() {
             <div className="w-10 h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center">
               <Activity className="w-5 h-5 text-yellow-500" />
             </div>
-            <h3 className="text-white/70 font-medium">Debt Ratio</h3>
+            <h3 className="text-white/70 font-medium">{copy.debtRatioLabel}</h3>
           </div>
           <div>
             <p className="text-3xl font-black text-white">{debtRatio}</p>
-            <p className="text-xs text-white/40 mt-1">Aman di bawah 30%</p>
+            <p className="text-xs text-white/40 mt-1">{copy.debtRatioHint}</p>
           </div>
         </Card>
 
@@ -201,8 +206,8 @@ export default function DashboardPage() {
               <History className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
             </div>
             <div>
-              <h3 className="text-white font-bold">Riwayat Scan</h3>
-              <p className="text-sm text-white/40">Lihat data historis analisis</p>
+              <h3 className="text-white font-bold">{copy.historyTitle}</h3>
+              <p className="text-sm text-white/40">{copy.historyDescription}</p>
             </div>
           </div>
           <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[#F2A971] group-hover:translate-x-1 transition-all" />

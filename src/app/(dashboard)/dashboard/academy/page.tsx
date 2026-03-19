@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "@/components/language-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, BookOpen, CheckCircle2, Loader2, PlayCircle, ShieldIcon } from "lucide-react";
@@ -14,6 +15,8 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 );
 
 export default function AcademyPage() {
+  const { locale } = useLocale();
+  const isEnglish = locale === "en";
   const router = useRouter();
   const [completing, setCompleting] = useState(false);
 
@@ -24,15 +27,22 @@ export default function AcademyPage() {
       const json = await res.json();
       
       if (json.success) {
-        toast.success("Edukasi Selesai! Akses Health Scanner telah dibuka.");
+        toast.success(
+          isEnglish
+            ? "Education complete. Health Scanner access is unlocked."
+            : "Edukasi Selesai! Akses Health Scanner telah dibuka."
+        );
         setTimeout(() => {
           router.push("/dashboard/scan");
         }, 1500);
       } else {
-        toast.error(json.error?.message ?? "Gagal menyelesaikan modul.");
+        toast.error(
+          json.error?.message ??
+            (isEnglish ? "Failed to complete the module." : "Gagal menyelesaikan modul.")
+        );
       }
     } catch {
-      toast.error("Gagal terhubung ke server.");
+      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
     } finally {
       setCompleting(false);
     }
@@ -48,7 +58,9 @@ export default function AcademyPage() {
         </div>
         <h1 className="text-4xl font-black text-white tracking-tighter">Saku Academy</h1>
         <p className="text-[#8B7DFF] font-bold text-lg uppercase tracking-widest">
-          Modul Wajib: Pertolongan Pertama Jeratan Pinjol
+          {isEnglish
+            ? "Required Module: Emergency Response for Predatory Lending"
+            : "Modul Wajib: Pertolongan Pertama Jeratan Pinjol"}
         </p>
       </div>
 
@@ -58,9 +70,29 @@ export default function AcademyPage() {
             <AlertTriangle className="h-8 w-8 text-amber-500" />
           </div>
           <div className="space-y-3 flex-1">
-            <h3 className="text-xl font-bold text-amber-500">Kenapa akun Anda terkunci di halaman ini?</h3>
+            <h3 className="text-xl font-bold text-amber-500">
+              {isEnglish ? "Why is your account locked on this page?" : "Kenapa akun Anda terkunci di halaman ini?"}
+            </h3>
             <p className="text-amber-500/80 leading-relaxed text-sm md:text-base">
-              Sistem AI SafeWallet mendeteksi bahwa <strong className="text-amber-400">rasio utang Anda melampaui 35%</strong> dari total pendapatan bulan ini. Secara statistik, angka ini adalah batas kritis sebelum kehilangan kendali finansial. Kami mengunci fitur Scan sementara agar Anda fokus pada metodologi penyelesaian masalah utang jangka pendek berikut ini.
+              {isEnglish ? (
+                <>
+                  SafeWallet detected that your{" "}
+                  <strong className="text-amber-400">debt ratio exceeds 35%</strong>{" "}
+                  of this month&apos;s income. Statistically, this is a critical
+                  threshold before financial control starts breaking down. We
+                  temporarily lock the scanner so you can focus on the
+                  short-term debt recovery steps below.
+                </>
+              ) : (
+                <>
+                  Sistem AI SafeWallet mendeteksi bahwa{" "}
+                  <strong className="text-amber-400">rasio utang Anda melampaui 35%</strong>{" "}
+                  dari total pendapatan bulan ini. Secara statistik, angka ini
+                  adalah batas kritis sebelum kehilangan kendali finansial. Kami
+                  mengunci fitur Scan sementara agar Anda fokus pada metodologi
+                  penyelesaian masalah utang jangka pendek berikut ini.
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -151,9 +183,15 @@ export default function AcademyPage() {
             disabled={completing}
           >
             {completing ? (
-              <><Loader2 className="mr-3 h-6 w-6 animate-spin" /> Sedang Membuka Kunci Akun...</>
+              <>
+                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+                {isEnglish ? "Unlocking Account..." : "Sedang Membuka Kunci Akun..."}
+              </>
             ) : (
-              <><CheckCircle2 className="mr-3 h-6 w-6" /> Saya Berkomitmen & Buka Kunci</>
+              <>
+                <CheckCircle2 className="mr-3 h-6 w-6" />
+                {isEnglish ? "I Commit and Unlock Access" : "Saya Berkomitmen & Buka Kunci"}
+              </>
             )}
           </Button>
         </div>
