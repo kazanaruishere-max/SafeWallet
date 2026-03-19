@@ -85,6 +85,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Performance optimizations
+  compress: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
 };
 
 import { withSentryConfig } from '@sentry/nextjs';
@@ -112,5 +117,5 @@ export default withSentryConfig(nextConfig, {
   webpack: {
     reactComponentAnnotation: { enabled: true },
     automaticVercelMonitors: true,
-  }
+  },
 });

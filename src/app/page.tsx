@@ -6,6 +6,8 @@ import dynamic from "next/dynamic";
 import { Shield, Sparkles, ArrowRight, Server, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+import Image from "next/image";
+
 // Performance Optimization: Dynamic Imports for Heavy Components
 const LightRays = dynamic(() => import("@/components/light-rays"), { ssr: false });
 const ScrollVelocity = dynamic(() => import("@/components/scroll-velocity"), { ssr: false });
