@@ -36,4 +36,21 @@ describe('sanitizeAIInput', () => {
     expect(sanitized).toContain('___IP_REDACTED___');
     expect(sanitized).not.toContain('192.168.1.1');
   });
+
+  it('should redact English names with titles (Global i18n)', () => {
+    const input = 'Mr. John Doe and Ms. Jane Smith signed the document';
+    const { sanitized } = sanitizeAIInput(input);
+    expect(sanitized).toContain('Mr ___NAME_REDACTED___');
+    expect(sanitized).toContain('Ms ___NAME_REDACTED___');
+    expect(sanitized).not.toContain('John Doe');
+    expect(sanitized).not.toContain('Jane Smith');
+  });
+
+  it('should redact English street addresses (Global i18n)', () => {
+    const input = 'Office located at 123 Wall Street, Avenue Road';
+    const { sanitized } = sanitizeAIInput(input);
+    expect(sanitized).toContain('___ADDRESS_REDACTED___');
+    expect(sanitized).not.toContain('Wall Street');
+    expect(sanitized).not.toContain('Avenue Road');
+  });
 });

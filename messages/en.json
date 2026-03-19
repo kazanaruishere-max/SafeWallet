@@ -1,0 +1,21 @@
+{
+  "common": {
+    "back": "Back to Home",
+    "dashboard": "Dashboard",
+    "loading": "Loading...",
+    "error": "An error occurred"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "required": "Please login first to use this feature."
+  },
+  "dashboard": {
+    "overview": "Financial Overview",
+    "subtitle": "Monitor your AI Health Score and security activity today.",
+    "newScan": "Start New Scan"
+  },
+  "security": {
+    "piiWarning": "Sensitive data (PII) has been automatically masked for your privacy."
+  }
+}

@@ -49,12 +49,14 @@ export function sanitizeAIInput(input: string, maxLength = 5000): {
     { regex: /\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, replacement: "___CARD_REDACTED___" },
     // 3. Emails
     { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: "___EMAIL_REDACTED___" },
-    // 4. Names with common Indonesian titles & typical capitalized names
-    { regex: /\b(Bpk|Ibu|Mr|Mrs|Sdr|Sdri|Tuan|Nyonya|Anak|An)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)*\b/g, replacement: "$1 ___NAME_REDACTED___" },
+    // 4. Names with common Indonesian/Global titles & typical capitalized names
+    { regex: /\b(Bpk|Ibu|Mr|Mrs|Ms|Sir|Dr|Prof|Sdr|Sdri|Tuan|Nyonya|Anak|An)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)*\b/g, replacement: "$1 ___NAME_REDACTED___" },
     // 5. Common Bank Keywords often followed by identifiers (REK, NO.REK, etc)
     { regex: /\b(REK|NO\.REK|ACCOUNT|ACC|VA|VIRTUAL ACCOUNT|NO\.HP|TELP|PIN|NIK)\s*[:.]?\s*[A-Z0-9-]{4,}\b/gi, replacement: "$1 ___REDACTED___" },
-    // 6. Addresses (Common Indonesian address keywords)
-    { regex: /\b(Jl|Jalan|Kec|Kab|Kota|Prov|RT|RW)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)*\b/g, replacement: "___ADDRESS_REDACTED___" },
+    // 6. Addresses (Common Indonesian & Global address keywords)
+    { regex: /\d*\s*[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\s+(Jl|Jalan|St|Street|Ave|Avenue|Rd|Road)\.?/gi, replacement: "___ADDRESS_REDACTED___" },
+    { regex: /\b(Jl|Jalan|St|Street|Ave|Avenue|Rd|Road)\.?\s+[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\b/gi, replacement: "___ADDRESS_REDACTED___" },
+    { regex: /\b(Kec|Kab|Kota|Prov|RT|RW)\.?\s+[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\b/g, replacement: "___ADDRESS_REDACTED___" },
     // 7. SWIFT/BIC/IBAN patterns
     { regex: /\b[A-Z]{6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3})?\b/g, replacement: "___BANK_CODE_REDACTED___" },
     // 8. IP Addresses (for telemetry/log leak prevention)
