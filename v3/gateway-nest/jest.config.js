@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 // v3/gateway-nest/jest.config.js
-=======
->>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 module.exports = {
   moduleFileExtensions: ['js', 'json', 'ts'],
   rootDir: 'src',

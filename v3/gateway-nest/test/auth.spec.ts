@@ -1,7 +1,4 @@
-<<<<<<< HEAD
 // v3/gateway-nest/test/auth.spec.ts
-=======
->>>>>>> 7fa1416d021156d01b5169f1739fac21d9ce3c81
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtStrategy } from '../src/auth/jwt.strategy';
 import { ConfigService } from '@nestjs/config';
