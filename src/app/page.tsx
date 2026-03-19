@@ -3,6 +3,7 @@
 import { useRef, useEffect } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useLocale } from "@/components/language-provider";
 import { Shield, Sparkles, ArrowRight, Server, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +14,8 @@ const CircularGallery = dynamic(() => import("@/components/circular-gallery"), {
 const FlowingMenu = dynamic(() => import("@/components/flowing-menu"), { ssr: false });
 
 export default function LandingPage() {
+  const { messages } = useLocale();
+  const copy = messages.landing;
   const containerRef = useRef<HTMLDivElement>(null);
   const mockupRef = useRef<HTMLDivElement>(null);
   const scoreRef = useRef<HTMLSpanElement>(null);
@@ -499,8 +502,8 @@ export default function LandingPage() {
 
   const footerMenu = [
     { link: '/', text: 'SafeWallet © 2026', image: 'https://picsum.photos/seed/sw1/800/600' },
-    { link: '/kebijakan-privasi', text: 'Kebijakan Privasi', image: 'https://picsum.photos/seed/sw2/800/600' },
-    { link: '/syarat-ketentuan', text: 'Syarat Operasi', image: 'https://picsum.photos/seed/sw3/800/600' }
+    { link: '/kebijakan-privasi', text: copy.footerPrivacy, image: 'https://picsum.photos/seed/sw2/800/600' },
+    { link: '/syarat-ketentuan', text: copy.footerTerms, image: 'https://picsum.photos/seed/sw3/800/600' }
   ];
 
   return (
@@ -517,12 +520,12 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <Link href="/login">
               <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/5 rounded-full px-6">
-                 Login
+                 {copy.navLogin}
               </Button>
             </Link>
             <Link href="/signup">
               <Button className="bg-[#F2A971] text-[#0B0A08] hover:bg-[#F2A971]/90 rounded-full px-8 font-semibold transition-all">
-                Get Started
+                {copy.navGetStarted}
               </Button>
             </Link>
           </div>
@@ -552,16 +555,16 @@ export default function LandingPage() {
           <div className="relative z-10 container mx-auto flex flex-col items-center">
             <div className="hero-text inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-10 backdrop-blur-sm opacity-80">
               <Sparkles className="w-4 h-4 text-[#F2A971]" />
-              <span className="text-sm font-medium text-white/80">SaaS Finansial AI #1 di Indonesia</span>
+              <span className="text-sm font-medium text-white/80">{copy.badge}</span>
             </div>
             
             <h1 className="hero-text text-5xl md:text-7xl font-extrabold tracking-tight mb-8 max-w-4xl leading-tight">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 block md:inline">AI Guardian untuk </span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2A971] to-amber-300 drop-shadow-[0_0_15px_rgba(242,169,113,0.15)] block md:inline">Uangmu</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 block md:inline">{copy.heroTitleA} </span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2A971] to-amber-300 drop-shadow-[0_0_15px_rgba(242,169,113,0.15)] block md:inline">{copy.heroTitleB}</span>
             </h1>
             
             <p className="hero-text text-xl md:text-2xl text-white/50 max-w-2xl mb-14 leading-relaxed font-light">
-              Deteksi mutasi pinjol, judi online, dan dapatkan saran finansial personal dengan kecerdasan buatan kelas institusi.
+              {copy.heroDescription}
             </p>
             
             <div className="cta-btn">
@@ -571,7 +574,7 @@ export default function LandingPage() {
                 onMouseLeave={handleCTALeave}
                 className="inline-flex items-center justify-center h-16 px-10 rounded-full bg-[#F2A971] text-[#0B0A08] text-lg font-bold shadow-[0_0_20px_rgba(242,169,113,0.2)] transition-colors duration-300 hover:bg-[#FADCBE]"
               >
-                Mulai Perjalanan Finansialmu
+                {copy.heroCta}
                 <ArrowRight className="ml-3 w-5 h-5 opacity-80" />
               </Link>
             </div>
@@ -598,8 +601,8 @@ export default function LandingPage() {
                         <div className="absolute inset-0 border border-[#F2A971]/50 rounded-full animate-ping opacity-20" />
                         <span ref={scoreRef} className="text-3xl font-bold text-[#F2A971]">0</span>
                       </div>
-                      <h3 className="text-2xl font-semibold text-white/90 mb-3 tracking-wide">Health Score: Excellent</h3>
-                      <p className="text-white/40 font-light text-sm max-w-xs mx-auto">Sistem pelacakan real-time melaporkan 0 aktivitas abnormal di seluruh gerbang pembayaran Anda.</p>
+                      <h3 className="text-2xl font-semibold text-white/90 mb-3 tracking-wide">{copy.heroScoreTitle}</h3>
+                      <p className="text-white/40 font-light text-sm max-w-xs mx-auto">{copy.heroScoreDescription}</p>
                     </div>
                   </div>
                 </div>
@@ -620,18 +623,18 @@ export default function LandingPage() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-20 h-20 rounded-full bg-[#F2A971]/10 border-2 border-[#F2A971]/60 flex items-center justify-center shadow-[0_0_80px_rgba(242,169,113,0.5)] backdrop-blur-sm z-10">
                 <Shield className="w-10 h-10 text-[#F2A971]" />
               </div>
-              <span className="orbit-label absolute top-0 left-1/2 -translate-x-1/2 text-[#F2A971] text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">Pengguna</span>
-              <span className="orbit-label absolute bottom-0 left-[5%] text-white/60 text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">Teknologi</span>
-              <span className="orbit-label absolute bottom-0 right-[5%] text-[#D9772B] text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">Dana</span>
+              <span className="orbit-label absolute top-0 left-1/2 -translate-x-1/2 text-[#F2A971] text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">{copy.orbitUser}</span>
+              <span className="orbit-label absolute bottom-0 left-[5%] text-white/60 text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">{copy.orbitTech}</span>
+              <span className="orbit-label absolute bottom-0 right-[5%] text-[#D9772B] text-[10px] font-mono tracking-[0.3em] uppercase opacity-0">{copy.orbitFunds}</span>
             </div>
           </div>
           <div className="relative z-10 px-10 md:px-20 w-full md:w-1/2">
-            <div className="mb-4 font-mono text-[#F2A971]/40 text-xs tracking-[0.4em] uppercase">// kepercayaan.triad</div>
+            <div className="mb-4 font-mono text-[#F2A971]/40 text-xs tracking-[0.4em] uppercase">{copy.orbitTag}</div>
             <h2 className="orbit-title text-5xl md:text-7xl font-black tracking-tighter leading-none mb-8 opacity-0">
-              <span className="text-white block">Tiga Lapis</span>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2A971] to-[#D9772B] block">Perlindungan</span>
+              <span className="text-white block">{copy.orbitTitleA}</span>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2A971] to-[#D9772B] block">{copy.orbitTitleB}</span>
             </h2>
-            <p className="orbit-subtitle text-lg text-white/40 font-light leading-relaxed max-w-md opacity-0">Finansial Anda dijaga oleh triad kecerdasan AI yang berputar dan saling mengunci satu sama lain tanpa henti.</p>
+            <p className="orbit-subtitle text-lg text-white/40 font-light leading-relaxed max-w-md opacity-0">{copy.orbitSubtitle}</p>
           </div>
         </section>
 
@@ -659,7 +662,7 @@ export default function LandingPage() {
               </svg>
             </div>
             <p className="eye-tagline text-3xl md:text-5xl font-black text-white tracking-tighter text-center opacity-0">
-              Deteksi Bahaya <span className="text-[#F2A971]">Sebelum Terjadi</span>
+              {copy.eyeTitleA} <span className="text-[#F2A971]">{copy.eyeTitleB}</span>
             </p>
           </div>
           <div className="eye-scan-label absolute bottom-10 right-10 font-mono text-[#F2A971] text-xs tracking-[0.5em] uppercase opacity-0">AI SCAN: ESTABLISHED</div>
@@ -675,15 +678,15 @@ export default function LandingPage() {
             {/* Teks Sebelah Kiri */}
             <div ref={pinTextRef} className="flex-1 md:pr-16 text-center md:text-left mb-16 md:mb-0 transform-gpu">
               <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-                <span className="text-white">Benteng </span> 
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-[#F2A971]">Terakhir</span>
+                <span className="text-white">{copy.pinTitleA} </span> 
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-[#F2A971]">{copy.pinTitleB}</span>
               </h2>
               <p className="text-white/50 text-xl font-light leading-relaxed max-w-lg mx-auto md:mx-0">
-                Layar ini terkunci sementara. Saat Anda menggulir ke bawah, mesin AI kami memproses kordinat data Anda di latar belakang layaknya mesin gigi presisi.
+                {copy.pinDescription}
               </p>
               <div className="mt-8 flex items-center gap-3 justify-center md:justify-start text-white/30">
                 <Server className="w-5 h-5 animate-pulse text-[#F2A971]" />
-                <span className="text-sm uppercase tracking-widest font-semibold text-[#F2A971]">Scroll Untuk Memutar Brankas AI</span>
+                <span className="text-sm uppercase tracking-widest font-semibold text-[#F2A971]">{copy.pinHint}</span>
               </div>
             </div>
 
@@ -709,8 +712,8 @@ export default function LandingPage() {
         {/* ========================================== */}
         <section className="container mx-auto px-6 py-20 pb-40">
           <div className="text-center mb-16 relative z-10">
-            <h2 className="text-3xl font-bold text-white mb-4">Infrastruktur Keamanan Menyeluruh</h2>
-            <p className="text-white/40">Geser untuk mengeksplorasi modul inti SafeWallet.</p>
+            <h2 className="text-3xl font-bold text-white mb-4">{copy.infrastructureTitle}</h2>
+            <p className="text-white/40">{copy.infrastructureSubtitle}</p>
           </div>
 
           <div className="w-full h-[600px] relative rounded-[3rem] overflow-hidden border border-white/5 bg-[#0A0907]/50 mix-blend-screen shadow-[0_0_100px_rgba(242,169,113,0.05)]">
@@ -726,10 +729,10 @@ export default function LandingPage() {
           
           <div className="container mx-auto px-6 z-10 text-center">
             <h2 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-8">
-              <span className="text-red-500/80">Kenyataan Pahit.</span>
+              <span className="text-red-500/80">{copy.bitterRealityTitle}</span>
             </h2>
             <p className="text-white/40 text-xl font-light leading-relaxed max-w-2xl mx-auto mb-20">
-              Ribuan masyarakat terjebak kebocoran finansial pasif. Gaya hidup konsumerisme beracun memutar uang lari dari ekonomi lokal kita.
+              {copy.bitterRealityDescription}
             </p>
 
             {/* Chaotic 3D Objects Container */}
@@ -758,14 +761,14 @@ export default function LandingPage() {
               <div className="scanner-content max-w-4xl mx-auto text-center transform-gpu">
                 <Shield className="scanner-shield w-24 h-24 text-[#F2A971] mx-auto mb-10 opacity-80" />
                 <h2 className="text-5xl md:text-7xl font-extrabold mb-8 tracking-tighter">
-                  <span className="text-white/40">Intervensi </span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#FFF5ED] via-[#F2A971] to-[#D9772B] drop-shadow-[0_0_20px_rgba(242,169,113,0.3)]">Kecerdasan Buatan</span>
+                  <span className="text-white/40">{copy.interventionTitleA} </span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-br from-[#FFF5ED] via-[#F2A971] to-[#D9772B] drop-shadow-[0_0_20px_rgba(242,169,113,0.3)]">{copy.interventionTitleB}</span>
                 </h2>
                 <div className="w-24 h-[1px] bg-[#F2A971]/30 mx-auto mb-8" />
                 <p className="text-white/60 text-2xl font-light leading-relaxed px-4 md:px-20">
-                  Sistem perlindungan yang mengkalibrasi ulang impuls finansial Anda.
+                  {copy.interventionDescriptionA}
                   <br className="hidden md:block" />
-                  Mengunci bahaya. Membuka peluang.
+                  {copy.interventionDescriptionB}
                 </p>
               </div>
            </div>
@@ -786,8 +789,8 @@ export default function LandingPage() {
         {/* ========================================== */}
         <section ref={nodesSectionRef} className="h-screen bg-[#050403] relative overflow-hidden flex flex-col items-center justify-start pt-24 border-t border-[#F2A971]/10">
           <div className="micro-text container mx-auto px-6 text-center z-20 relative mt-8 mb-6 transform-gpu">
-            <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white tracking-widest uppercase"><span className="text-[#F2A971]">Sirkulasi</span> Bangkit</h2>
-            <p className="text-white/40 text-2xl font-light tracking-[0.2em] uppercase">Setiap titik ekonomi adalah Anda.</p>
+            <h2 className="text-5xl md:text-7xl font-bold mb-6 text-white tracking-widest uppercase"><span className="text-[#F2A971]">{copy.circulationTitleA}</span> {copy.circulationTitleB}</h2>
+            <p className="text-white/40 text-2xl font-light tracking-[0.2em] uppercase">{copy.circulationSubtitle}</p>
           </div>
 
           <div className="relative w-full h-full absolute inset-0 flex items-center justify-center">
@@ -834,7 +837,7 @@ export default function LandingPage() {
 
             {/* SUBTITLE — drifts up after text crystallizes */}
             <p className="indo-subtitle absolute bottom-[28%] left-1/2 -translate-x-1/2 w-full text-xl md:text-3xl text-white/70 font-light leading-relaxed tracking-wider text-center max-w-4xl mx-auto px-6 opacity-0">
-              Negara tak terkalahkan bermula dari finansial individu yang terproteksi.
+              {copy.nationSubtitle}
             </p>
 
             {/* CTA — materializes last as the finale reward */}
@@ -843,7 +846,7 @@ export default function LandingPage() {
                 href="/signup"
                 className="inline-flex items-center justify-center h-20 px-16 rounded-full bg-gradient-to-r from-[#F2A971] to-[#D9772B] text-[#0B0A08] text-2xl font-black shadow-[0_0_100px_rgba(242,169,113,0.8)] hover:scale-105 hover:shadow-[0_0_200px_rgba(242,169,113,1)] transition-all duration-500 hover:brightness-110"
               >
-                Mulai Selamatkan Dana Anda
+                {copy.nationCta}
               </Link>
             </div>
           </div>

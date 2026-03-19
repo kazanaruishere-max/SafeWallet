@@ -26,8 +26,8 @@ const GlassCard = ({ children, className = "" }: { children: React.ReactNode, cl
 );
 
 export default function ProfilePage() {
-  const { locale } = useLocale();
-  const isEnglish = locale === "en";
+  const { messages } = useLocale();
+  const copy = messages.profile;
   const router = useRouter();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -75,31 +75,31 @@ export default function ProfilePage() {
       });
       const json = await res.json();
       if (json.success) {
-        toast.success(isEnglish ? "Profile saved." : "Profil berhasil disimpan!");
+        toast.success(copy.toastProfileSaved);
       } else {
-        toast.error(json.error?.message ?? (isEnglish ? "Failed to save." : "Gagal menyimpan."));
+        toast.error(json.error?.message ?? copy.toastProfileSaveFailed);
       }
     } catch {
-      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
+      toast.error(copy.toastServerFailed);
     } finally {
       setSaving(false);
     }
   };
 
   const handleDeleteAccount = async () => {
-    if (!confirm("Yakin ingin menghapus akun? Semua data akan hilang permanen.")) return;
-    if (!confirm("Ini TIDAK BISA DIBATALKAN. Ketik ya untuk konfirmasi.")) return;
+    if (!confirm(copy.confirmDeleteFirst)) return;
+    if (!confirm(copy.confirmDeleteSecond)) return;
     try {
       const res = await fetch("/api/user/delete", { method: "DELETE" });
       const json = await res.json();
       if (json.success) {
-        toast.success(isEnglish ? "Account deleted." : "Akun berhasil dihapus.");
+        toast.success(copy.toastDeleteSuccess);
         router.push("/");
       } else {
-        toast.error(json.error?.message ?? (isEnglish ? "Failed to delete account." : "Gagal menghapus akun."));
+        toast.error(json.error?.message ?? copy.toastDeleteFailed);
       }
     } catch {
-      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
+      toast.error(copy.toastServerFailed);
     }
   };
 
@@ -114,9 +114,9 @@ export default function ProfilePage() {
       a.download = `safewallet-export-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success(isEnglish ? "Data downloaded." : "Data berhasil diunduh!");
+      toast.success(copy.toastDownloadSuccess);
     } catch {
-      toast.error(isEnglish ? "Failed to download data." : "Gagal mengunduh data.");
+      toast.error(copy.toastDownloadFailed);
     }
   };
 
@@ -127,14 +127,12 @@ export default function ProfilePage() {
       const json = await res.json();
       if (json.success) {
         setLinkCode(json.code);
-        toast.success(
-          isEnglish ? "Telegram OTP created." : "Kode OTP Telegram berhasil dibuat!"
-        );
+        toast.success(copy.toastOtpSuccess);
       } else {
-        toast.error(json.error?.message ?? (isEnglish ? "Failed to get code." : "Gagal mendapatkan kode."));
+        toast.error(json.error?.message ?? copy.toastOtpFailed);
       }
     } catch {
-      toast.error(isEnglish ? "Failed to connect to the server." : "Gagal terhubung ke server.");
+      toast.error(copy.toastServerFailed);
     } finally {
       setLinking(false);
     }
@@ -156,14 +154,8 @@ export default function ProfilePage() {
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#3323D2]/10 blur-[150px] rounded-full pointer-events-none -z-10" />
 
       <div>
-        <h1 className="text-3xl font-extrabold text-white tracking-tight">
-          {isEnglish ? "Profile & Settings" : "Profil & Pengaturan"}
-        </h1>
-        <p className="mt-2 text-white/50 text-lg">
-          {isEnglish
-            ? "Customize your personal information and security integrations."
-            : "Kustomisasi informasi personal dan integrasi keamanan Anda."}
-        </p>
+        <h1 className="text-3xl font-extrabold text-white tracking-tight">{copy.title}</h1>
+        <p className="mt-2 text-white/50 text-lg">{copy.subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -173,21 +165,21 @@ export default function ProfilePage() {
           {/* Card: Personal Information */}
           <GlassCard className="p-8">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <User className="text-[#F2A971] w-5 h-5" /> {isEnglish ? "Personal Information" : "Informasi Pribadi"}
+              <User className="text-[#F2A971] w-5 h-5" /> {copy.personalInfo}
             </h2>
             <div className="flex items-center gap-6 mb-8">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-[#F2A971] to-[#3323D2] flex items-center justify-center text-3xl font-black text-white shadow-xl">
                 {profile?.email.charAt(0).toUpperCase()}
               </div>
               <div>
-                <Label className="text-white/50 text-xs uppercase tracking-wider font-bold mb-1 block">Akun Vault</Label>
+                <Label className="text-white/50 text-xs uppercase tracking-wider font-bold mb-1 block">{copy.vaultAccount}</Label>
                 <p className="text-white font-bold text-lg">{profile?.email}</p>
               </div>
             </div>
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label className="text-white/70 font-medium">Alamat Email Terdaftar</Label>
+                <Label className="text-white/70 font-medium">{copy.registeredEmail}</Label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
                   <Input disabled value={profile?.email ?? ""} className="bg-white/5 border-white/10 text-white/50 pl-12 h-12 rounded-xl" />
@@ -195,7 +187,7 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white/70 font-medium">Nomor WhatsApp (Opsional)</Label>
+                <Label className="text-white/70 font-medium">{copy.whatsapp}</Label>
                 <div className="relative">
                   <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
                   <Input
@@ -208,19 +200,19 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label className="text-white/70 font-medium">Pendapatan Bulanan (Rp)</Label>
+                <Label className="text-white/70 font-medium">{copy.monthlyIncome}</Label>
                 <div className="relative">
                   <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
                   <Input
                     type="number"
-                    placeholder="Contoh: 5000000"
+                    placeholder={copy.monthlyIncomePlaceholder}
                     value={income}
                     onChange={(e) => setIncome(e.target.value)}
                     className="bg-white/5 border-white/10 focus:border-[#F2A971] text-white pl-12 h-12 rounded-xl transition-colors"
                   />
                 </div>
                 <p className="text-xs text-white/40 leading-relaxed mt-2">
-                  *Penting: Data ini digunakan AI untuk menghitung wajar rasio utang dan batas saving rate bulanan Anda secara akurat.
+                  *{copy.monthlyIncomeHint}
                 </p>
               </div>
 
@@ -232,12 +224,12 @@ export default function ProfilePage() {
                 {saving ? (
                   <>
                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    {isEnglish ? "Saving..." : "Merekam Data..."}
+                    {copy.saving}
                   </>
                 ) : (
                   <>
                     <Save className="mr-2 h-5 w-5" />
-                    {isEnglish ? "Save Profile Changes" : "Simpan Perubahan Profil"}
+                    {copy.saveProfile}
                   </>
                 )}
               </Button>
@@ -247,11 +239,11 @@ export default function ProfilePage() {
           {/* Card: Subscription */}
           <GlassCard className="p-8 border-[#3323D2]/20">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <CreditCard className="text-[#8B7DFF] w-5 h-5" /> Paket Layanan
+              <CreditCard className="text-[#8B7DFF] w-5 h-5" /> {copy.planTitle}
             </h2>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
-                <p className="text-white/50 text-sm font-medium mb-1">Status Langganan</p>
+                <p className="text-white/50 text-sm font-medium mb-1">{copy.subscriptionStatus}</p>
                 <div className="flex items-center gap-3">
                   <Badge className="bg-[#3323D2] text-white hover:bg-[#3323D2] text-sm py-1 capitalize rounded-lg">{profile?.subscription_tier ?? "free"}</Badge>
                   <span className="text-white font-bold text-lg">SafeWallet {profile?.subscription_tier === 'free' ? 'Basic' : 'Premium'}</span>
@@ -259,19 +251,19 @@ export default function ProfilePage() {
               </div>
               {profile?.subscription_tier === "free" && (
                 <Button className="bg-white/10 hover:bg-white/20 text-white border border-white/10 font-medium rounded-xl h-10">
-                  Upgrade Premium
+                  {copy.upgradePremium}
                 </Button>
               )}
             </div>
             <div className="bg-[#0B0A08]/40 border border-white/5 rounded-2xl p-4 flex gap-6">
               <div className="flex-1">
                 <span className="text-white/40 text-xs block mb-1">Health Scanner</span>
-                <span className="text-xl font-black text-white">{scanQuota.limit - scanQuota.used} <span className="text-sm font-normal text-white/50">/ {scanQuota.limit} sisa</span></span>
+                <span className="text-xl font-black text-white">{scanQuota.limit - scanQuota.used} <span className="text-sm font-normal text-white/50">/ {scanQuota.limit} {copy.remaining}</span></span>
               </div>
               <div className="w-px bg-white/10" />
               <div className="flex-1">
                 <span className="text-white/40 text-xs block mb-1">Scam Checker</span>
-                <span className="text-xl font-black text-white">{scamQuota.limit - scamQuota.used} <span className="text-sm font-normal text-white/50">/ {scamQuota.limit} sisa</span></span>
+                <span className="text-xl font-black text-white">{scamQuota.limit - scamQuota.used} <span className="text-sm font-normal text-white/50">/ {scamQuota.limit} {copy.remaining}</span></span>
               </div>
             </div>
           </GlassCard>
@@ -290,9 +282,9 @@ export default function ProfilePage() {
                 <svg viewBox="0 0 24 24" className="h-8 w-8 text-[#2CA5E0] fill-current"><path d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.32.252-.472.252l.215-3.048 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/></svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white">Bot Saku SafeWallet</h2>
+                <h2 className="text-xl font-bold text-white">{copy.telegramTitle}</h2>
                 <Badge variant="outline" className={`mt-1 border-none font-bold ${profile?.telegram_chat_id ? 'bg-[#F2A971]/20 text-[#F2A971]' : 'bg-white/10 text-white/50'}`}>
-                  {profile?.telegram_chat_id ? "STATUS: TERKONEKSI AKTIF" : "STATUS: BELUM TERHUBUNG"}
+                  {profile?.telegram_chat_id ? copy.telegramConnected : copy.telegramDisconnected}
                 </Badge>
               </div>
             </div>
@@ -301,7 +293,7 @@ export default function ProfilePage() {
               {!profile?.telegram_chat_id ? (
                 <>
                   <p className="text-white/60 leading-relaxed text-sm">
-                    Hubungkan akun Anda dengan bot Telegram resmi kami untuk mendapatkan AI Coaching harian, notifikasi instan untuk scan dokumen, dan navigasi command cepat di Telegram.
+                    {copy.telegramDescription}
                   </p>
                   
                   {!linkCode ? (
@@ -311,16 +303,16 @@ export default function ProfilePage() {
                       disabled={linking}
                     >
                       {linking ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
-                      Bangkitkan Kode OTP Telegram
+                      {copy.telegramGenerateOtp}
                     </Button>
                   ) : (
                     <div className="bg-[#0B0A08] border border-[#2CA5E0]/30 rounded-2xl p-5 relative overflow-hidden">
                       <div className="absolute top-0 right-0 w-full h-full bg-[#2CA5E0]/5 pointer-events-none" />
-                      <h3 className="text-[#2CA5E0] font-bold mb-3 flex items-center gap-2">Langkah Integrasi Final:</h3>
+                      <h3 className="text-[#2CA5E0] font-bold mb-3 flex items-center gap-2">{copy.telegramFinalSteps}</h3>
                       <ol className="text-white/60 text-sm space-y-2 ml-4 list-decimal marker:text-white/40 mb-5">
-                        <li>Buka aplikasi Telegram dan cari <span className="font-bold text-white">@SakuSafeBot</span></li>
-                        <li>Tekan tombol START untuk memulai bot</li>
-                        <li>Salin dan kirim kode OTP berikut ke bot:</li>
+                        <li>{copy.telegramStep1}</li>
+                        <li>{copy.telegramStep2}</li>
+                        <li>{copy.telegramStep3}</li>
                       </ol>
                       
                       <div className="flex gap-2">
@@ -334,7 +326,7 @@ export default function ProfilePage() {
                           Copy
                         </Button>
                       </div>
-                      <p className="text-xs text-center text-white/30 mt-4">*Kode OTP ini bersifat sementara dan otomatis hangus</p>
+                      <p className="text-xs text-center text-white/30 mt-4">*{copy.telegramOtpHint}</p>
                     </div>
                   )}
                 </>
@@ -343,11 +335,11 @@ export default function ProfilePage() {
                   <div className="w-16 h-16 bg-[#F2A971]/10 text-[#F2A971] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#F2A971]/20">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="text-white font-bold text-lg mb-2">Bot Sepenuhnya Terhubung</h3>
+                  <h3 className="text-white font-bold text-lg mb-2">{copy.telegramFullyConnected}</h3>
                   <p className="text-white/50 text-sm leading-relaxed">
-                    Saku Assistant sudah aktif 24/7 di Telegram. Saku dapat melihat kondisi finansial Anda saat ini untuk memberi rekomendasi paling relevan.
+                    {copy.telegramConnectedDescription}
                   </p>
-                  <Button variant="outline" className="mt-6 border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl w-full">Putuskan Koneksi Bot</Button>
+                  <Button variant="outline" className="mt-6 border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl w-full">{copy.telegramDisconnect}</Button>
                 </div>
               )}
             </div>
@@ -356,17 +348,17 @@ export default function ProfilePage() {
           {/* Card: Security & Privacy */}
           <GlassCard className="p-8 border-red-500/10">
             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-              <Shield className="text-red-500 w-5 h-5" /> Privasi & Kontrol Akun
+              <Shield className="text-red-500 w-5 h-5" /> {copy.privacyTitle}
             </h2>
             <p className="text-white/40 text-sm mb-6 leading-relaxed">
-              SafeWallet 100% patuh pada regulasi perlindungan data pribadi. Anda memiliki kontrol penuh atas jejak digital Anda di platform kami.
+              {copy.privacyDescription}
             </p>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5 group hover:bg-white/10 transition-colors">
                 <div>
-                  <h3 className="text-white font-bold text-sm">Unduh Rekam Jejak (JSON)</h3>
-                  <p className="text-white/40 text-xs mt-1">Ekspor seluruh data akun sesuai hak portabilitas</p>
+                  <h3 className="text-white font-bold text-sm">{copy.exportTitle}</h3>
+                  <p className="text-white/40 text-xs mt-1">{copy.exportDescription}</p>
                 </div>
                 <Button variant="ghost" className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-xl" onClick={handleExportData}>
                   <Download className="w-5 h-5" />
@@ -375,8 +367,8 @@ export default function ProfilePage() {
 
               <div className="flex items-center justify-between p-4 bg-red-500/5 rounded-2xl border border-red-500/10 group hover:bg-red-500/10 transition-colors">
                 <div>
-                  <h3 className="text-red-400 font-bold text-sm">Hapus Akun Permanen</h3>
-                  <p className="text-red-400/50 text-xs mt-1">Semua data terhapus dalam 30 hari tanpa sisa</p>
+                  <h3 className="text-red-400 font-bold text-sm">{copy.deleteTitle}</h3>
+                  <p className="text-red-400/50 text-xs mt-1">{copy.deleteDescription}</p>
                 </div>
                 <Button variant="ghost" className="text-red-500 hover:text-red-400 hover:bg-red-500/20 rounded-xl" onClick={handleDeleteAccount}>
                   <Trash2 className="w-5 h-5" />
