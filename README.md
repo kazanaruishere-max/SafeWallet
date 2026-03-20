@@ -333,3 +333,4 @@ Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 Copyright © 2026 **Kazanaru.**
 
 </div>
+<!-- YOLO Badge Hunt -->
