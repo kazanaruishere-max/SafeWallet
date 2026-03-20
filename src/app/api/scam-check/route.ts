@@ -9,8 +9,45 @@ import { parseAIResponse, ScamAnalysisSchema } from "@/lib/ai/schemas";
 import { encrypt } from "@/lib/encryption";
 import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
 import type { ApiResponse, ApiError, ScamCheckResult } from "@/types/api";
+import dns from "node:dns/promises";
 
 const VALID_INPUT_TYPES = ["text", "url", "screenshot"] as const;
+
+/**
+ * SSRF Protection: Check if IP is in a private or restricted range
+ */
+function isPrivateIP(ip: string): boolean {
+  // IPv4 Private & Restricted Ranges
+  const ipv4Match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4Match) {
+    const [_, o1, o2] = ipv4Match.map(Number);
+    // 127.0.0.0/8 (Loopback)
+    if (o1 === 127) return true;
+    // 10.0.0.0/8 (Private)
+    if (o1 === 10) return true;
+    // 172.16.0.0/12 (Private)
+    if (o1 === 172 && o2 >= 16 && o2 <= 31) return true;
+    // 192.168.0.0/16 (Private)
+    if (o1 === 192 && o2 === 168) return true;
+    // 169.254.0.0/16 (Link-local / Cloud Metadata)
+    if (o1 === 169 && o2 === 254) return true;
+    // 0.0.0.0/8 (Current network)
+    if (o1 === 0) return true;
+  }
+
+  // IPv6 Private & Restricted Ranges
+  if (
+    ip === "::1" || 
+    ip.startsWith("fe80:") || 
+    ip.startsWith("fc00:") || 
+    ip.startsWith("fd00:") ||
+    ip === "::"
+  ) {
+    return true;
+  }
+
+  return false;
+}
 
 export async function POST(request: Request) {
   try {
@@ -88,6 +125,42 @@ export async function POST(request: Request) {
 
     // Sanitize input
     const { sanitized: cleanContent } = sanitizeScamInput(content);
+
+    // FIX: SSRF Protection for URL inputs (GHSA-g374-rpgq-fphx)
+    if (input_type === "url") {
+      try {
+        const url = new URL(content.trim());
+        if (url.protocol !== "http:" && url.protocol !== "https:") {
+          throw new Error("Invalid protocol");
+        }
+        
+        // Resolve host to IP to prevent DNS rebinding & bypasses
+        const { address } = await dns.lookup(url.hostname);
+        if (isPrivateIP(address)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "SSRF_ATTEMPT",
+                message: "Akses ke alamat internal atau terlarang tidak diperbolehkan.",
+              },
+            } satisfies ApiError,
+            { status: 403 }
+          );
+        }
+      } catch (e) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "VALIDATION_ERROR",
+              message: "URL tidak valid atau tidak dapat diakses.",
+            },
+          } satisfies ApiError,
+          { status: 400 }
+        );
+      }
+    }
 
     // 4. AI Analysis
     let analysisResult;
