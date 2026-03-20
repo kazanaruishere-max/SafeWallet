@@ -325,6 +325,18 @@ Built with dedication by **[Kazanaru](https://github.com/kazanaruishere-max)**.
 > *"Code is a shield. Technology is a tool for justice."*
 
 ---
+## Star History
+
+<a href="https://www.star-history.com/?repos=kazanaruishere-max%2FSafeWallet&type=timeline&logscale=&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=kazanaruishere-max/SafeWallet&type=timeline&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=kazanaruishere-max/SafeWallet&type=timeline&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=kazanaruishere-max/SafeWallet&type=timeline&legend=top-left" />
+ </picture>
+</a>
+
+
+
 
 ## 📜 License | Lisensi
 
@@ -333,5 +345,4 @@ Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
 Copyright © 2026 **Kazanaru.**
 
 </div>
-<!-- YOLO Badge Hunt. -->
-qg3rg235vt2  qwef34ef43r
+
