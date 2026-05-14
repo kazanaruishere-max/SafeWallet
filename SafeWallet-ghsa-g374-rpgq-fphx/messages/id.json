@@ -1,0 +1,21 @@
+{
+  "common": {
+    "back": "Kembali ke Beranda",
+    "dashboard": "Dashboard",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan"
+  },
+  "auth": {
+    "login": "Masuk",
+    "signup": "Daftar",
+    "required": "Login terlebih dahulu untuk menggunakan fitur ini."
+  },
+  "dashboard": {
+    "overview": "Financial Overview",
+    "subtitle": "Pantau AI Health Score dan aktivitas keamananmu hari ini.",
+    "newScan": "Mulai Scan Baru"
+  },
+  "security": {
+    "piiWarning": "Data sensitif (PII) telah disamarkan secara otomatis demi privasi Anda."
+  }
+}

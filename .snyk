@@ -1,0 +1,11 @@
+# Snyk (https://snyk.io) policy file, patches or ignores known vulnerabilities.
+version: v1.25.0
+ignore:
+  'SNYK-JS-XLSX-5457926':
+    - '*':
+        reason: 'Known Snyk false positive for CDN-hosted versions of SheetJS (xlsx >= 0.19.3). Issues are resolved in the 0.20.x branch.'
+        expires: '2026-09-19T00:00:00.000Z'
+  'SNYK-JS-XLSX-6252523':
+    - '*':
+        reason: 'Known Snyk false positive for CDN-hosted versions of SheetJS (xlsx >= 0.20.2). Issues are resolved in the 0.20.x branch.'
+        expires: '2026-09-19T00:00:00.000Z'

@@ -1,0 +1,29 @@
+# SafeWallet: Automated Patch Management (Dependabot)
+version: 2
+updates:
+  # 1. NestJS Gateway
+  - package-ecosystem: "npm"
+    directory: "/v3/gateway-nest"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "safewallet-devs"
+
+  # 2. Rust Security Module
+  - package-ecosystem: "cargo"
+    directory: "/v3/security-rust"
+    schedule:
+      interval: "weekly"
+
+  # 3. Python Worker
+  - package-ecosystem: "pip"
+    directory: "/v3/worker-python"
+    schedule:
+      interval: "weekly"
+
+  # 4. GitHub Actions Security
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"

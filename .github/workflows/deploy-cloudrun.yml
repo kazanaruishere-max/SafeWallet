@@ -1,0 +1,140 @@
+# .github/workflows/deploy-cloudrun.yml
+#
+# SafeWallet — Google Cloud Run Deployment
+#
+# Strategy:
+#   - Triggered ONLY on push to `cloudrun` branch (isolated from Vercel/main)
+#   - Uses Workload Identity Federation — ZERO service account key files
+#   - Shared services: same Supabase, Gemini API, Upstash Redis as Vercel
+#   - Scale-to-zero by default (cost = $0 when no traffic)
+#
+# Setup (run once): see scripts/setup-gcp-wif.sh
+
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - cloudrun       # ← dedicated branch, TIDAK menyentuh main/Vercel
+  workflow_dispatch:   # ← bisa trigger manual dari GitHub UI
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: asia-southeast2                  # Jakarta — terdekat ke pengguna Indonesia
+  SERVICE_NAME: safewallet-app
+  REGISTRY: asia-southeast2-docker.pkg.dev
+
+permissions:
+  contents: read
+  id-token: write    # WAJIB untuk Workload Identity Federation
+
+jobs:
+  # ============================================================
+  # Job 1: Build image & push ke Artifact Registry
+  # ============================================================
+  build-and-push:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image: ${{ steps.image.outputs.uri }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Autentikasi ke GCP via Workload Identity Federation
+      # Tidak ada service account JSON — autentikasi via OIDC token GitHub
+      - name: Authenticate to Google Cloud (WIF)
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Konfigurasi Docker agar bisa push ke Artifact Registry
+      - name: Configure Docker to use Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+
+      # Build image dengan label git SHA untuk traceability
+      - name: Build Docker Image
+        id: image
+        run: |
+          IMAGE_URI="${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}"
+          echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
+
+          docker build \
+            --tag "${IMAGE_URI}" \
+            --tag "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
+            --cache-from "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
+            --build-arg BUILDKIT_INLINE_CACHE=1 \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push "${{ steps.image.outputs.uri }}"
+          docker push "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest"
+
+  # ============================================================
+  # Job 2: Deploy ke Cloud Run
+  # ============================================================
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+      - name: Authenticate to Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image "${{ needs.build-and-push.outputs.image }}" \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 10 \
+            --memory 512Mi \
+            --cpu 1 \
+            --timeout 60s \
+            --concurrency 80 \
+            --set-env-vars "NODE_ENV=production" \
+            --set-env-vars "NEXT_PUBLIC_APP_URL=${{ secrets.CLOUDRUN_APP_URL }}" \
+            --set-env-vars "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --set-env-vars "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            --set-env-vars "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" \
+            --set-env-vars "UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }}" \
+            --set-env-vars "UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}" \
+            --set-env-vars "CRON_SECRET=${{ secrets.CRON_SECRET }}" \
+            --set-env-vars "MIDTRANS_SERVER_KEY=${{ secrets.MIDTRANS_SERVER_KEY }}" \
+            --set-env-vars "MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY }}" \
+            --set-env-vars "NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}" \
+            --set-env-vars "NEXT_TELEMETRY_DISABLED=1" \
+            --port 3000 \
+            --quiet
+
+      - name: Get Service URL
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format 'value(status.url)')
+          echo "✅ Cloud Run URL: ${URL}"
+          echo "cloudrun_url=${URL}" >> $GITHUB_STEP_SUMMARY
+          echo "### ✅ Deployment Berhasil!" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${URL}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ needs.build-and-push.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
