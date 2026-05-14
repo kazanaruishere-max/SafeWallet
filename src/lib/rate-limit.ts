@@ -6,9 +6,9 @@
 import { createClient } from "@/lib/supabase/server";
 
 export const TIER_LIMITS: Record<string, Record<string, number>> = {
-  free: { scan: 5, scam_check: 10 },
-  premium: { scan: 999999, scam_check: 999999 },
-  family: { scan: 999999, scam_check: 999999 },
+  free: { scan: 5, scam_check: 10, breach_check: 3 },
+  premium: { scan: 999999, scam_check: 999999, breach_check: 999999 },
+  family: { scan: 999999, scam_check: 999999, breach_check: 999999 },
 };
 
 /**
@@ -17,7 +17,7 @@ export const TIER_LIMITS: Record<string, Record<string, number>> = {
  */
 export async function incrementQuotaAtomic(
   userId: string,
-  feature: "scan" | "scam_check"
+  feature: "scan" | "scam_check" | "breach_check"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -61,7 +61,7 @@ export async function incrementQuotaAtomic(
 
 export async function checkQuota(
   userId: string,
-  feature: "scan" | "scam_check"
+  feature: "scan" | "scam_check" | "breach_check"
 ): Promise<{
   allowed: boolean;
   used: number;
@@ -107,7 +107,7 @@ export async function checkQuota(
  */
 export async function incrementUsage(
   userId: string,
-  feature: "scan" | "scam_check"
+  feature: "scan" | "scam_check" | "breach_check"
 ): Promise<void> {
   const supabase = await createClient();
   const period = getCurrentPeriod();

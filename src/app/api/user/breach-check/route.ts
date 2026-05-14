@@ -20,8 +20,8 @@ export async function POST(request: Request) {
     let quotaInfo;
     try {
       const { incrementQuotaAtomic } = await import("@/lib/rate-limit");
-      // Batasi 3 scan per hari per user
-      quotaInfo = await incrementQuotaAtomic(user.id, "breach_check", "daily", 3);
+      // Batasi scan per hari/bulan berdasarkan tier di rate-limit.ts
+      quotaInfo = await incrementQuotaAtomic(user.id, "breach_check");
       if (!quotaInfo.allowed) {
         return NextResponse.json(
           {
