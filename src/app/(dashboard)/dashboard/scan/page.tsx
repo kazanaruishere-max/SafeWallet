@@ -452,7 +452,7 @@ export default function ScanPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {result.recurring_charges.map((charge, i) => (
-                  <div key={i} className={\`p-5 rounded-2xl border \${charge.is_suspicious ? 'bg-red-500/10 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-[#0B0A08]/50 border-white/5'}\`}>
+                  <div key={i} className={`p-5 rounded-2xl border ${charge.is_suspicious ? 'bg-red-500/10 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]' : 'bg-[#0B0A08]/50 border-white/5'}`}>
                     <div className="flex justify-between items-start mb-3">
                       <span className="text-white/90 font-medium truncate pr-2" title={charge.name}>{charge.name}</span>
                       {charge.is_suspicious && (

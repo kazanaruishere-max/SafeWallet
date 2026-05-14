@@ -73,11 +73,11 @@ export default function LegalDisputePage() {
                     key={type.id}
                     type="button"
                     onClick={() => setDisputeType(type.id as any)}
-                    className={\`px-4 py-3 rounded-xl border text-sm font-medium transition-all \${
+                    className={`px-4 py-3 rounded-xl border text-sm font-medium transition-all ${
                       disputeType === type.id 
                         ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-300' 
                         : 'bg-[#0B0A08] border-white/10 text-white/50 hover:bg-white/5 hover:text-white'
-                    }\`}
+                    }`}
                   >
                     {type.label}
                   </button>
