@@ -62,13 +62,13 @@ export async function POST(request: Request) {
       Tolong susun drafnya sekarang.
     `;
 
-    // 3. Proses AI (Menggunakan Gemini Pro karena butuh nalar bahasa tinggi)
+    // 3. Proses AI (Menggunakan llama 3.3 karena butuh nalar bahasa tinggi)
     const aiResponse = await callAI(
       [
         { role: "system", content: LEGAL_PROMPT },
         { role: "user", content: userPrompt }
       ],
-      { model: "gemini-2.0-flash", temperature: 0.1 } // Suhu rendah agar bahasanya baku/tidak berimajinasi
+      { model: "llama-3.3-70b-versatile", temperature: 0.1 } // Suhu rendah agar bahasanya baku/tidak berimajinasi
     );
 
     return NextResponse.json({

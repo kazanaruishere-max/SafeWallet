@@ -2,8 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { callAI, AIError } from "@/lib/ai/client";
 
 // Konfigurasi Model
-const ROUTING_MODEL = "gemini-2.5-flash"; // Cepat & Murah untuk klasifikasi niat
-const RAG_MODEL = "gemini-2.0-flash";     // (Atau gemini-1.5-pro jika butuh lebih pintar)
+const ROUTING_MODEL = "llama-3.1-8b-instant"; // Cepat & Murah untuk klasifikasi niat
+const RAG_MODEL = "llama-3.3-70b-versatile";  // Model cerdas utama
 const EMBEDDING_URL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent";
 
 /**
