@@ -44,7 +44,7 @@ export async function parseFileServer(
         case "text":
           return { text: buffer.toString("utf-8"), format: "text" as const };
         case "pdf":
-          return { text: await parseImageServer(buffer), format: "pdf" as const }; 
+          return { text: await parsePdfServer(buffer), format: "pdf" as const }; 
         default:
           throw new Error(`Format file ${mimeType} tidak didukung di server.`);
       }
@@ -95,4 +95,27 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
   const workbook = xlsx.read(buffer, { type: "buffer" });
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
   return xlsx.utils.sheet_to_txt(firstSheet);
+}
+
+/**
+ * Server-side Native PDF parsing (Lightning Fast vs OCR)
+ */
+async function parsePdfServer(buffer: Buffer): Promise<string> {
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const data = new Uint8Array(buffer);
+  const loadingTask = pdfjsLib.getDocument({ data, disableFontFace: true });
+  const pdfDocument = await loadingTask.promise;
+  
+  let fullText = "";
+  // Read up to 20 pages max to prevent overload
+  const maxPages = Math.min(pdfDocument.numPages, 20);
+  
+  for (let i = 1; i <= maxPages; i++) {
+    const page = await pdfDocument.getPage(i);
+    const textContent = await page.getTextContent();
+    const pageText = textContent.items.map((item: any) => item.str).join(" ");
+    fullText += pageText + "\n";
+  }
+  
+  return fullText;
 }
