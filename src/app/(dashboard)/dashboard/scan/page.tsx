@@ -133,7 +133,7 @@ export default function ScanPage() {
       setError("Gagal terhubung ke server.");
       setState("error");
     }
-  }, []);
+  }, [pdfPassword]); // FIX HS-1: pdfPassword MUST be in deps or it's always ""
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -290,7 +290,7 @@ export default function ScanPage() {
                 <CheckCircle2 className="absolute h-4 w-4 text-[#0B0A08] left-1 opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" />
               </div>
               <span className="text-white/70 text-sm group-hover:text-white transition-colors">
-                Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga (Gemini).
+                Saya memahami bahwa SafeWallet adalah alat bantu edukasi, bukan nasihat keuangan, dan data saya akan diproses oleh AI pihak ketiga secara aman.
               </span>
             </label>
           </div>

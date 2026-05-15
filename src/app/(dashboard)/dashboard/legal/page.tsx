@@ -24,12 +24,18 @@ export default function LegalDisputePage() {
     setResult("");
 
     try {
+      // FIX LP-1: Add timeout to prevent infinite spinner
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
       const res = await fetch("/api/legal/generate-dispute", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chronology, dispute_type: disputeType })
+        body: JSON.stringify({ chronology, dispute_type: disputeType }),
+        signal: controller.signal,
       });
       
+      clearTimeout(timeout);
       const json = await res.json();
       
       if (!res.ok) {
@@ -38,7 +44,11 @@ export default function LegalDisputePage() {
 
       setResult(json.data.draft_content);
     } catch (err: any) {
-      setError(err.message);
+      if (err.name === "AbortError") {
+        setError("Pembuatan dokumen memakan waktu terlalu lama. Silakan coba lagi.");
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsGenerating(false);
     }

@@ -163,7 +163,13 @@ export async function POST(request: Request) {
       console.error("Failed to save scam check:", insertError);
     }
 
-    const newBadges = await checkAndAwardBadges(user.id);
+    // FIX SC-4: Badge failure must not crash the whole request
+    let newBadges: string[] = [];
+    try {
+      newBadges = await checkAndAwardBadges(user.id);
+    } catch {
+      // Badge system failure should never block results
+    }
 
     // 7. Determine verdict
     const verdict =

@@ -100,18 +100,31 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
 
 /**
  * Server-side Native PDF parsing (Lightning Fast vs OCR)
- * Menggunakan pdf-parse yang sangat stabil untuk Serverless Node.js
+ * Menggunakan pdf-parse v2 (class-based API) untuk Serverless Node.js
+ * FIX HS-2: v2 exports PDFParse class, bukan callable function
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
-  const pdfParseMod = await import("pdf-parse");
-  // @ts-ignore
-  const pdfParse = pdfParseMod.default || pdfParseMod;
+  const { PDFParse } = await import("pdf-parse");
   
-  // Parse PDF buffer directly
-  const data = await pdfParse(buffer, {
-    max: 20, // Batasi 20 halaman untuk mencegah Timeout / OOM
-    password: pdfPassword
+  if (!PDFParse) {
+    throw new Error("pdf-parse module tidak memiliki export PDFParse yang valid.");
+  }
+
+  // v2 API: Instantiate class with LoadParameters
+  const parser = new PDFParse({
+    data: new Uint8Array(buffer),
+    ...(pdfPassword ? { password: pdfPassword } : {}),
   });
-  
-  return data.text;
+
+  try {
+    // v2 API: getText() returns TextResult { text: string, pages: PageTextResult[] }
+    const result = await parser.getText({
+      last: 20, // Batasi 20 halaman untuk mencegah Timeout / OOM
+    });
+
+    return result.text;
+  } finally {
+    // Cleanup: release internal pdfjs resources to prevent memory leaks
+    try { await parser.destroy(); } catch { /* ignore cleanup errors */ }
+  }
 }
