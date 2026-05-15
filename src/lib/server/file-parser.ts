@@ -99,23 +99,17 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
 
 /**
  * Server-side Native PDF parsing (Lightning Fast vs OCR)
+ * Menggunakan pdf-parse yang sangat stabil untuk Serverless Node.js
  */
 async function parsePdfServer(buffer: Buffer): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const data = new Uint8Array(buffer);
-  const loadingTask = pdfjsLib.getDocument({ data, disableFontFace: true });
-  const pdfDocument = await loadingTask.promise;
+  const pdfParseMod = await import("pdf-parse");
+  // @ts-ignore
+  const pdfParse = pdfParseMod.default || pdfParseMod;
   
-  let fullText = "";
-  // Read up to 20 pages max to prevent overload
-  const maxPages = Math.min(pdfDocument.numPages, 20);
+  // Parse PDF buffer directly
+  const data = await pdfParse(buffer, {
+    max: 20 // Batasi 20 halaman untuk mencegah Timeout / OOM
+  });
   
-  for (let i = 1; i <= maxPages; i++) {
-    const page = await pdfDocument.getPage(i);
-    const textContent = await page.getTextContent();
-    const pageText = textContent.items.map((item: any) => item.str).join(" ");
-    fullText += pageText + "\n";
-  }
-  
-  return fullText;
+  return data.text;
 }
