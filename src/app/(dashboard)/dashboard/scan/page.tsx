@@ -53,6 +53,7 @@ export default function ScanPage() {
   const [progress, setProgress] = useState(0);
   const [progressMsg, setProgressMsg] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
+  const [pdfPassword, setPdfPassword] = useState(""); // State for PDF password
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -105,6 +106,9 @@ export default function ScanPage() {
     try {
       const formData = new FormData();
       formData.append("image", file);
+      if (pdfPassword) {
+        formData.append("pdf_password", pdfPassword);
+      }
 
       const res = await fetch("/api/scan", {
         method: "POST",
@@ -158,6 +162,7 @@ export default function ScanPage() {
     setFileFormat(null);
     setProgress(0);
     setProgressMsg("");
+    setPdfPassword("");
   };
 
   if (loadingProfile) {
@@ -249,7 +254,22 @@ export default function ScanPage() {
                   * Harap setujui Disclaimer & Batasan di bawah untuk mulai.
                 </p>
               )}
-              <Button disabled={!acknowledged} className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/5 backdrop-blur-md transition-all">
+              <div className="mb-6 z-10 relative">
+                <div className="flex items-center justify-center gap-2 mb-2">
+                  <Lock className="w-4 h-4 text-white/50" />
+                  <p className="text-white/50 text-sm font-medium">Password PDF Mutasi (Jika Terkunci)</p>
+                </div>
+                <input
+                  type="password"
+                  placeholder="Misal: Tanggal Lahir (DDMMYYYY)"
+                  value={pdfPassword}
+                  onChange={(e) => setPdfPassword(e.target.value)}
+                  className="w-full max-w-xs mx-auto bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white placeholder:text-white/20 focus:outline-none focus:border-[#F2A971]/50 text-center block transition-colors"
+                  onClick={(e) => e.stopPropagation()} // Prevent triggering file dialog when clicking input
+                />
+              </div>
+
+              <Button disabled={!acknowledged} className="h-14 px-8 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl border border-white/5 backdrop-blur-md transition-all z-10 relative" onClick={(e) => { e.stopPropagation(); fileRef.current?.click(); }}>
                 <FileImage className="mr-3 h-5 w-5" /> Pilih File dari Perangkat
               </Button>
             </div>

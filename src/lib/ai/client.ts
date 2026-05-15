@@ -28,9 +28,9 @@ export class AIError extends Error {
   }
 }
 
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-const PRIMARY_MODEL = "gemini-1.5-flash";
-const FALLBACK_MODEL = "gemini-1.5-pro";
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const PRIMARY_MODEL = "llama-3.3-70b-versatile";
+const FALLBACK_MODEL = "llama-3.1-8b-instant";
 
 export async function callAI(
   messages: Message[],
@@ -42,54 +42,38 @@ export async function callAI(
     _retryCount?: number;
   }
 ): Promise<AIResponse> {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY; // Fallback for backward compatibility
   if (!apiKey) {
     throw new AIError(
       "CONFIG_ERROR",
       500,
-      "Konfigurasi AI belum lengkap. Hubungi admin.",
-      "GEMINI_API_KEY is not set"
+      "Konfigurasi AI (Groq API Key) belum lengkap. Hubungi admin.",
+      "GROQ_API_KEY is not set"
     );
   }
 
   const model = options?.model ?? PRIMARY_MODEL;
   const retryCount = options?._retryCount ?? 0;
 
-  // Convert messages to Gemini format
-  const systemInstruction = messages
-    .filter((m) => m.role === "system")
-    .map((m) => m.content)
-    .join("\n\n");
-
-  const contents = messages
-    .filter((m) => m.role !== "system")
-    .map((m) => ({
-      role: m.role === "assistant" ? "model" : "user",
-      parts: [{ text: m.content }],
-    }));
+  // Convert messages to OpenAI format
+  const formattedMessages = messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+  }));
 
   const body: Record<string, unknown> = {
-    contents,
-    generationConfig: {
-      temperature: options?.temperature ?? 0.3,
-      maxOutputTokens: options?.maxTokens ?? 4000,
-      topP: 0.95,
-    },
+    model: model,
+    messages: formattedMessages,
+    temperature: options?.temperature ?? 0.3,
+    max_tokens: options?.maxTokens ?? 4000,
+    top_p: 0.95,
   };
 
-  if (systemInstruction) {
-    body.systemInstruction = {
-      parts: [{ text: systemInstruction }],
-    };
-  }
-
   if (options?.jsonMode) {
-    (body.generationConfig as Record<string, unknown>).responseMimeType =
-      "application/json";
+    body.response_format = { type: "json_object" };
   }
 
-  // FIX C3: API key in header, NOT in URL query string
-  const endpoint = `${GEMINI_URL}/${model}:generateContent`;
+  const endpoint = GROQ_URL;
 
   try {
     // FIX L2: AbortController timeout — prevent indefinite hangs
@@ -100,7 +84,7 @@ export async function callAI(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-goog-api-key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify(body),
       signal: controller.signal,
@@ -110,7 +94,7 @@ export async function callAI(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Gemini API error (${response.status}):`, errorText);
+      console.error(`Groq API error (${response.status}):`, errorText);
 
       // Handle specific status codes
       switch (response.status) {
@@ -153,7 +137,7 @@ export async function callAI(
         case 503:
           // Server error — try fallback model
           if (model === PRIMARY_MODEL) {
-            console.warn("Gemini server error, trying fallback...");
+            console.warn("Groq server error, trying fallback...");
             return callAI(messages, { ...options, model: FALLBACK_MODEL });
           }
           throw new AIError(
@@ -176,23 +160,14 @@ export async function callAI(
     }
 
     const data = await response.json();
-    const candidate = data.candidates?.[0];
-    const text = candidate?.content?.parts?.[0]?.text;
-    const blockReason = candidate?.finishReason;
+    const messageContent = data.choices?.[0]?.message?.content;
+    const finishReason = data.choices?.[0]?.finish_reason;
 
-    if (blockReason && blockReason !== "STOP") {
-      console.warn(`[Gemini API] Response truncated. finishReason: ${blockReason}`);
+    if (finishReason && finishReason !== "stop") {
+      console.warn(`[Groq API] Response truncated. finishReason: ${finishReason}`);
     }
 
-    if (!text) {
-      // Check for safety blocks
-      if (blockReason === "SAFETY") {
-        throw new AIError(
-          "SAFETY_BLOCK",
-          200,
-          "AI tidak bisa menganalisis konten ini karena alasan keamanan. Coba file lain."
-        );
-      }
+    if (!messageContent) {
       throw new AIError(
         "EMPTY_RESPONSE",
         200,
@@ -201,11 +176,11 @@ export async function callAI(
     }
 
     return {
-      content: text,
+      content: messageContent,
       model,
       usage: {
-        prompt_tokens: data.usageMetadata?.promptTokenCount ?? 0,
-        completion_tokens: data.usageMetadata?.candidatesTokenCount ?? 0,
+        prompt_tokens: data.usage?.prompt_tokens ?? 0,
+        completion_tokens: data.usage?.completion_tokens ?? 0,
       },
     };
   } catch (error) {

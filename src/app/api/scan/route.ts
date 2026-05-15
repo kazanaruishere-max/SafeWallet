@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     const monthlyIncome = formData.get("monthly_income")
       ? Number(formData.get("monthly_income"))
       : undefined;
+    const pdfPassword = formData.get("pdf_password") as string | undefined;
 
     if (!image) {
       return NextResponse.json(
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
     // 5. Server-Side Parsing (V2 Update for Security)
     let ocrText: string;
     try {
-      const parsedFile = await parseFileServer(buffer, verifiedMime, image.name);
+      const parsedFile = await parseFileServer(buffer, verifiedMime, image.name, pdfPassword);
       ocrText = parsedFile.text;
     } catch (parseErr) {
       console.error("Server-side parsing failed:", parseErr);

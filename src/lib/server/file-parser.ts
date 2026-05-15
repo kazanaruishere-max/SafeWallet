@@ -22,7 +22,8 @@ export type ParsedFileServer = {
 export async function parseFileServer(
   buffer: Buffer,
   mimeType: string,
-  fileName: string
+  fileName: string,
+  pdfPassword?: string
 ): Promise<ParsedFileServer> {
   // Guardrail: Size check
   if (buffer.length > MAX_FILE_SIZE) {
@@ -44,7 +45,7 @@ export async function parseFileServer(
         case "text":
           return { text: buffer.toString("utf-8"), format: "text" as const };
         case "pdf":
-          return { text: await parsePdfServer(buffer), format: "pdf" as const }; 
+          return { text: await parsePdfServer(buffer, pdfPassword), format: "pdf" as const }; 
         default:
           throw new Error(`Format file ${mimeType} tidak didukung di server.`);
       }
@@ -101,14 +102,15 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
  * Server-side Native PDF parsing (Lightning Fast vs OCR)
  * Menggunakan pdf-parse yang sangat stabil untuk Serverless Node.js
  */
-async function parsePdfServer(buffer: Buffer): Promise<string> {
+async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
   const pdfParseMod = await import("pdf-parse");
   // @ts-ignore
   const pdfParse = pdfParseMod.default || pdfParseMod;
   
   // Parse PDF buffer directly
   const data = await pdfParse(buffer, {
-    max: 20 // Batasi 20 halaman untuk mencegah Timeout / OOM
+    max: 20, // Batasi 20 halaman untuk mencegah Timeout / OOM
+    password: pdfPassword
   });
   
   return data.text;
