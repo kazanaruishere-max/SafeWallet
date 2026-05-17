@@ -21,7 +21,6 @@ import {
 } from "lucide-react";
 import type { ScanResult } from "@/types/api";
 import {
-  parseFile,
   getFileFormat,
   getSupportedExtensions,
   getFormatLabel,
