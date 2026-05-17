@@ -9,6 +9,9 @@ import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
 import { parseFileServer } from "@/lib/server/file-parser";
 import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
 
+// Vercel Serverless config: extend timeout for OCR/AI processing
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const startTime = Date.now();
 
@@ -75,13 +78,13 @@ export async function POST(request: Request) {
       );
     }
 
-    if (image.size > 20 * 1024 * 1024) {
+    if (image.size > 10 * 1024 * 1024) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "Ukuran file maksimum 20MB.",
+            message: "Ukuran file maksimum 10MB.",
           },
         } satisfies ApiError,
         { status: 400 }
@@ -103,8 +106,16 @@ export async function POST(request: Request) {
     const arrayBuffer = await image.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const { fileTypeFromBuffer } = await import("file-type");
-    const fileTypeResult = await fileTypeFromBuffer(buffer);
+    // BUG-1 FIX: file-type is ESM-only, may crash in Turbopack serverless.
+    // Wrap in try-catch so a failed magic-bytes check doesn't kill the entire request.
+    let fileTypeResult: { mime: string; ext: string } | undefined;
+    try {
+      const { fileTypeFromBuffer } = await import("file-type");
+      fileTypeResult = await fileTypeFromBuffer(buffer) ?? undefined;
+    } catch (ftError) {
+      console.warn("[Scan] file-type import failed, falling back to client MIME:", ftError);
+      // Fallback: trust client MIME (less secure but won't crash)
+    }
 
     let verifiedMime = image.type; 
     
@@ -161,13 +172,29 @@ export async function POST(request: Request) {
       const parsedFile = await parseFileServer(buffer, verifiedMime, image.name, pdfPassword);
       ocrText = parsedFile.text;
     } catch (parseErr) {
-      console.error("Server-side parsing failed:", parseErr);
+      const errMsg = parseErr instanceof Error ? parseErr.message : String(parseErr);
+      console.error("Server-side parsing failed:", errMsg);
+      
+      // BUG-7 FIX: Return specific error messages per failure type
+      let userMessage = "Gagal memproses file. ";
+      if (errMsg.includes("timeout") || errMsg.includes("Timeout")) {
+        userMessage += "Server terlalu sibuk. Coba lagi dalam beberapa saat.";
+      } else if (errMsg.includes("PDF") || errMsg.includes("pdf")) {
+        userMessage += "File PDF rusak atau terproteksi password. Masukkan password di kolom yang tersedia.";
+      } else if (errMsg.includes("terlalu besar")) {
+        userMessage += "File terlalu besar. Maksimal 10MB.";
+      } else if (verifiedMime.startsWith("image/")) {
+        userMessage += "Gagal membaca teks dari gambar (OCR). Pastikan gambar jelas dan tidak blur.";
+      } else {
+        userMessage += "Format file mungkin rusak. Coba export ulang dari aplikasi sumber.";
+      }
+      
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "OCR_FAILED",
-            message: "Gagal memproses file di server keamanan kami. Coba lagi.",
+            message: userMessage,
           },
         } satisfies ApiError,
         { status: 422 }

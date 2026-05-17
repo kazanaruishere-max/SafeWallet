@@ -32,8 +32,7 @@ export async function recordOnBlockchain(
   scanHash: string,
   metadata: Record<string, unknown>
 ): Promise<BlockchainRecord> {
-  // Simulate network latency
-  await new Promise((resolve) => setTimeout(resolve, 500));
+  // NOTE: In production, this would interact with a smart contract. No artificial delay.
 
   const txId = `0x${createHash("sha1").update(userId + scanHash + Date.now()).digest("hex")}`;
   

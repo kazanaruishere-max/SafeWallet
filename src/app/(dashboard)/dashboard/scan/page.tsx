@@ -80,8 +80,8 @@ export default function ScanPage() {
       return;
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      setError("Ukuran file maksimum 20MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Ukuran file maksimum 10MB.");
       return;
     }
 
@@ -246,7 +246,7 @@ export default function ScanPage() {
                 Drop File Mutasi Di Sini
               </h3>
               <p className="text-white/50 text-center max-w-sm mb-8 leading-relaxed">
-                Mendukung gambar, PDF e-statement, Excel, CSV, atau TXT. Max ukuran file 20MB.
+                Mendukung gambar, PDF e-statement, Excel, CSV, atau TXT. Max ukuran file 10MB.
               </p>
               {!acknowledged && (
                 <p className="text-amber-500 text-sm font-medium mb-4 animate-pulse">

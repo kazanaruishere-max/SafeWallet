@@ -66,12 +66,31 @@ function getFormatFromMime(mime: string, fileName: string): ParsedFileServer["fo
 
 /**
  * Server-side OCR using Tesseract.js (Node version)
+ * BUG-3 FIX: Wrap in resilient try-catch for Vercel cold-start issues
  */
 async function parseImageServer(buffer: Buffer): Promise<string> {
-  const worker = await Tesseract.createWorker("ind+eng");
-  const { data: { text } } = await worker.recognize(buffer);
-  await worker.terminate();
-  return text;
+  let worker;
+  try {
+    worker = await Tesseract.createWorker("ind+eng");
+    const { data: { text } } = await worker.recognize(buffer);
+    await worker.terminate();
+    
+    if (!text || text.trim().length < 10) {
+      throw new Error("OCR tidak dapat membaca teks dari gambar. Pastikan gambar jelas dan berisi data keuangan.");
+    }
+    
+    return text;
+  } catch (err) {
+    // Ensure worker cleanup even on failure
+    try { if (worker) await worker.terminate(); } catch { /* ignore */ }
+    
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("OCR tidak dapat")) throw err; // Re-throw our own descriptive error
+    
+    // Tesseract cold-start / language data download failure
+    console.error("[OCR] Tesseract.js failure:", msg);
+    throw new Error("Gagal memuat engine OCR (cold-start). Coba upload ulang dalam 10 detik.");
+  }
 }
 
 /**
