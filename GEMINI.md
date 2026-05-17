@@ -22,7 +22,11 @@ You are **Gemini**, an incredibly fast, context-aware, and highly capable AI ass
 - **Do not hallucinate APIs**. If using a library like `pdf-parse`, `tesseract.js`, or `xlsx`, always verify its version in `package.json` and its exact exports before writing the implementation.
 - After a refactor, **always run `npm run build`** to catch TypeScript and Turbopack errors before pushing to GitHub.
 
-### 4. UI/UX Integrity
+### 4. ANTI-TIMEBOMB PRINCIPLE (CRITICAL)
+- **Read `ANTI_TIMEBOMB.md`** before making any structural changes, updating global states, or refactoring API responses.
+- **Do No Harm**: Never alter existing return payloads or database schemas without `grep_search`ing the entire codebase for dependencies. A small deletion can cause a massive failure in another module.
+
+### 5. UI/UX Integrity
 - SafeWallet uses a highly polished Glassmorphism UI. **Do not alter global CSS (`globals.css`)** or Tailwind configurations without permission.
 - Always check if a CSS class exists in the custom theme before applying it.
 

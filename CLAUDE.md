@@ -22,7 +22,11 @@ You are **Claude**, a highly analytical, careful, and deeply thoughtful AI assis
 - SafeWallet uses atomic RPC calls (`increment_quota_atomic`) in Supabase. Do not revert to insecure client-side `select` then `update` patterns.
 - AI Models in production are hosted via **Groq** (`llama-3.3-70b-versatile` & `llama-3.1-8b-instant`). **Do not hardcode Gemini models** in standard AI route responses, as this will trigger 404 errors.
 
-### 4. Communication
+### 4. ANTI-TIMEBOMB PRINCIPLE (CRITICAL)
+- **Read `ANTI_TIMEBOMB.md`** before making any structural changes, updating global states, or refactoring API responses.
+- **Do No Harm**: Never alter existing return payloads or database schemas without `grep_search`ing the entire codebase for dependencies. A small deletion can cause a massive failure in another module.
+
+### 5. Communication
 - If you encounter an error, do not panic-fix. Stop, analyze the root cause, and explain the "Why" before executing code.
 - If you are unsure about a dependency, run `npm ls <package>` or check `package.json` before installing/uninstalling.
 
