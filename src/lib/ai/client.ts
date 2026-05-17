@@ -125,6 +125,24 @@ export async function callAI(
             const errJson = JSON.parse(errorText);
             detail = errJson.error?.message || "";
           } catch { detail = errorText.substring(0, 100); }
+          
+          // Handle "failed_generation" — JSON mode failed but text mode may work
+          // This happens when Vision-extracted markdown text confuses JSON-constrained generation
+          if (detail.includes("failed_generation") && options?.jsonMode && retryCount < 1) {
+            console.warn("[AI] JSON mode failed_generation, retrying without jsonMode...");
+            return callAI(messages, { 
+              ...options, 
+              jsonMode: false, 
+              _retryCount: retryCount + 1 
+            });
+          }
+          
+          // Try fallback model for other 400 errors
+          if (model === PRIMARY_MODEL && retryCount < 1) {
+            console.warn("[AI] 400 error on primary, trying fallback model...");
+            return callAI(messages, { ...options, model: FALLBACK_MODEL, _retryCount: retryCount + 1 });
+          }
+          
           throw new AIError(
             "BAD_REQUEST",
             400,
