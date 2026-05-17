@@ -100,24 +100,32 @@ export async function POST(request: Request) {
       "text/plain",
     ];
 
-    // Read the buffer for magic bytes inspection
     const arrayBuffer = await image.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    // Dynamic import to handle ESM 'file-type' module safely in Next.js 
     const { fileTypeFromBuffer } = await import("file-type");
     const fileTypeResult = await fileTypeFromBuffer(buffer);
 
-    // If it's a binary file (images, pdf, excel), fileTypeResult will correctly identify it.
-    // Text formats like CSV and PLAIN don't have distinct magic bytes and will be undefined.
     let verifiedMime = image.type; 
     
     if (fileTypeResult) {
-       verifiedMime = fileTypeResult.mime;
+       // ZIP files can be .xlsx, CFB can be .xls
+       if (fileTypeResult.mime === "application/zip" && (image.type.includes("spreadsheetml") || image.name.endsWith(".xlsx"))) {
+         verifiedMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+       } else if (fileTypeResult.mime === "application/x-cfb" && (image.type.includes("ms-excel") || image.name.endsWith(".xls"))) {
+         verifiedMime = "application/vnd.ms-excel";
+       } else {
+         verifiedMime = fileTypeResult.mime;
+       }
     } else {
-       // If undefined, it must only be plain text or CSV. 
-       // If client claimed it was an image/pdf but magic bytes are missing, REJECT IT.
-       if (!image.type.startsWith("text/") && image.type !== "application/csv") {
+       // No magic bytes. Could be CSV or TXT.
+       // Windows often sends CSVs as application/vnd.ms-excel, so we allow that if name ends in .csv
+       const isCsvOrTxt = 
+         image.type.startsWith("text/") || 
+         image.type === "application/csv" || 
+         (image.type === "application/vnd.ms-excel" && image.name.endsWith(".csv"));
+         
+       if (!isCsvOrTxt) {
            return NextResponse.json(
              {
                success: false,
@@ -129,6 +137,9 @@ export async function POST(request: Request) {
              { status: 400 }
            );
        }
+       // Normalize CSV MIME so the next check passes
+       if (image.name.endsWith(".csv")) verifiedMime = "text/csv";
+       else if (image.name.endsWith(".txt")) verifiedMime = "text/plain";
     }
 
     if (!allowedMimeTypes.includes(verifiedMime)) {
@@ -137,7 +148,7 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: "VALIDATION_ERROR",
-            message: "Format file tidak didukung secara native oleh sistem keamanan kami.",
+            message: `Format file tidak didukung secara native oleh sistem keamanan kami. (Terdeteksi: ${verifiedMime})`,
           },
         } satisfies ApiError,
         { status: 400 }

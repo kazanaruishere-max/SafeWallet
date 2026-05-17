@@ -1,6 +1,7 @@
 import * as Tesseract from "tesseract.js";
 import * as xlsx from "xlsx";
 import { Buffer } from "buffer";
+import { PDFParse } from "pdf-parse";
 
 /**
  * Server-Side File Parser for SafeWallet v2
@@ -104,8 +105,6 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
  * FIX HS-2: v2 exports PDFParse class, bukan callable function
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
-  const { PDFParse } = await import("pdf-parse");
-  
   if (!PDFParse) {
     throw new Error("pdf-parse module tidak memiliki export PDFParse yang valid.");
   }
