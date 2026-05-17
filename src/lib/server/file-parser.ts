@@ -9,7 +9,7 @@ import { Buffer } from "buffer";
  */
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB limit for server processing
-const OCR_TIMEOUT = 25000; // 25s timeout to prevent serverless hanging
+const OCR_TIMEOUT = 55000; // 55s timeout (maxDuration=60 on Vercel)
 
 export type ParsedFileServer = {
   text: string;
@@ -71,7 +71,9 @@ function getFormatFromMime(mime: string, fileName: string): ParsedFileServer["fo
 async function parseImageServer(buffer: Buffer): Promise<string> {
   let worker;
   try {
-    worker = await Tesseract.createWorker("ind+eng");
+    // Use 'eng' only — halves download size (~7MB vs ~15MB for ind+eng)
+    // Bank statements are mostly numbers, dates, and common banking terms that English handles fine
+    worker = await Tesseract.createWorker("eng");
     const { data: { text } } = await worker.recognize(buffer);
     await worker.terminate();
     
