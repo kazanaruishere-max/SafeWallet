@@ -114,10 +114,24 @@ export default function ScanPage() {
         body: formData,
       });
 
+      // Handle non-JSON responses (e.g., Vercel 500 HTML page, middleware blocks)
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error(`[Scan] Non-JSON response (${res.status}):`, text.substring(0, 500));
+        setError(`Server error (HTTP ${res.status}). Coba refresh halaman dan upload ulang.`);
+        setState("error");
+        return;
+      }
+
       const json = await res.json();
 
       if (!json.success) {
-        setError(json.error?.message ?? "Gagal menganalisis. Coba lagi.");
+        // Show specific error from server
+        const serverMsg = typeof json.error === "string" 
+          ? json.error 
+          : json.error?.message ?? "Gagal menganalisis. Coba lagi.";
+        setError(`${serverMsg} (HTTP ${res.status})`);
         setState("error");
         return;
       }
@@ -128,8 +142,9 @@ export default function ScanPage() {
 
       setResult(json.data as ScanResult);
       setState("done");
-    } catch {
-      setError("Gagal terhubung ke server.");
+    } catch (err) {
+      console.error("[Scan] Fetch error:", err);
+      setError("Gagal terhubung ke server. Periksa koneksi internet Anda.");
       setState("error");
     }
   }, [pdfPassword]); // FIX HS-1: pdfPassword MUST be in deps or it's always ""
