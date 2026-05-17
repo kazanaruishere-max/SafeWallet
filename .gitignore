@@ -72,3 +72,9 @@ komponen react.md
 spline design.md
 MCP SPLINE.md
 update markdown.md
+
+# Tesseract language data (downloaded at runtime)
+*.traineddata
+# Test files
+mutasi-*.pdf
+test_*.mjs
