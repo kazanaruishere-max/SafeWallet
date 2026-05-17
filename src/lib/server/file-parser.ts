@@ -120,6 +120,7 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
 /**
  * Server-side Native PDF parsing
  * Reverted to pdf-parse v1 API to fix Webpack pdf.js worker crash in Next.js Serverless.
+ * Enhanced: password support, text quality check, OCR fallback for scanned PDFs.
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
   // @ts-ignore - pdf-parse/lib/pdf-parse.js doesn't have type definitions
@@ -127,9 +128,57 @@ async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<str
   // ESM interop fallback for CJS
   const pdfParse = pdfParseMod.default || pdfParseMod;
   
-  const result = await pdfParse(buffer, {
-    max: 20, // max 20 pages
-  });
+  // Build options — pass password if provided
+  const options: Record<string, unknown> = { max: 50 };
+  if (pdfPassword) {
+    options.password = pdfPassword;
+  }
 
-  return result.text;
+  let text = "";
+  try {
+    const result = await pdfParse(buffer, options);
+    text = result.text?.trim() || "";
+    console.log(`[PDF] Extracted ${text.length} chars, ${result.numpages} pages`);
+  } catch (pdfErr) {
+    const errMsg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
+    console.error("[PDF] pdf-parse error:", errMsg);
+    
+    if (errMsg.includes("password") || errMsg.includes("encrypted")) {
+      throw new Error("PDF terproteksi password. Masukkan password yang benar di kolom yang tersedia.");
+    }
+    throw new Error(`Gagal membaca PDF: ${errMsg.substring(0, 100)}`);
+  }
+
+  // Quality check: does the extracted text contain financial data?
+  // Count digits in text — financial data always has numbers (amounts, dates, etc.)
+  const digitCount = (text.match(/\d/g) || []).length;
+  const hasFinancialKeywords = /(?:debit|kredit|transfer|saldo|mutasi|transaksi|pembayaran|setoran|penarikan|total|rp|idr)/i.test(text);
+  
+  console.log(`[PDF] Quality check: ${digitCount} digits, financial keywords: ${hasFinancialKeywords}`);
+
+  // If text is too short or has no financial signals, this is likely a scanned PDF
+  if (text.length < 50 || (digitCount < 5 && !hasFinancialKeywords)) {
+    console.warn("[PDF] Insufficient text from pdf-parse, attempting OCR fallback...");
+    
+    // Try OCR as fallback — Tesseract.js can sometimes read text from PDF buffers
+    try {
+      const ocrText = await parseImageServer(buffer);
+      if (ocrText && ocrText.trim().length > text.length) {
+        console.log(`[PDF] OCR fallback produced ${ocrText.length} chars (vs ${text.length} from pdf-parse)`);
+        return ocrText;
+      }
+    } catch (ocrErr) {
+      console.warn("[PDF] OCR fallback failed:", ocrErr);
+    }
+
+    // If both methods produce little text, return what we have with a warning
+    if (text.length < 20) {
+      throw new Error(
+        "PDF ini tampaknya berupa scan gambar dan tidak mengandung teks digital. " +
+        "Coba screenshot halaman yang berisi data transaksi dan upload sebagai gambar (JPG/PNG)."
+      );
+    }
+  }
+
+  return text;
 }

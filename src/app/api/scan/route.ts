@@ -201,13 +201,16 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!ocrText || ocrText.trim().length < 10) {
+    if (!ocrText || ocrText.trim().length < 30) {
+      const formatHint = verifiedMime === "application/pdf"
+        ? "PDF mungkin berupa scan gambar. Coba screenshot halaman transaksi dan upload sebagai gambar (JPG/PNG)."
+        : "Pastikan file berisi data keuangan yang jelas (transaksi, nominal, tanggal).";
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "OCR_FAILED",
-            message: "Teks dari file tidak cukup. Pastikan file berisi data keuangan yang jelas.",
+            message: `Teks dari file tidak cukup untuk dianalisis. ${formatHint}`,
           },
         } satisfies ApiError,
         { status: 422 }
