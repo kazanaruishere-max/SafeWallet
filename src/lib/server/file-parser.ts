@@ -119,26 +119,26 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
 
 /**
  * Server-side Native PDF parsing
- * Reverted to pdf-parse v1 API to fix Webpack pdf.js worker crash in Next.js Serverless.
- * Enhanced: password support, text quality check, OCR fallback for scanned PDFs.
+ * Uses pdf-parse v1 to avoid Webpack worker crash in Next.js Serverless.
+ * Includes text quality validation for scanned PDFs (image-embedded text).
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
   // @ts-ignore - pdf-parse/lib/pdf-parse.js doesn't have type definitions
   const pdfParseMod = await import("pdf-parse/lib/pdf-parse.js");
-  // ESM interop fallback for CJS
   const pdfParse = pdfParseMod.default || pdfParseMod;
   
-  // Build options — pass password if provided
   const options: Record<string, unknown> = { max: 50 };
   if (pdfPassword) {
     options.password = pdfPassword;
   }
 
   let text = "";
+  let numpages = 0;
   try {
     const result = await pdfParse(buffer, options);
     text = result.text?.trim() || "";
-    console.log(`[PDF] Extracted ${text.length} chars, ${result.numpages} pages`);
+    numpages = result.numpages || 0;
+    console.log(`[PDF] Extracted ${text.length} chars from ${numpages} pages`);
   } catch (pdfErr) {
     const errMsg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
     console.error("[PDF] pdf-parse error:", errMsg);
@@ -149,36 +149,30 @@ async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<str
     throw new Error(`Gagal membaca PDF: ${errMsg.substring(0, 100)}`);
   }
 
-  // Quality check: does the extracted text contain financial data?
-  // Count digits in text — financial data always has numbers (amounts, dates, etc.)
+  // Quality check: does the extracted text actually contain financial data?
   const digitCount = (text.match(/\d/g) || []).length;
-  const hasFinancialKeywords = /(?:debit|kredit|transfer|saldo|mutasi|transaksi|pembayaran|setoran|penarikan|total|rp|idr)/i.test(text);
+  const hasFinancialKeywords = /(?:debit|kredit|credit|transfer|saldo|balance|mutasi|transaksi|pembayaran|setoran|penarikan|total|rp\s|idr)/i.test(text);
   
-  console.log(`[PDF] Quality check: ${digitCount} digits, financial keywords: ${hasFinancialKeywords}`);
+  console.log(`[PDF] Quality: ${digitCount} digits, financial keywords: ${hasFinancialKeywords}, length: ${text.length}`);
 
-  // If text is too short or has no financial signals, this is likely a scanned PDF
-  if (text.length < 50 || (digitCount < 5 && !hasFinancialKeywords)) {
-    console.warn("[PDF] Insufficient text from pdf-parse, attempting OCR fallback...");
-    
-    // Try OCR as fallback — Tesseract.js can sometimes read text from PDF buffers
-    try {
-      const ocrText = await parseImageServer(buffer);
-      if (ocrText && ocrText.trim().length > text.length) {
-        console.log(`[PDF] OCR fallback produced ${ocrText.length} chars (vs ${text.length} from pdf-parse)`);
-        return ocrText;
-      }
-    } catch (ocrErr) {
-      console.warn("[PDF] OCR fallback failed:", ocrErr);
-    }
+  // If text has no financial value, this is a scanned/image-based PDF
+  // NOTE: Tesseract.js CANNOT process PDF buffers directly ("Pdf reading is not supported")
+  // The user must screenshot pages and upload as images for OCR to work.
+  if (digitCount < 5 && !hasFinancialKeywords) {
+    throw new Error(
+      "PDF ini berupa hasil scan/gambar dan tidak mengandung teks transaksi digital. " +
+      "Solusi: Screenshot halaman yang berisi data transaksi, lalu upload sebagai gambar (JPG/PNG). " +
+      "Fitur OCR kami akan membaca teks dari gambar tersebut."
+    );
+  }
 
-    // If both methods produce little text, return what we have with a warning
-    if (text.length < 20) {
-      throw new Error(
-        "PDF ini tampaknya berupa scan gambar dan tidak mengandung teks digital. " +
-        "Coba screenshot halaman yang berisi data transaksi dan upload sebagai gambar (JPG/PNG)."
-      );
-    }
+  if (text.length < 30) {
+    throw new Error(
+      "Teks yang diekstrak dari PDF terlalu sedikit. " +
+      "Coba screenshot halaman transaksi dan upload sebagai gambar."
+    );
   }
 
   return text;
 }
+
