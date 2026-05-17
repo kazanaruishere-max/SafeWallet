@@ -103,6 +103,7 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
  * Reverted to pdf-parse v1 API to fix Webpack pdf.js worker crash in Next.js Serverless.
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
+  // @ts-ignore - pdf-parse/lib/pdf-parse.js doesn't have type definitions
   const pdfParseMod = await import("pdf-parse/lib/pdf-parse.js");
   // ESM interop fallback for CJS
   const pdfParse = pdfParseMod.default || pdfParseMod;
