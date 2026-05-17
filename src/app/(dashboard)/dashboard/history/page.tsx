@@ -13,7 +13,8 @@ import {
   FileText,
   ChevronRight,
   TrendingDown,
-  Lock
+  Lock,
+  Shield
 } from "lucide-react";
 import type { ScanHistoryItem } from "@/types/api";
 
@@ -63,6 +64,30 @@ export default function HistoryPage() {
       border: "border-red-500/20",
       label: "Kritis",
       badge: "bg-red-500"
+    };
+  };
+
+  const getScamStyle = (riskScore: number) => {
+    if (riskScore >= 61) return {
+      color: "text-red-500",
+      bg: "bg-red-500/10",
+      border: "border-red-500/20",
+      label: "High Risk",
+      badge: "bg-red-500"
+    };
+    if (riskScore >= 31) return {
+      color: "text-amber-500",
+      bg: "bg-amber-500/10",
+      border: "border-amber-500/20",
+      label: "Caution",
+      badge: "bg-amber-500"
+    };
+    return {
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      label: "Safe",
+      badge: "bg-emerald-500"
     };
   };
 
@@ -121,18 +146,27 @@ export default function HistoryPage() {
       ) : (
         <div className="space-y-4">
           {scans.map((scan, i) => {
-            const style = getScoreStyle(scan.health_score);
+            const isScam = scan.scan_type === "scam";
+            const style = isScam 
+              ? getScamStyle(scan.risk_score ?? 0)
+              : getScoreStyle(scan.health_score);
             const date = new Date(scan.created_at);
-            const topCategories = Object.entries(scan.categories || {})
+            const topCategories = !isScam ? Object.entries(scan.categories || {})
               .sort(([, a], [, b]) => b - a)
-              .slice(0, 3);
+              .slice(0, 3) : [];
 
             return (
               <GlassCard key={scan.id || i} className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-6 cursor-pointer">
                 {/* Left Thumbnail */}
                 <div className={`w-20 h-20 shrink-0 rounded-2xl border flex flex-col items-center justify-center shadow-lg transition-transform group-hover:scale-105 ${style.bg} ${style.border}`}>
-                  <FileText className={`h-8 w-8 ${style.color}`} />
-                  <span className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${style.color}`}>Report</span>
+                  {isScam ? (
+                    <Shield className={`h-8 w-8 ${style.color}`} />
+                  ) : (
+                    <FileText className={`h-8 w-8 ${style.color}`} />
+                  )}
+                  <span className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${style.color}`}>
+                    {isScam ? "Scam" : "Health"}
+                  </span>
                 </div>
 
                 {/* Middle Info */}
@@ -146,6 +180,11 @@ export default function HistoryPage() {
                         year: "numeric",
                       })}
                     </span>
+                    <Badge variant="outline" className={`text-[10px] uppercase font-bold px-2 py-0 ${
+                      isScam ? "border-purple-500/20 bg-purple-500/10 text-purple-400" : "border-blue-500/20 bg-blue-500/10 text-blue-400"
+                    }`}>
+                      {isScam ? "Scam Check" : "Health Scan"}
+                    </Badge>
                     {scan.blockchain_tx_id && (
                       <Badge variant="outline" className="text-[10px] uppercase font-bold px-2 py-0 border-emerald-500/20 bg-emerald-500/10 text-emerald-400 flex items-center gap-1">
                         <Lock className="w-2.5 h-2.5" /> Proof-of-Integrity
@@ -153,18 +192,36 @@ export default function HistoryPage() {
                     )}
                   </div>
                   
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
-                    {topCategories.map(([cat, amount]) => (
-                      <span
-                        key={cat}
-                        className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-semibold text-white/70"
-                      >
-                        {cat} <span className="text-white/40 ml-1 font-normal">Rp {(amount as number).toLocaleString("id-ID")}</span>
-                      </span>
-                    ))}
-                  </div>
+                  {isScam ? (
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
+                      {(scan.red_flags ?? []).slice(0, 3).map((flag, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center px-3 py-1 rounded-full bg-red-500/5 border border-red-500/10 text-xs font-semibold text-red-400/80"
+                        >
+                          ⚠️ {flag.type}
+                        </span>
+                      ))}
+                      {(scan.red_flags?.length ?? 0) === 0 && (
+                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-500/5 border border-emerald-500/10 text-xs font-semibold text-emerald-400">
+                          ✅ Tidak ada red flags
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-3">
+                      {topCategories.map(([cat, amount]) => (
+                        <span
+                          key={cat}
+                          className="inline-flex items-center px-3 py-1 rounded-full bg-white/5 border border-white/5 text-xs font-semibold text-white/70"
+                        >
+                          {cat} <span className="text-white/40 ml-1 font-normal">Rp {(amount as number).toLocaleString("id-ID")}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-                  {scan.recommendations?.[0] && (
+                  {!isScam && scan.recommendations?.[0] && (
                     <p className="text-sm text-white/60 truncate w-full max-w-2xl bg-white/5 px-3 py-1.5 rounded-lg border border-white/5">
                       <span className="mr-2 text-[#8B7DFF]">✨ AI Update:</span> {scan.recommendations[0]}
                     </p>
@@ -176,10 +233,12 @@ export default function HistoryPage() {
                   <div className="flex flex-col items-start sm:items-end">
                     <span className="text-xs uppercase tracking-wider font-bold text-white/30 mb-1">{style.label}</span>
                     <Badge className={`border-none ${style.badge} text-[#0B0A08] font-black uppercase tracking-wider py-1 px-3 shadow-[0_0_15px_inherit]`}>
-                      {scan.health_score} / 100
+                      {isScam ? `Risk ${scan.risk_score}/100` : `${scan.health_score} / 100`}
                     </Badge>
                   </div>
-                  {scan.health_score >= 80 ? (
+                  {isScam ? (
+                    <Shield className={`w-8 h-8 ${style.color} drop-shadow-lg opacity-50 sm:opacity-100`} />
+                  ) : scan.health_score >= 80 ? (
                     <TrendingUp className={`w-8 h-8 ${style.color} drop-shadow-lg opacity-50 sm:opacity-100`} />
                   ) : (
                     <TrendingDown className={`w-8 h-8 ${style.color} drop-shadow-lg opacity-50 sm:opacity-100`} />

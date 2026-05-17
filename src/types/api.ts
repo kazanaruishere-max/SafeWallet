@@ -58,12 +58,17 @@ export type ScanResult = {
 };
 
 export type ScanHistoryItem = {
-  id: string; // Changed from scan_id to match actual DB result
+  id: string;
+  scan_type: "health" | "scam";
   health_score: number;
   created_at: string;
   categories: Record<string, number>;
   recommendations: string[];
   blockchain_tx_id?: string;
+  // Scam check specific fields
+  risk_score?: number;
+  verdict?: string;
+  red_flags?: Array<{ type: string; detail: string }>;
 };
 
 // === Scam Check Types ===

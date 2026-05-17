@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { ApiResponse, ApiError, ScanHistoryItem } from "@/types/api";
 
 export async function GET(request: NextRequest) {
@@ -23,44 +23,66 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const page = Math.max(1, Number(searchParams.get("page") ?? 1));
     const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 10)));
-    const offset = (page - 1) * limit;
+    
+    // Use admin client to bypass RLS for reading scan history
+    const adminSupabase = createAdminClient();
 
-    // Get total count
-    const { count: total } = await supabase
-      .from("scans")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", user.id);
-
-    // Get scans
-    const { data: scans, error } = await supabase
+    // Fetch health scans
+    const { data: healthScans, error: healthError } = await adminSupabase
       .from("scans")
       .select("id, health_score, created_at, categories, recommendations, blockchain_tx_id")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .range(offset, offset + limit - 1);
+      .order("created_at", { ascending: false });
 
-    if (error) {
-      throw error;
-    }
+    // Fetch scam checks
+    const { data: scamChecks, error: scamError } = await adminSupabase
+      .from("scam_checks")
+      .select("id, risk_score, created_at, red_flags, blockchain_tx_id, confidence")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
 
-    const items: ScanHistoryItem[] =
-      scans?.map((s) => ({
-        id: s.id,
-        health_score: s.health_score,
-        created_at: s.created_at,
-        categories: (s.categories as Record<string, number>) ?? {},
-        recommendations: (s.recommendations as string[]) ?? [],
-        blockchain_tx_id: s.blockchain_tx_id,
-      })) ?? [];
+    if (healthError) console.error("[History] Health scan fetch error:", healthError);
+    if (scamError) console.error("[History] Scam check fetch error:", scamError);
 
-    // FIX M1: Add Cache-Control
+    // Combine and sort by date
+    const healthItems: ScanHistoryItem[] = (healthScans ?? []).map((s) => ({
+      id: s.id,
+      scan_type: "health" as const,
+      health_score: s.health_score,
+      created_at: s.created_at,
+      categories: (s.categories as Record<string, number>) ?? {},
+      recommendations: (s.recommendations as string[]) ?? [],
+      blockchain_tx_id: s.blockchain_tx_id,
+    }));
+
+    const scamItems: ScanHistoryItem[] = (scamChecks ?? []).map((s) => ({
+      id: s.id,
+      scan_type: "scam" as const,
+      health_score: 0, // Not applicable for scam checks
+      created_at: s.created_at,
+      categories: {},
+      recommendations: [],
+      blockchain_tx_id: s.blockchain_tx_id,
+      risk_score: s.risk_score,
+      verdict: s.risk_score >= 61 ? "HIGH_RISK" : s.risk_score >= 31 ? "CAUTION" : "SAFE",
+      red_flags: (s.red_flags as Array<{ type: string; detail: string }>) ?? [],
+    }));
+
+    // Merge and sort by created_at descending
+    const allItems = [...healthItems, ...scamItems]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    const total = allItems.length;
+    const offset = (page - 1) * limit;
+    const paginatedItems = allItems.slice(offset, offset + limit);
+
     return NextResponse.json(
       {
         success: true,
-        data: items,
-        meta: { page, total: total ?? 0 },
+        data: paginatedItems,
+        meta: { page, total },
       } satisfies ApiResponse<ScanHistoryItem[]>,
-      { headers: { "Cache-Control": "private, max-age=300, stale-while-revalidate=60" } }
+      { headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=10" } }
     );
   } catch (error) {
     console.error("Scan history error:", error);

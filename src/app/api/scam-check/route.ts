@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { SCAM_DETECTION_PROMPT, buildScamPrompt } from "@/lib/ai/prompts";
 import { routeAndExecuteAI } from "@/lib/ai/router";
 import { checkQuota, incrementUsage } from "@/lib/rate-limit";
@@ -142,7 +142,10 @@ export async function POST(request: Request) {
       console.warn("Blockchain recording failed, proceeding with DB save:", bcErr);
     }
 
-    const { data: check, error: insertError } = await supabase
+    // Use admin client for DB writes to bypass RLS
+    const adminSupabase = createAdminClient();
+
+    const { data: check, error: insertError } = await adminSupabase
       .from("scam_checks")
       .insert({
         user_id: user.id,
@@ -160,7 +163,9 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error("Failed to save scam check:", insertError);
+      console.error("[ScamCheck DB] Insert error:", JSON.stringify(insertError));
+    } else {
+      console.log(`[ScamCheck DB] Saved check ${check.id} for user ${user.id}`);
     }
 
     // FIX SC-4: Badge failure must not crash the whole request

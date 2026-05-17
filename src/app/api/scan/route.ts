@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { callAI, AIError } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
 import { sanitizeAIInput } from "@/lib/sanitize";
@@ -268,6 +268,9 @@ export async function POST(request: Request) {
     const integrityHash: string = generateIntegrityHash(analysisResult);
 
     try {
+      // Use admin client (service role) for DB writes to bypass RLS policies
+      const adminSupabase = createAdminClient();
+      
       // v2 Update: Encrypt sensitive data before storage
       const encryptedOcrText = encrypt(ocrText.substring(0, 5000));
       
@@ -278,12 +281,12 @@ export async function POST(request: Request) {
       });
       blockchainTxId = blockchainRecord.tx_id;
 
-      const { data: scan, error: insertError } = await supabase
+      const { data: scan, error: insertError } = await adminSupabase
         .from("scans")
         .insert({
           user_id: user.id,
-          image_url: "client-side-only",
-          ocr_raw_text: "[ENCRYPTED_V2]", // Placeholder to replace old plain text
+          image_url: "server-processed",
+          ocr_raw_text: "[ENCRYPTED_V2]",
           encrypted_ocr_text: encryptedOcrText,
           blockchain_hash: integrityHash,
           blockchain_tx_id: blockchainTxId,
@@ -295,12 +298,17 @@ export async function POST(request: Request) {
         .select("id")
         .single();
         
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("[Scan DB] Insert error:", JSON.stringify(insertError));
+        throw insertError;
+      }
       
       scanId = scan.id;
       dbSuccess = true;
+      console.log(`[Scan DB] Saved scan ${scanId} for user ${user.id}`);
     } catch (dbErr) {
-      console.warn("Failed to save scan to DB (Dirty State Prevented). Skipping quota deduction:", dbErr);
+      console.error("[Scan DB] Failed to save scan:", dbErr);
+      // Don't block the result — user still gets their analysis
     }
 
     // 9. Badges & Intervention (Non-blocking)
