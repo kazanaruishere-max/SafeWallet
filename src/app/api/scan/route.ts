@@ -271,43 +271,91 @@ export async function POST(request: Request) {
       // Use admin client (service role) for DB writes to bypass RLS policies
       const adminSupabase = createAdminClient();
       
-      // v2 Update: Encrypt sensitive data before storage
-      const encryptedOcrText = encrypt(ocrText.substring(0, 5000));
+      // Non-blocking: Encrypt sensitive data before storage
+      let encryptedOcrText: string | undefined;
+      try {
+        encryptedOcrText = encrypt(ocrText.substring(0, 5000));
+      } catch (encErr) {
+        console.warn("[Scan] Encryption skipped (ENCRYPTION_KEY may not be set):", encErr);
+      }
       
-      // v2 Update: Record integrity proof on "Blockchain"
-      const blockchainRecord = await recordOnBlockchain(user.id, integrityHash, {
-        feature: "health-scan",
-        score: analysisResult.health_score
-      });
-      blockchainTxId = blockchainRecord.tx_id;
+      // Non-blocking: Record integrity proof on "Blockchain"
+      try {
+        const blockchainRecord = await recordOnBlockchain(user.id, integrityHash, {
+          feature: "health-scan",
+          score: analysisResult.health_score
+        });
+        blockchainTxId = blockchainRecord.tx_id;
+      } catch (bcErr) {
+        console.warn("[Scan] Blockchain recording skipped:", bcErr);
+      }
 
-      const { data: scan, error: insertError } = await adminSupabase
+      // Build insert payload — only include columns that have values
+      // Core fields (guaranteed to exist in DB schema)
+      const insertPayload: Record<string, unknown> = {
+        user_id: user.id,
+        image_url: "server-processed",
+        ocr_raw_text: encryptedOcrText ? "[ENCRYPTED_V2]" : ocrText.substring(0, 5000),
+        health_score: analysisResult.health_score,
+        categories: analysisResult.categories,
+        recommendations: analysisResult.recommendations,
+        processing_time_ms: Date.now() - startTime,
+      };
+
+      // Optional fields — only add if they have values
+      if (encryptedOcrText) insertPayload.encrypted_ocr_text = encryptedOcrText;
+      if (integrityHash) insertPayload.blockchain_hash = integrityHash;
+      if (blockchainTxId) insertPayload.blockchain_tx_id = blockchainTxId;
+
+      // Try insert with all columns first
+      let scan: { id: string } | null = null;
+      let insertError: unknown = null;
+
+      const result1 = await adminSupabase
         .from("scans")
-        .insert({
+        .insert(insertPayload)
+        .select("id")
+        .single();
+      
+      if (result1.error) {
+        console.warn("[Scan DB] Full insert failed, trying core-only:", JSON.stringify(result1.error));
+        
+        // Retry with ONLY core columns (no optional columns that might not exist)
+        const corePayload = {
           user_id: user.id,
           image_url: "server-processed",
-          ocr_raw_text: "[ENCRYPTED_V2]",
-          encrypted_ocr_text: encryptedOcrText,
-          blockchain_hash: integrityHash,
-          blockchain_tx_id: blockchainTxId,
+          ocr_raw_text: ocrText.substring(0, 5000),
           health_score: analysisResult.health_score,
           categories: analysisResult.categories,
           recommendations: analysisResult.recommendations,
           processing_time_ms: Date.now() - startTime,
-        })
-        .select("id")
-        .single();
+        };
+
+        const result2 = await adminSupabase
+          .from("scans")
+          .insert(corePayload)
+          .select("id")
+          .single();
+
+        if (result2.error) {
+          console.error("[Scan DB] Core insert also failed:", JSON.stringify(result2.error));
+          insertError = result2.error;
+        } else {
+          scan = result2.data;
+        }
+      } else {
+        scan = result1.data;
+      }
         
-      if (insertError) {
-        console.error("[Scan DB] Insert error:", JSON.stringify(insertError));
-        throw insertError;
+      if (insertError || !scan) {
+        throw new Error("All insert attempts failed");
       }
       
       scanId = scan.id;
       dbSuccess = true;
-      console.log(`[Scan DB] Saved scan ${scanId} for user ${user.id}`);
+      console.log(`[Scan DB] ✅ Saved scan ${scanId} for user ${user.id}`);
     } catch (dbErr) {
-      console.error("[Scan DB] Failed to save scan:", dbErr);
+      console.error("[Scan DB] ❌ Failed to save scan:", dbErr);
       // Don't block the result — user still gets their analysis
     }
 

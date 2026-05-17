@@ -128,10 +128,15 @@ export async function POST(request: Request) {
     let blockchainTxId: string | undefined;
     const integrityHash: string = generateIntegrityHash(analysisResult);
 
-    // v2 Update: Encrypt sensitive data
-    const encryptedContent = encrypt(content.substring(0, 5000));
+    // Non-blocking: Encrypt sensitive data
+    let encryptedContent: string | undefined;
+    try {
+      encryptedContent = encrypt(content.substring(0, 5000));
+    } catch (encErr) {
+      console.warn("[ScamCheck] Encryption skipped:", encErr);
+    }
 
-    // v2 Update: Record integrity proof
+    // Non-blocking: Record integrity proof
     try {
       const blockchainRecord = await recordOnBlockchain(user.id, integrityHash, {
         feature: "scam-check",
@@ -139,33 +144,64 @@ export async function POST(request: Request) {
       });
       blockchainTxId = blockchainRecord.tx_id;
     } catch (bcErr) {
-      console.warn("Blockchain recording failed, proceeding with DB save:", bcErr);
+      console.warn("[ScamCheck] Blockchain recording skipped:", bcErr);
     }
 
     // Use admin client for DB writes to bypass RLS
     const adminSupabase = createAdminClient();
 
-    const { data: check, error: insertError } = await adminSupabase
+    // Build insert payload with optional columns
+    const insertPayload: Record<string, unknown> = {
+      user_id: user.id,
+      input_type,
+      input_content: encryptedContent ? "[ENCRYPTED_V2]" : content.substring(0, 5000),
+      risk_score: analysisResult.risk_score,
+      confidence: analysisResult.confidence,
+      red_flags: analysisResult.red_flags,
+      safe_alternatives: analysisResult.safe_alternatives,
+    };
+
+    if (encryptedContent) insertPayload.encrypted_input_content = encryptedContent;
+    if (integrityHash) insertPayload.blockchain_hash = integrityHash;
+    if (blockchainTxId) insertPayload.blockchain_tx_id = blockchainTxId;
+
+    let check: { id: string } | null = null;
+
+    const result1 = await adminSupabase
       .from("scam_checks")
-      .insert({
+      .insert(insertPayload)
+      .select("id")
+      .single();
+
+    if (result1.error) {
+      console.warn("[ScamCheck DB] Full insert failed, trying core-only:", JSON.stringify(result1.error));
+      
+      // Retry with core-only columns
+      const corePayload = {
         user_id: user.id,
         input_type,
-        input_content: "[ENCRYPTED_V2]",
-        encrypted_input_content: encryptedContent,
-        blockchain_hash: integrityHash,
-        blockchain_tx_id: blockchainTxId,
+        input_content: content.substring(0, 5000),
         risk_score: analysisResult.risk_score,
         confidence: analysisResult.confidence,
         red_flags: analysisResult.red_flags,
         safe_alternatives: analysisResult.safe_alternatives,
-      })
-      .select("id")
-      .single();
+      };
 
-    if (insertError) {
-      console.error("[ScamCheck DB] Insert error:", JSON.stringify(insertError));
+      const result2 = await adminSupabase
+        .from("scam_checks")
+        .insert(corePayload)
+        .select("id")
+        .single();
+
+      if (result2.error) {
+        console.error("[ScamCheck DB] ❌ Core insert also failed:", JSON.stringify(result2.error));
+      } else {
+        check = result2.data;
+        console.log(`[ScamCheck DB] ✅ Saved (core) ${check.id} for user ${user.id}`);
+      }
     } else {
-      console.log(`[ScamCheck DB] Saved check ${check.id} for user ${user.id}`);
+      check = result1.data;
+      console.log(`[ScamCheck DB] ✅ Saved ${check!.id} for user ${user.id}`);
     }
 
     // FIX SC-4: Badge failure must not crash the whole request

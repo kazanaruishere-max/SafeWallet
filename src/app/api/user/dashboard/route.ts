@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import type { ApiResponse, ApiError, DashboardData } from "@/types/api";
 
 export async function GET() {
@@ -20,38 +20,41 @@ export async function GET() {
       );
     }
 
+    // Use admin client for DB reads to bypass RLS
+    const adminSupabase = createAdminClient();
+
     // FIX C8: Parallel queries instead of sequential
     const period = getCurrentPeriod();
 
     const [profileRes, latestScanRes, scanTrendRes, scamCountRes, badgesRes, usageRes] =
       await Promise.all([
-        supabase
+        adminSupabase
           .from("users")
           .select("email, subscription_tier, created_at")
           .eq("id", user.id)
           .single(),
-        supabase
+        adminSupabase
           .from("scans")
           .select("health_score, created_at, debt_to_income_ratio, savings_rate")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(1)
           .single(),
-        supabase
+        adminSupabase
           .from("scans")
           .select("health_score")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(3),
-        supabase
+        adminSupabase
           .from("scam_checks")
           .select("*", { count: "exact", head: true })
           .eq("user_id", user.id),
-        supabase
+        adminSupabase
           .from("badges")
           .select("badge_type, badge_name, earned_at")
           .eq("user_id", user.id),
-        supabase
+        adminSupabase
           .from("usage_counts")
           .select("feature, count")
           .eq("user_id", user.id)
