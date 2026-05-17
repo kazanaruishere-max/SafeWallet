@@ -118,13 +118,20 @@ export async function callAI(
             errorText
           );
         }
-        case 400:
+        case 400: {
+          // Parse Groq error detail for better user feedback
+          let detail = "";
+          try {
+            const errJson = JSON.parse(errorText);
+            detail = errJson.error?.message || "";
+          } catch { detail = errorText.substring(0, 100); }
           throw new AIError(
             "BAD_REQUEST",
             400,
-            "Data yang dikirim tidak dapat diproses AI. Coba file lain.",
+            `Data tidak dapat diproses AI. ${detail ? `Detail: ${detail.substring(0, 150)}` : "Coba file lain."}`,
             errorText
           );
+        }
         case 401:
         case 403:
           throw new AIError(

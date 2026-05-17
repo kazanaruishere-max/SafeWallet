@@ -40,27 +40,20 @@ export function sanitizeAIInput(input: string, maxLength = 5000): {
     }
   }
 
-  // FIX H3: Advanced PII (Personally Identifiable Information) Redaction
-  // This is a "Zero-Trust" sanitizer to ensure sensitive data never leaves the server to external AI.
+  // FIX H3: PII Redaction — balanced for financial data preservation
+  // CRITICAL: Only redact patterns that are clearly PII. DO NOT redact patterns
+  // that could be transaction descriptions, amounts, or banking keywords.
   const piiPatterns = [
-    // 1. Bank Account / NIK / Phone Numbers (10-16 digits)
-    { regex: /\b\d{10,16}\b/g, replacement: "___ID_REDACTED___" },
-    // 2. Credit Card Numbers
+    // 1. Credit Card Numbers (very specific pattern)
     { regex: /\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, replacement: "___CARD_REDACTED___" },
-    // 3. Emails
+    // 2. Emails
     { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: "___EMAIL_REDACTED___" },
-    // 4. Names with common Indonesian/Global titles & typical capitalized names
-    { regex: /\b(Bpk|Ibu|Mr|Mrs|Ms|Sir|Dr|Prof|Sdr|Sdri|Tuan|Nyonya|Anak|An)\.?\s+[A-Z][a-z]+(\s+[A-Z][a-z]+)*\b/g, replacement: "$1 ___NAME_REDACTED___" },
-    // 5. Common Bank Keywords often followed by identifiers (REK, NO.REK, etc)
-    { regex: /\b(REK|NO\.REK|ACCOUNT|ACC|VA|VIRTUAL ACCOUNT|NO\.HP|TELP|PIN|NIK)\s*[:.]?\s*[A-Z0-9-]{4,}\b/gi, replacement: "$1 ___REDACTED___" },
-    // 6. Addresses (Common Indonesian & Global address keywords)
-    { regex: /\d*\s*[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\s+(Jl|Jalan|St|Street|Ave|Avenue|Rd|Road)\.?/gi, replacement: "___ADDRESS_REDACTED___" },
-    { regex: /\b(Jl|Jalan|St|Street|Ave|Avenue|Rd|Road)\.?\s+[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\b/gi, replacement: "___ADDRESS_REDACTED___" },
-    { regex: /\b(Kec|Kab|Kota|Prov|RT|RW)\.?\s+[A-Z0-9][a-z0-9]*(\s+[A-Z0-9][a-z0-9]*)*\b/g, replacement: "___ADDRESS_REDACTED___" },
-    // 7. SWIFT/BIC/IBAN patterns
-    { regex: /\b[A-Z]{6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3})?\b/g, replacement: "___BANK_CODE_REDACTED___" },
-    // 8. IP Addresses (for telemetry/log leak prevention)
-    { regex: /\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, replacement: "___IP_REDACTED___" },
+    // 3. NIK (exactly 16 digits — Indonesian National ID)
+    { regex: /\b\d{16}\b/g, replacement: "___NIK_REDACTED___" },
+    // 4. Phone numbers (Indonesian format: 08xx or +62)
+    { regex: /\b(?:0|\+62)\d{9,13}\b/g, replacement: "___PHONE_REDACTED___" },
+    // 5. Explicit bank account keywords followed by numbers
+    { regex: /\b(REK|NO\.?\s*REK|REKENING|ACCOUNT|ACC|NO\.?\s*HP|TELP|PIN|NIK)\s*[:.]?\s*\d{4,}\b/gi, replacement: "$1 ___REDACTED___" },
   ];
 
   let piiDetected = false;

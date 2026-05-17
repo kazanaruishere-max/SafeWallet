@@ -15,9 +15,14 @@ INSTRUKSI:
    - Pola belanja impulsif (banyak belanja online kecil = red flag)
 4. Berikan 3-5 rekomendasi praktis dalam bahasa Indonesia
 5. Berikan warnings jika ada masalah serius
-6. DETEKSI JUDI ONLINE (PENTING):
-   - Jika ada pengeluaran berupa top-up ke e-wallet (DANA/OVO/GoPay/LinkAja) atau transfer ke Virtual Account pada RENTANG JAM 22:00 - 05:00 dalam jumlah repetitif atau angka acak unik (misal 50.123, 100.888), catat ini di gambling_flags.
-   - Jangan masukkan belanja makan malam rutin ke sini. Hanya curigai pola deposit ganjil.
+6. DETEKSI JUDI ONLINE (PENTING - HARUS SANGAT SPESIFIK):
+   - JANGAN langsung menandai top-up e-wallet biasa sebagai judi. Top-up e-wallet (DANA/OVO/GoPay/LinkAja) untuk belanja, transfer, atau pembayaran tagihan adalah NORMAL.
+   - Hanya tandai sebagai gambling_flags jika SEMUA kriteria berikut terpenuhi BERSAMAAN:
+     a) Transaksi terjadi pada rentang jam 22:00 - 05:00 (dini hari)
+     b) DAN nominal berpola repetitif atau angka acak unik (misal: 50.123, 100.888, 75.777)
+     c) DAN terjadi berulang-ulang dalam satu malam (3+ transaksi sejenis)
+   - Jika TIDAK ADA data waktu transaksi, JANGAN masukkan gambling_flags sama sekali.
+   - Jika ragu, JANGAN masukkan ke gambling_flags. Lebih baik tidak mendeteksi daripada salah menuduh.
 7. DETEKSI GHOST-CHARGES (LANGGANAN SILUMAN):
    - Deteksi pola pengeluaran dengan nominal identik yang terjadi berulang (bulanan/mingguan) seperti langganan aplikasi, Netflix, Spotify, atau biaya admin. Masukkan ke recurring_charges.
    - Jika namanya tidak jelas atau mencurigakan, set is_suspicious = true.
