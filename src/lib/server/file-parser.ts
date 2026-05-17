@@ -1,7 +1,6 @@
 import * as Tesseract from "tesseract.js";
 import * as xlsx from "xlsx";
 import { Buffer } from "buffer";
-import { PDFParse } from "pdf-parse";
 
 /**
  * Server-Side File Parser for SafeWallet v2
@@ -100,30 +99,17 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Server-side Native PDF parsing (Lightning Fast vs OCR)
- * Menggunakan pdf-parse v2 (class-based API) untuk Serverless Node.js
- * FIX HS-2: v2 exports PDFParse class, bukan callable function
+ * Server-side Native PDF parsing
+ * Reverted to pdf-parse v1 API to fix Webpack pdf.js worker crash in Next.js Serverless.
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
-  if (!PDFParse) {
-    throw new Error("pdf-parse module tidak memiliki export PDFParse yang valid.");
-  }
-
-  // v2 API: Instantiate class with LoadParameters
-  const parser = new PDFParse({
-    data: new Uint8Array(buffer),
-    ...(pdfPassword ? { password: pdfPassword } : {}),
+  const pdfParseMod = await import("pdf-parse/lib/pdf-parse.js");
+  // ESM interop fallback for CJS
+  const pdfParse = pdfParseMod.default || pdfParseMod;
+  
+  const result = await pdfParse(buffer, {
+    max: 20, // max 20 pages
   });
 
-  try {
-    // v2 API: getText() returns TextResult { text: string, pages: PageTextResult[] }
-    const result = await parser.getText({
-      last: 20, // Batasi 20 halaman untuk mencegah Timeout / OOM
-    });
-
-    return result.text;
-  } finally {
-    // Cleanup: release internal pdfjs resources to prevent memory leaks
-    try { await parser.destroy(); } catch { /* ignore cleanup errors */ }
-  }
+  return result.text;
 }
