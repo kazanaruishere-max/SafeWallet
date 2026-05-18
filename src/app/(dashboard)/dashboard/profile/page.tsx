@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { User, CreditCard, Shield, Loader2, Save, Download, Trash2, Smartphone, Mail, DollarSign, CheckCircle2 } from "lucide-react";
+import { User, CreditCard, Shield, Loader2, Save, Download, Trash2, Smartphone, Mail, DollarSign, CheckCircle2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 type ProfileData = {
   email: string;
@@ -114,6 +115,17 @@ export default function ProfilePage() {
       toast.success("Data berhasil diunduh!");
     } catch {
       toast.error("Gagal mengunduh data.");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      toast.success("Berhasil keluar.");
+      router.push("/login");
+    } catch {
+      toast.error("Gagal melakukan log out.");
     }
   };
 
@@ -355,6 +367,16 @@ export default function ProfilePage() {
                 </div>
                 <Button variant="ghost" className="text-blue-400 hover:text-blue-300 hover:bg-blue-400/10 rounded-xl" onClick={handleExportData}>
                   <Download className="w-5 h-5" />
+                </Button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 group hover:bg-amber-500/10 transition-colors">
+                <div>
+                  <h3 className="text-amber-500 font-bold text-sm">Keluar (Log Out)</h3>
+                  <p className="text-amber-500/50 text-xs mt-1">Akhiri sesi aktif Anda di perangkat ini</p>
+                </div>
+                <Button variant="ghost" className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/20 rounded-xl" onClick={handleLogout}>
+                  <LogOut className="w-5 h-5" />
                 </Button>
               </div>
 

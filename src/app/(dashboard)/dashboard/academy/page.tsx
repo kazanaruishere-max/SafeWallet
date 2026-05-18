@@ -82,14 +82,18 @@ export default function AcademyPage() {
                 Utang Rp 5.000.000 dengan bunga 2% per bulan akan membengkak tanpa disadari, memicu siklus "gali lubang tutup lubang".
               </p>
             </div>
-            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0B0A08] group-hover:border-[#3323D2]/30 transition-colors cursor-pointer">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-              <div className="absolute inset-0 flex items-center justify-center z-20">
-                <PlayCircle className="w-16 h-16 text-white/80 group-hover:scale-110 transition-transform group-hover:text-[#8B7DFF]" />
-              </div>
-              <div className="absolute bottom-4 left-4 z-20">
-                <Badge className="bg-[#3323D2] border-none text-white">Materi Video</Badge>
-              </div>
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-[#0B0A08] group-hover:border-[#3323D2]/30 transition-colors">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                src="https://www.youtube.com/embed/QL7agVc-StQ?rel=0" 
+                title="Edukasi Finansial Pinjol" 
+                frameBorder="0" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                referrerPolicy="strict-origin-when-cross-origin" 
+                allowFullScreen
+                className="absolute inset-0 w-full h-full"
+              ></iframe>
             </div>
           </div>
         </GlassCard>
