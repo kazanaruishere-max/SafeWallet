@@ -123,7 +123,8 @@ export default function ProfilePage() {
       const supabase = createClient();
       await supabase.auth.signOut();
       toast.success("Berhasil keluar.");
-      router.push("/login");
+      // Force a full browser reload to clear all Next.js memory cache and Supabase states
+      window.location.href = "/login";
     } catch {
       toast.error("Gagal melakukan log out.");
     }
