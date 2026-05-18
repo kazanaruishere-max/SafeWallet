@@ -52,6 +52,9 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,6 +70,8 @@ export default function RootLayout({
             {children}
             <Toaster position="top-right" richColors />
             <PlausibleAnalytics />
+            <Analytics />
+            <SpeedInsights />
           </LenisProvider>
         </ErrorBoundary>
       </body>
