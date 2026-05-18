@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/user/dashboard")
+    fetch("/api/user/dashboard", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (json.success) setData(json.data);

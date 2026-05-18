@@ -31,7 +31,7 @@ export default function HistoryPage() {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetch(`/api/user/scans?page=${page}&limit=10`)
+    fetch(`/api/user/scans?page=${page}&limit=10`, { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (json.success) {

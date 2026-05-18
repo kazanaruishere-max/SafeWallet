@@ -42,8 +42,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/user/profile").then((r) => r.json()),
-      fetch("/api/user/dashboard").then((r) => r.json()),
+      fetch("/api/user/profile", { cache: "no-store" }).then((r) => r.json()),
+      fetch("/api/user/dashboard", { cache: "no-store" }).then((r) => r.json()),
     ])
       .then(([profileRes, dashRes]) => {
         if (profileRes.success) {

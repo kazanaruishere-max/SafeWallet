@@ -56,7 +56,7 @@ export default function ScanPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/user/profile")
+    fetch("/api/user/profile", { cache: "no-store" })
       .then((r) => r.json())
       .then((json) => {
         if (json.success && json.data.needs_education_lock) {

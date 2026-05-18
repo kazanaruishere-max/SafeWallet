@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { ApiError } from "@/types/api";
 
+export const dynamic = "force-dynamic";
+
 // GET /api/user/profile
 export async function GET() {
   try {
