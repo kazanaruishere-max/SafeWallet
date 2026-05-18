@@ -27,17 +27,17 @@ export async function GET(request: NextRequest) {
     // Use admin client to bypass RLS for reading scan history
     const adminSupabase = createAdminClient();
 
-    // Fetch health scans
+    // Fetch health scans (use only columns from original schema)
     const { data: healthScans, error: healthError } = await adminSupabase
       .from("scans")
-      .select("id, health_score, created_at, categories, recommendations, blockchain_tx_id")
+      .select("id, health_score, created_at, categories, recommendations")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
-    // Fetch scam checks
+    // Fetch scam checks (use only columns from original schema)
     const { data: scamChecks, error: scamError } = await adminSupabase
       .from("scam_checks")
-      .select("id, risk_score, created_at, red_flags, blockchain_tx_id, confidence")
+      .select("id, risk_score, created_at, red_flags, confidence")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -51,8 +51,7 @@ export async function GET(request: NextRequest) {
       health_score: s.health_score,
       created_at: s.created_at,
       categories: (s.categories as Record<string, number>) ?? {},
-      recommendations: (s.recommendations as string[]) ?? [],
-      blockchain_tx_id: s.blockchain_tx_id,
+      recommendations: (s.recommendations as string[]) ?? {},
     }));
 
     const scamItems: ScanHistoryItem[] = (scamChecks ?? []).map((s) => ({
@@ -62,7 +61,6 @@ export async function GET(request: NextRequest) {
       created_at: s.created_at,
       categories: {},
       recommendations: [],
-      blockchain_tx_id: s.blockchain_tx_id,
       risk_score: s.risk_score,
       verdict: s.risk_score >= 61 ? "HIGH_RISK" : s.risk_score >= 31 ? "CAUTION" : "SAFE",
       red_flags: (s.red_flags as Array<{ type: string; detail: string }>) ?? [],
