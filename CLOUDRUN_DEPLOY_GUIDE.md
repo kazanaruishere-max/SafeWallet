@@ -7,8 +7,8 @@ main branch  ──push──► Vercel         (Frontend global, CDN edge, Cron
 cloudrun branch ──push──► Cloud Run   (Jakarta, Docker container, scale-to-zero)
 ```
 
-Keduanya **berbagi** Supabase DB, Gemini/OpenRouter API, dan Upstash Redis yang sama.
-**Tidak ada perubahan kode aplikasi.**
+Keduanya **berbagi** Supabase DB, Groq AI, optional Gemini embeddings, dan Upstash Redis yang sama.
+Cloud Run memakai branch `cloudrun`, jadi push ke branch ini **tidak memicu deploy Vercel `main`**.
 
 ---
 
@@ -68,7 +68,7 @@ Buka: `GitHub Repo → Settings → Secrets and variables → Actions → New re
 | `GCP_PROJECT_ID` | ID project GCP Anda (contoh: `safewallet-cloudrun`) |
 | `GCP_WIF_PROVIDER` | Resource name WIF Provider (format panjang dari script) |
 | `GCP_SERVICE_ACCOUNT_EMAIL` | `safewallet-deployer@PROJECT_ID.iam.gserviceaccount.com` |
-| `CLOUDRUN_APP_URL` | URL Cloud Run (isi setelah deploy pertama) |
+| `CLOUDRUN_APP_URL` | URL Cloud Run (isi setelah deploy pertama; sementara bisa isi domain placeholder HTTPS) |
 
 ### Secrets Aplikasi (sama persis dengan .env.local Vercel):
 
@@ -77,15 +77,25 @@ Buka: `GitHub Repo → Settings → Secrets and variables → Actions → New re
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase URL (shared dengan Vercel) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anon Key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key |
-| `OPENROUTER_API_KEY` | OpenRouter/Gemini API Key |
+| `GROQ_API_KEY` | Groq API Key untuk AI utama, OCR vision, scam detection, legal generation |
+| `GEMINI_API_KEY` | Opsional untuk embedding RAG OJK/scam knowledge |
+| `ENCRYPTION_KEY` | Wajib, minimal 32 karakter/64 hex disarankan untuk OCR encrypted retention |
 | `UPSTASH_REDIS_REST_URL` | Upstash Redis URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis Token |
 | `CRON_SECRET` | Secret untuk endpoint cron |
 | `MIDTRANS_SERVER_KEY` | Midtrans Server Key |
 | `MIDTRANS_CLIENT_KEY` | Midtrans Client Key |
+| `TELEGRAM_BOT_TOKEN` | Opsional jika Telegram bot aktif |
+| `TELEGRAM_WEBHOOK_SECRET` | Wajib jika Telegram bot aktif |
+| `WHATSAPP_APP_SECRET` | Wajib jika WhatsApp webhook aktif; untuk verifikasi `x-hub-signature-256` |
+| `WHATSAPP_VERIFY_TOKEN` | Wajib jika WhatsApp webhook aktif |
+| `WHATSAPP_API_TOKEN` | Wajib jika WhatsApp webhook aktif |
+| `WHATSAPP_PHONE_ID` | Wajib jika WhatsApp webhook aktif |
+| `DIAGNOSTIC_SECRET` | Opsional; membuka `/api/scan/diagnose` di production jika dibutuhkan |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN |
 
 > **Catatan:** Supabase, Redis, dan API Key yang sama bisa digunakan oleh keduanya. Tidak perlu membuat akun/project baru.
+> **Penting:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_APP_URL`, dan `NEXT_PUBLIC_SENTRY_DSN` dikirim sebagai Docker build args karena Next.js meng-inline nilai `NEXT_PUBLIC_*` saat `npm run build`.
 
 ---
 
@@ -101,6 +111,14 @@ git push origin cloudrun
 
 GitHub Actions otomatis berjalan! Lihat progress di:
 `GitHub Repo → Actions → Deploy to Cloud Run`
+
+Untuk update berikutnya tanpa menyentuh Vercel:
+
+```bash
+git checkout cloudrun
+git merge main
+git push origin cloudrun
+```
 
 ---
 
@@ -162,6 +180,8 @@ Untuk aplikasi dengan traffic rendah-menengah, **biaya Cloud Run bisa $0/bulan**
 ## Update `.env` untuk Cloud Run
 
 Setelah deploy pertama, update `CLOUDRUN_APP_URL` di GitHub Secrets dengan URL yang diberikan Cloud Run (format: `https://safewallet-app-xxxxxxxxxx-et.a.run.app`).
+
+Setelah mengganti `CLOUDRUN_APP_URL`, jalankan ulang workflow **Deploy to Cloud Run** supaya URL tersebut ikut ter-bake ke bundle browser.
 
 ---
 

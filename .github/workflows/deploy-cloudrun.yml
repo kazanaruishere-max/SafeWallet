@@ -5,7 +5,7 @@
 # Strategy:
 #   - Triggered ONLY on push to `cloudrun` branch (isolated from Vercel/main)
 #   - Uses Workload Identity Federation — ZERO service account key files
-#   - Shared services: same Supabase, Gemini API, Upstash Redis as Vercel
+#   - Shared services: same Supabase, Groq, optional Gemini embeddings, Upstash Redis as Vercel
 #   - Scale-to-zero by default (cost = $0 when no traffic)
 #
 # Setup (run once): see scripts/setup-gcp-wif.sh
@@ -72,6 +72,11 @@ jobs:
             --tag "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
             --cache-from "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
             --build-arg BUILDKIT_INLINE_CACHE=1 \
+            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
+            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
+            --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.CLOUDRUN_APP_URL }}" \
+            --build-arg NEXT_PUBLIC_APP_NAME="${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}" \
+            --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}" \
             .
 
       - name: Push Docker Image
@@ -112,18 +117,28 @@ jobs:
             --timeout 60s \
             --concurrency 80 \
             --set-env-vars "NODE_ENV=production" \
+            --set-env-vars "NEXT_TELEMETRY_DISABLED=1" \
             --set-env-vars "NEXT_PUBLIC_APP_URL=${{ secrets.CLOUDRUN_APP_URL }}" \
+            --set-env-vars "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}" \
             --set-env-vars "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
             --set-env-vars "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
             --set-env-vars "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            --set-env-vars "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" \
+            --set-env-vars "GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}" \
+            --set-env-vars "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" \
+            --set-env-vars "ENCRYPTION_KEY=${{ secrets.ENCRYPTION_KEY }}" \
             --set-env-vars "UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }}" \
             --set-env-vars "UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}" \
             --set-env-vars "CRON_SECRET=${{ secrets.CRON_SECRET }}" \
             --set-env-vars "MIDTRANS_SERVER_KEY=${{ secrets.MIDTRANS_SERVER_KEY }}" \
             --set-env-vars "MIDTRANS_CLIENT_KEY=${{ secrets.MIDTRANS_CLIENT_KEY }}" \
+            --set-env-vars "TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}" \
+            --set-env-vars "TELEGRAM_WEBHOOK_SECRET=${{ secrets.TELEGRAM_WEBHOOK_SECRET }}" \
+            --set-env-vars "WHATSAPP_APP_SECRET=${{ secrets.WHATSAPP_APP_SECRET }}" \
+            --set-env-vars "WHATSAPP_VERIFY_TOKEN=${{ secrets.WHATSAPP_VERIFY_TOKEN }}" \
+            --set-env-vars "WHATSAPP_API_TOKEN=${{ secrets.WHATSAPP_API_TOKEN }}" \
+            --set-env-vars "WHATSAPP_PHONE_ID=${{ secrets.WHATSAPP_PHONE_ID }}" \
+            --set-env-vars "DIAGNOSTIC_SECRET=${{ secrets.DIAGNOSTIC_SECRET }}" \
             --set-env-vars "NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}" \
-            --set-env-vars "NEXT_TELEMETRY_DISABLED=1" \
             --port 3000 \
             --quiet
 
