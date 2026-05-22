@@ -44,7 +44,6 @@ jobs:
         uses: actions/checkout@v4
 
       # Autentikasi ke GCP via Workload Identity Federation
-      # Tidak ada service account JSON — autentikasi via OIDC token GitHub
       - name: Authenticate to Google Cloud (WIF)
         id: auth
         uses: google-github-actions/auth@v2
@@ -60,29 +59,32 @@ jobs:
         run: |
           gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
 
-      # Build image dengan label git SHA untuk traceability
-      - name: Build Docker Image
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Docker Image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            NEXT_PUBLIC_APP_URL=${{ secrets.CLOUDRUN_APP_URL }}
+            NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}
+            NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+
+      - name: Set Image URI output
         id: image
         run: |
           IMAGE_URI="${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}"
           echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-
-          docker build \
-            --tag "${IMAGE_URI}" \
-            --tag "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
-            --cache-from "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest" \
-            --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --build-arg NEXT_PUBLIC_SUPABASE_URL="${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \
-            --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" \
-            --build-arg NEXT_PUBLIC_APP_URL="${{ secrets.CLOUDRUN_APP_URL }}" \
-            --build-arg NEXT_PUBLIC_APP_NAME="${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}" \
-            --build-arg NEXT_PUBLIC_SENTRY_DSN="${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}" \
-            .
-
-      - name: Push Docker Image
-        run: |
-          docker push "${{ steps.image.outputs.uri }}"
-          docker push "${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest"
 
   # ============================================================
   # Job 2: Deploy ke Cloud Run
