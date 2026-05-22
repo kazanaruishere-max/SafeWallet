@@ -3,30 +3,29 @@
 # SafeWallet — Google Cloud Run Deployment
 #
 # Strategy:
-#   - Triggered ONLY on push to `cloudrun` branch (isolated from Vercel/main)
-#   - Uses Workload Identity Federation — ZERO service account key files
-#   - Shared services: same Supabase, Groq, optional Gemini embeddings, Upstash Redis as Vercel
-#   - Scale-to-zero by default (cost = $0 when no traffic)
+#   - Triggered ONLY on push to `cloudrun` branch
+#   - Uses Workload Identity Federation
+#   - Shared services: Supabase, Groq, Upstash Redis
 #
-# Setup (run once): see scripts/setup-gcp-wif.sh
+# Setup: see scripts/setup-gcp-wif.sh
 
 name: Deploy to Cloud Run
 
 on:
   push:
     branches:
-      - cloudrun       # ← dedicated branch, TIDAK menyentuh main/Vercel
-  workflow_dispatch:   # ← bisa trigger manual dari GitHub UI
+      - cloudrun
+  workflow_dispatch:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: asia-southeast2                  # Jakarta — terdekat ke pengguna Indonesia
+  REGION: asia-southeast2
   SERVICE_NAME: safewallet-app
   REGISTRY: asia-southeast2-docker.pkg.dev
 
 permissions:
   contents: read
-  id-token: write    # WAJIB untuk Workload Identity Federation
+  id-token: write
 
 jobs:
   # ============================================================
@@ -35,15 +34,10 @@ jobs:
   build-and-push:
     name: Build Docker Image
     runs-on: ubuntu-latest
-
-    outputs:
-      image: ${{ steps.image.outputs.uri }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Autentikasi ke GCP via Workload Identity Federation
       - name: Authenticate to Google Cloud (WIF)
         id: auth
         uses: google-github-actions/auth@v2
@@ -54,7 +48,6 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      # Konfigurasi Docker agar bisa push ke Artifact Registry
       - name: Configure Docker to use Artifact Registry
         run: |
           gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
@@ -69,8 +62,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}
-            ${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}
+            ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
@@ -80,12 +73,6 @@ jobs:
             NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}
             NEXT_PUBLIC_SENTRY_DSN=${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
 
-      - name: Set Image URI output
-        id: image
-        run: |
-          IMAGE_URI="${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/safewallet/${{ env.SERVICE_NAME }}:${{ github.sha }}"
-          echo "uri=${IMAGE_URI}" >> $GITHUB_OUTPUT
-
   # ============================================================
   # Job 2: Deploy ke Cloud Run
   # ============================================================
@@ -93,6 +80,8 @@ jobs:
     name: Deploy to Cloud Run
     runs-on: ubuntu-latest
     needs: build-and-push
+    env:
+      IMAGE_URI: ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/safewallet/safewallet-app:${{ github.sha }}
 
     steps:
       - name: Authenticate to Google Cloud (WIF)
@@ -108,7 +97,7 @@ jobs:
         id: deploy
         run: |
           gcloud run deploy ${{ env.SERVICE_NAME }} \
-            --image "${{ needs.build-and-push.outputs.image }}" \
+            --image "${{ env.IMAGE_URI }}" \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
@@ -149,10 +138,8 @@ jobs:
           URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
             --region ${{ env.REGION }} \
             --format 'value(status.url)')
-          echo "✅ Cloud Run URL: ${URL}"
-          echo "cloudrun_url=${URL}" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Cloud Run URL: $URL"
           echo "### ✅ Deployment Berhasil!" >> $GITHUB_STEP_SUMMARY
-          echo "**URL:** ${URL}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${{ needs.build-and-push.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** $URL" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${{ env.IMAGE_URI }}" >> $GITHUB_STEP_SUMMARY
           echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
- 
