@@ -155,3 +155,4 @@ jobs:
           echo "**URL:** ${URL}" >> $GITHUB_STEP_SUMMARY
           echo "**Image:** ${{ needs.build-and-push.outputs.image }}" >> $GITHUB_STEP_SUMMARY
           echo "**Region:** ${{ env.REGION }}" >> $GITHUB_STEP_SUMMARY
+ 
