@@ -5,9 +5,27 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
  * Diagnostic endpoint to debug DB write/read issues.
  * Hit: /api/scan/diagnose to see exactly what's failing.
  * 
- * IMPORTANT: Remove this endpoint before going to production.
+ * Disabled in production unless DIAGNOSTIC_SECRET is configured and provided
+ * via the x-diagnostic-secret header.
  */
-export async function GET() {
+function isDiagnosticAccessAllowed(request: Request): boolean {
+  const diagnosticSecret = process.env.DIAGNOSTIC_SECRET?.trim();
+
+  if (process.env.NODE_ENV !== "production" && !diagnosticSecret) {
+    return true;
+  }
+
+  return Boolean(
+    diagnosticSecret &&
+    request.headers.get("x-diagnostic-secret") === diagnosticSecret
+  );
+}
+
+export async function GET(request: Request) {
+  if (!isDiagnosticAccessAllowed(request)) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const diagnostics: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
     env_check: {},
@@ -22,7 +40,6 @@ export async function GET() {
     NEXT_PUBLIC_SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    SUPABASE_SERVICE_ROLE_KEY_length: process.env.SUPABASE_SERVICE_ROLE_KEY?.length ?? 0,
     ENCRYPTION_KEY: !!process.env.ENCRYPTION_KEY,
     GROQ_API_KEY: !!process.env.GROQ_API_KEY,
   };
