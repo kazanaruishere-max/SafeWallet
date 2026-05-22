@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { SCAM_DETECTION_PROMPT, buildScamPrompt } from "@/lib/ai/prompts";
 import { routeAndExecuteAI } from "@/lib/ai/router";
-import { checkQuota, incrementUsage } from "@/lib/rate-limit";
 import { checkAndAwardBadges } from "@/lib/gamification";
 import { sanitizeScamInput } from "@/lib/sanitize";
 import { parseAIResponse, ScamAnalysisSchema } from "@/lib/ai/schemas";
-import { encrypt } from "@/lib/encryption";
-import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
+import { maskIdentifier, redactForLog } from "@/lib/security/logging";
 import type { ApiResponse, ApiError, ScamCheckResult } from "@/types/api";
 
 const VALID_INPUT_TYPES = ["text", "url", "screenshot"] as const;
@@ -53,7 +50,7 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.error("[ScamCheck] Quota system unavailable:", quotaErr);
+      console.error("[ScamCheck] Quota system unavailable:", redactForLog(quotaErr));
       return NextResponse.json(
         {
           success: false,
@@ -94,6 +91,81 @@ export async function POST(request: Request) {
         } satisfies ApiError,
         { status: 400 }
       );
+    }
+
+    // 🔒 SECURITY FIX: SSRF Protection for URL input
+    if (input_type === "url") {
+      try {
+        const url = new URL(content);
+        
+        // Block internal/private IPs and metadata endpoints
+        const blockedHosts = [
+          "localhost", "127.0.0.1", "0.0.0.0", "::1",
+          "169.254.169.254", // AWS/GCP metadata
+          "metadata.google.internal",
+          "metadata.azure.com",
+        ];
+        
+        const blockedPatterns = [
+          /^10\./,  // Private network 10.0.0.0/8
+          /^172\.(1[6-9]|2[0-9]|3[01])\./,  // Private network 172.16.0.0/12
+          /^192\.168\./,  // Private network 192.168.0.0/16
+          /^fd[0-9a-f]{2}:/i,  // IPv6 private
+        ];
+        
+        // Check hostname against blocklist
+        if (blockedHosts.includes(url.hostname.toLowerCase())) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "INVALID_URL",
+                message: "URL tidak diizinkan untuk alasan keamanan.",
+              },
+            } satisfies ApiError,
+            { status: 400 }
+          );
+        }
+        
+        // Check hostname against patterns
+        if (blockedPatterns.some(pattern => pattern.test(url.hostname))) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "INVALID_URL",
+                message: "URL tidak diizinkan untuk alasan keamanan.",
+              },
+            } satisfies ApiError,
+            { status: 400 }
+          );
+        }
+        
+        // Only allow HTTP/HTTPS
+        if (!["http:", "https:"].includes(url.protocol)) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "INVALID_URL",
+                message: "Hanya HTTP/HTTPS yang diizinkan.",
+              },
+            } satisfies ApiError,
+            { status: 400 }
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "INVALID_URL",
+              message: "Format URL tidak valid.",
+            },
+          } satisfies ApiError,
+          { status: 400 }
+        );
+      }
     }
 
     // Sanitize input
@@ -159,10 +231,10 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error("[ScamCheck DB] ❌ Insert error:", JSON.stringify(insertError));
+      console.error("[ScamCheck DB] Insert error:", redactForLog(insertError));
     } else {
       check = insertData;
-      console.log(`[ScamCheck DB] ✅ Saved ${check.id} for user ${user.id}`);
+      console.log(`[ScamCheck DB] Saved ${maskIdentifier(check.id)} for user ${maskIdentifier(user.id)}`);
     }
 
     // FIX SC-4: Badge failure must not crash the whole request
@@ -201,7 +273,7 @@ export async function POST(request: Request) {
       meta: { remaining_quota: quotaInfo?.remaining ?? 0, new_badges: newBadges },
     } satisfies ApiResponse<ScamCheckResult>);
   } catch (error) {
-    console.error("Scam check error:", error);
+    console.error("Scam check error:", redactForLog(error));
     return NextResponse.json(
       {
         success: false,

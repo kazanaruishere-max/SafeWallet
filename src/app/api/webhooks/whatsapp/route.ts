@@ -1,14 +1,45 @@
 import { NextResponse } from "next/server";
 import { routeAndExecuteAI } from "@/lib/ai/router";
+import { maskIdentifier, redactForLog } from "@/lib/security/logging";
 import type { ApiError } from "@/types/api";
+import crypto from "crypto";
+
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null): boolean {
+  const appSecret = process.env.WHATSAPP_APP_SECRET?.trim();
+
+  if (!appSecret) {
+    return process.env.NODE_ENV !== "production";
+  }
+
+  if (!signatureHeader?.startsWith("sha256=")) {
+    return false;
+  }
+
+  const expected = `sha256=${crypto
+    .createHmac("sha256", appSecret)
+    .update(rawBody)
+    .digest("hex")}`;
+
+  const actualBuffer = Buffer.from(signatureHeader);
+  const expectedBuffer = Buffer.from(expected);
+
+  return (
+    actualBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(actualBuffer, expectedBuffer)
+  );
+}
 
 // Endpoint untuk menerima webhook dari Meta WhatsApp Cloud API
 export async function POST(request: Request) {
   try {
-    // 1. Verifikasi Signature Meta WA (Keamanan)
-    // Dalam production, harus memverifikasi x-hub-signature
-    
-    const body = await request.json();
+    const rawBody = await request.text();
+
+    if (!verifyMetaSignature(rawBody, request.headers.get("x-hub-signature-256"))) {
+      console.warn("[WA BOT] Invalid webhook signature");
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
+
+    const body = JSON.parse(rawBody);
 
     // Pastikan ini adalah pesan masuk (bukan status update)
     if (body.object === "whatsapp_business_account" && body.entry?.[0]?.changes?.[0]?.value?.messages) {
@@ -24,7 +55,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: "Only text supported for now" });
       }
 
-      console.log(`[WA BOT] Menerima pesan dari ${senderPhone}`);
+      console.log(`[WA BOT] Incoming message from ${maskIdentifier(senderPhone)}`);
 
       // 2. Kirim pesan ke AI Router
       // Kita paksakan userAge 65 (Lansia) agar jawaban bot WA selalu simpel dan sopan
@@ -67,8 +98,8 @@ export async function POST(request: Request) {
     // Jika pesan bukan dari user (misal pesan otomatis sistem), kembalikan 200 agar WA tidak retry
     return NextResponse.json({ success: true });
 
-  } catch (error: any) {
-    console.error("[WA BOT] Error:", error);
+  } catch (error) {
+    console.error("[WA BOT] Error:", redactForLog(error));
     return NextResponse.json(
       { success: false, error: { code: "INTERNAL_ERROR", message: "Webhook failed" } } satisfies ApiError,
       { status: 500 }

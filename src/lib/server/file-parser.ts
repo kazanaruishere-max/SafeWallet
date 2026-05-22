@@ -1,5 +1,6 @@
 import * as xlsx from "xlsx";
 import { Buffer } from "buffer";
+import { redactForLog } from "@/lib/security/logging";
 
 /**
  * Server-Side File Parser for SafeWallet v2
@@ -137,7 +138,7 @@ async function parseImageWithVision(buffer: Buffer, mimeType: string): Promise<s
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`[Vision] Groq API error (${response.status}):`, errorText.substring(0, 300));
+      console.error(`[Vision] Groq API error (${response.status}):`, redactForLog(errorText));
       
       if (response.status === 429) {
         throw new Error("Batas penggunaan AI tercapai. Coba lagi dalam beberapa menit.");
@@ -169,7 +170,7 @@ async function parseImageWithVision(buffer: Buffer, mimeType: string): Promise<s
         msg.includes("GROQ_API_KEY")) {
       throw err;
     }
-    console.error("[Vision] Unexpected error:", msg);
+    console.error("[Vision] Unexpected error:", redactForLog(msg));
     throw new Error("Gagal memproses gambar. Pastikan gambar valid dan coba lagi.");
   }
 }
@@ -222,7 +223,7 @@ async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<str
     console.log(`[PDF] Extracted ${text.length} chars from ${numpages} pages`);
   } catch (pdfErr) {
     const errMsg = pdfErr instanceof Error ? pdfErr.message : String(pdfErr);
-    console.error("[PDF] pdf-parse error:", errMsg);
+    console.error("[PDF] pdf-parse error:", redactForLog(errMsg));
     
     if (errMsg.includes("password") || errMsg.includes("encrypted")) {
       throw new Error("PDF terproteksi password. Masukkan password yang benar di kolom yang tersedia.");
@@ -248,7 +249,7 @@ async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<str
         return visionText;
       }
     } catch (visionErr) {
-      console.warn("[PDF] Vision fallback failed:", visionErr);
+      console.warn("[PDF] Vision fallback failed:", redactForLog(visionErr));
     }
     
     throw new Error(

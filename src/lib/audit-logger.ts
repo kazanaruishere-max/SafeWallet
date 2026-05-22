@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { maskIdentifier, redactForLog } from "@/lib/security/logging";
 import { headers } from "next/headers";
 
 export type AuditAction = 
@@ -41,7 +42,7 @@ export async function logAudit(
     console.log(JSON.stringify({
       level: "AUDIT",
       request_id: requestId,
-      user_id: userId,
+      user_id: maskIdentifier(userId),
       action,
       status,
       timestamp: new Date().toISOString()
@@ -58,9 +59,9 @@ export async function logAudit(
     });
 
     if (error) {
-      console.warn(`[AuditLogger][${requestId}] Failed to save log:`, error.message);
+      console.warn(`[AuditLogger][${requestId}] Failed to save log:`, redactForLog(error.message));
     }
   } catch (error) {
-    console.error(`[AuditLogger][${requestId}] Fatal exception:`, error);
+    console.error(`[AuditLogger][${requestId}] Fatal exception:`, redactForLog(error));
   }
 }

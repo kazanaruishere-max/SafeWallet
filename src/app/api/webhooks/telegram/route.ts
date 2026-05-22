@@ -3,6 +3,7 @@ import { NATIONAL_AVERAGE_UMR } from "@/lib/constants/umr_data";
 import { callAI } from "@/lib/ai/client";
 import { FINANCIAL_COACHING_PROMPT } from "@/lib/ai/prompts";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { maskIdentifier, redactForLog } from "@/lib/security/logging";
 
 export async function POST(request: Request) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     const userName = message.from?.first_name || "Pengguna Baru";
 
     // SECURITY: Only log metadata, never log message content (may contain financial data)
-    console.log(`[Telegram] Incoming message from chatId=${chatId}, length=${userMessage.length}`);
+    console.log(`[Telegram] Incoming message from chatId=${maskIdentifier(chatId)}, length=${userMessage.length}`);
 
     // --- 1. HANDLE /link COMMAND ---
     if (userMessage.startsWith("/link ")) {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
       // Find user with this code
       const { data: userLink } = await supabase
         .from("users")
-        .select("id, email")
+        .select("id")
         .eq("telegram_link_code", code)
         .single();
 
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: "ok" });
       }
 
-      await replyTelegram(chatId, `✅ Akun SafeWallet berhasil terhubung!\n\nHalo pemilik email **${userLink.email}**, Saku sekarang siap bantu analisa kesehatan keuangan kamu. Cobalah tanya: *"Saku, bagaimana kondisi skorku saat ini?"*`);
+      await replyTelegram(chatId, `✅ Akun SafeWallet berhasil terhubung!\n\nSaku sekarang siap bantu analisa kesehatan keuangan kamu. Cobalah tanya: *"Saku, bagaimana kondisi skorku saat ini?"*`);
       return NextResponse.json({ status: "ok" });
     }
 
@@ -130,14 +131,14 @@ export async function POST(request: Request) {
       
       aiResponseText = aiResponse.content;
     } catch (aiError) {
-      console.error("[Telegram] Groq AI Error:", aiError);
+      console.error("[Telegram] Groq AI Error:", redactForLog(aiError));
       aiResponseText = "Waduh, koneksi Saku ke otak utama lagi gangguan nih. Boleh diulang sebentar lagi? 🙏";
     }
 
     await replyTelegram(chatId, aiResponseText);
     return NextResponse.json({ status: "ok" });
   } catch (error) {
-    console.error("[Telegram] Webhook critical error:", error);
+    console.error("[Telegram] Webhook critical error:", redactForLog(error));
     return NextResponse.json({ status: "error" }, { status: 500 });
   }
 }

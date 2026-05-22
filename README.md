@@ -160,11 +160,17 @@ Buka [http://localhost:3000](http://localhost:3000).
 | `GROQ_API_KEY` | ✅ | API key Groq untuk AI utama, OCR vision, scam detection, dan legal generation |
 | `GEMINI_API_KEY` | ⬜ | Opsional untuk embedding RAG OJK (`text-embedding-004`) |
 | `ENCRYPTION_KEY` | ✅ | Kunci minimal 32 karakter untuk enkripsi OCR AES-256-GCM |
-| `UPSTASH_REDIS_REST_URL` | ⬜ | Upstash Redis URL (untuk rate limiting) |
-| `UPSTASH_REDIS_REST_TOKEN` | ⬜ | Upstash Redis Token |
+| `UPSTASH_REDIS_REST_URL` | ✅ Production | Upstash Redis URL untuk rate limiting; API fail-closed di production bila kosong |
+| `UPSTASH_REDIS_REST_TOKEN` | ✅ Production | Upstash Redis Token untuk rate limiting; jangan expose sebagai `NEXT_PUBLIC_*` |
 | `MIDTRANS_SERVER_KEY` | ⬜ | Midtrans Server Key |
 | `TELEGRAM_BOT_TOKEN` | ⬜ | Telegram Bot Token |
+| `TELEGRAM_WEBHOOK_SECRET` | ✅ Jika Telegram aktif | Secret header webhook Telegram |
+| `WHATSAPP_APP_SECRET` | ✅ Jika WhatsApp aktif | Meta App Secret untuk verifikasi `x-hub-signature-256` |
+| `WHATSAPP_VERIFY_TOKEN` | ✅ Jika WhatsApp aktif | Token verifikasi webhook WhatsApp |
+| `WHATSAPP_API_TOKEN` | ✅ Jika WhatsApp aktif | Meta WhatsApp API token, server-only |
+| `WHATSAPP_PHONE_ID` | ✅ Jika WhatsApp aktif | WhatsApp phone number ID |
 | `CRON_SECRET` | ⬜ | Secret untuk cron job authentication |
+| `DIAGNOSTIC_SECRET` | ⬜ | Opsional untuk membuka `/api/scan/diagnose`; tanpa ini endpoint 404 di production |
 
 ---
 

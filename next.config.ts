@@ -2,6 +2,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   images: {
     remotePatterns: [
       {
@@ -52,14 +54,18 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
+              process.env.NODE_ENV === "production"
+                ? "script-src 'self' 'unsafe-inline' https://plausible.io"
+                : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://plausible.io",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://*.supabase.co",
               "connect-src 'self' https://*.supabase.co https://generativelanguage.googleapis.com https://plausible.io",
+              "object-src 'none'",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
+              ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : []),
             ].join("; "),
           },
         ],

@@ -7,6 +7,7 @@ import { parseAIResponse, HealthAnalysisSchema, type HealthAnalysis } from "@/li
 import { encrypt } from "@/lib/encryption";
 import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
 import { parseFileServer } from "@/lib/server/file-parser";
+import { maskIdentifier, redactForLog } from "@/lib/security/logging";
 import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
 
 // Vercel Serverless config: extend timeout for OCR/AI processing
@@ -81,7 +82,7 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.error("[Scan] Quota system unavailable:", quotaErr);
+      console.error("[Scan] Quota system unavailable:", redactForLog(quotaErr));
       return NextResponse.json(
         {
           success: false,
@@ -150,7 +151,7 @@ export async function POST(request: Request) {
       const { fileTypeFromBuffer } = await import("file-type");
       fileTypeResult = await fileTypeFromBuffer(buffer) ?? undefined;
     } catch (ftError) {
-      console.warn("[Scan] file-type import failed, falling back to client MIME:", ftError);
+      console.warn("[Scan] file-type import failed, falling back to client MIME:", redactForLog(ftError));
       // Fallback: trust client MIME (less secure but won't crash)
     }
 
@@ -286,7 +287,7 @@ export async function POST(request: Request) {
         parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan")
       );
     } catch (aiError) {
-      console.error("AI Analysis failed:", aiError);
+      console.error("AI Analysis failed:", redactForLog(aiError));
       const message = aiError instanceof AIError
         ? aiError.userMessage
         : "Layanan AI sedang tidak tersedia. Coba lagi dalam beberapa saat.";
@@ -329,14 +330,14 @@ export async function POST(request: Request) {
         .single();
         
       if (insertError) {
-        console.error("[Scan DB] ❌ Insert error:", JSON.stringify(insertError));
+        console.error("[Scan DB] Insert error:", redactForLog(insertError));
       } else {
         scanId = scan.id;
         dbSuccess = true;
-        console.log(`[Scan DB] ✅ Saved scan ${scanId} for user ${user.id}`);
+        console.log(`[Scan DB] Saved scan ${maskIdentifier(scanId)} for user ${maskIdentifier(user.id)}`);
       }
     } catch (dbErr) {
-      console.error("[Scan DB] ❌ Exception:", dbErr);
+      console.error("[Scan DB] Exception:", redactForLog(dbErr));
     }
 
     // 9. Badges & Intervention (Non-blocking)
@@ -359,7 +360,7 @@ export async function POST(request: Request) {
         }).eq("id", user.id);
         needs_education_lock = true;
       } catch (err) {
-        console.warn("Failed to apply Pinjol Education Lock", err);
+        console.warn("Failed to apply Pinjol Education Lock", redactForLog(err));
       }
     }
 
@@ -393,7 +394,7 @@ export async function POST(request: Request) {
             }
           }
         } catch (err) {
-          console.error("Failed to process gambling flag intervention", err);
+          console.error("Failed to process gambling flag intervention", redactForLog(err));
         }
       })();
     }
@@ -426,7 +427,7 @@ export async function POST(request: Request) {
       },
     } satisfies ApiResponse<ScanResult>);
   } catch (error) {
-    console.error("[Scan] Internal error:", error);
+    console.error("[Scan] Internal error:", redactForLog(error));
     return NextResponse.json(
       {
         success: false,

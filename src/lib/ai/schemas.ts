@@ -5,6 +5,7 @@
 
 import { z } from "zod";
 import { jsonrepair } from "jsonrepair";
+import { redactForLog } from "@/lib/security/logging";
 
 export const HealthAnalysisSchema = z.object({
   health_score: z.coerce.number().min(0).max(100).catch(0),
@@ -89,7 +90,7 @@ function repairJSON(jsonString: string): string {
   try {
     return jsonrepair(jsonString.trim());
   } catch (err) {
-    console.warn("jsonrepair failed, returning original string", err);
+    console.warn("jsonrepair failed, returning original string", redactForLog(err));
     return jsonString; // Fallback to raw if even jsonrepair fails
   }
 }
@@ -114,15 +115,15 @@ export function parseAIResponse<T>(
       cleaned = repairJSON(cleaned);
       parsed = JSON.parse(cleaned);
     } catch {
-      console.error(`[${context}] Raw AI response (failed to parse):`, rawJson.substring(0, 500));
+      console.error(`[${context}] Raw AI response (failed to parse):`, redactForLog(rawJson));
       throw new Error(`AI response bukan JSON valid (${context})`);
     }
   }
 
   const result = schema.safeParse(parsed);
   if (!result.success) {
-    console.error(`[${context}] Zod validation failed:`, result.error.format());
-    console.error(`[${context}] Parsed data:`, JSON.stringify(parsed).substring(0, 500));
+    console.error(`[${context}] Zod validation failed:`, redactForLog(result.error.format()));
+    console.error(`[${context}] Parsed data:`, redactForLog(parsed));
     throw new Error(`AI response format tidak sesuai (${context})`);
   }
 

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { callAI, AIError } from "@/lib/ai/client";
+import { redactForLog } from "@/lib/security/logging";
 
 /**
  * Mengubah Teks menjadi Vektor (768 Dimensi) menggunakan Gemini Embedding
@@ -68,7 +69,7 @@ export async function routeAndExecuteAI(userInput: string, companyName?: string,
     intent = "DEEP_CHECK";
   }
   
-  console.log(`[AI Router] Intent Detected: ${intent} (raw: "${rawIntent.substring(0, 50)}")`);
+  console.log(`[AI Router] Intent Detected: ${intent}`);
 
   // 2. EKSEKUSI BERDASARKAN JALUR
   if (intent === "MALICIOUS") {
@@ -90,7 +91,7 @@ export async function routeAndExecuteAI(userInput: string, companyName?: string,
   try {
     ragContext = await retrieveRAGContext(userInput);
   } catch (ragErr) {
-    console.warn("[AI Router] RAG Pipeline unavailable, proceeding without context:", ragErr);
+    console.warn("[AI Router] RAG Pipeline unavailable, proceeding without context:", redactForLog(ragErr));
     // Graceful degradation — AI will still work, just without OJK database context
   }
 
@@ -194,7 +195,7 @@ async function retrieveRAGContext(query: string, matchCount = 3): Promise<string
       .map((doc: any) => `[Sumber: ${doc.source_type}] ${doc.entity_name ? `(${doc.entity_name})` : ''} - ${doc.content}`)
       .join("\n\n");
   } catch (error) {
-    console.error("[RAG] Pipeline failed:", error);
+    console.error("[RAG] Pipeline failed:", redactForLog(error));
     return "";
   }
 }

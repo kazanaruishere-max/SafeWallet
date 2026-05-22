@@ -4,6 +4,9 @@
  * API key sent via Authorization header.
  */
 
+import "server-only";
+import { redactForLog } from "@/lib/security/logging";
+
 type Message = {
   role: "system" | "user" | "assistant";
   content: string;
@@ -94,7 +97,7 @@ export async function callAI(
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`Groq API error (${response.status}):`, errorText);
+      console.error(`Groq API error (${response.status}):`, redactForLog(errorText));
 
       // Handle specific status codes
       switch (response.status) {
@@ -214,7 +217,7 @@ export async function callAI(
 
     // Network errors
     if (model === PRIMARY_MODEL) {
-      console.warn("Network error, trying fallback...", error);
+      console.warn("Network error, trying fallback...", redactForLog(error));
       return callAI(messages, { ...options, model: FALLBACK_MODEL });
     }
     throw new AIError(

@@ -4,6 +4,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { redactForLog } from "@/lib/security/logging";
 
 type QuotaFeature = "scan" | "scam_check" | "breach_check";
 
@@ -65,8 +66,13 @@ export async function incrementQuotaAtomic(
   });
 
   if (error) {
-    console.error(`[RateLimit] RPC Error for ${feature}:`, error.message);
-    throw new QuotaSystemError("Atomic quota RPC failed", { cause: error });
+    console.error(`[RateLimit] RPC Error for ${feature}:`, redactForLog(error.message));
+    // 🔒 SECURITY FIX: Fail fast, NO fallback to non-atomic method
+    // Fallback would create race condition window allowing quota bypass
+    throw new QuotaSystemError(
+      "Quota system temporarily unavailable. Please try again in a moment.",
+      { cause: error }
+    );
   }
 
   const quota = data as QuotaRpcResponse | null;
@@ -76,8 +82,12 @@ export async function incrementQuotaAtomic(
     typeof quota.current !== "number" ||
     typeof quota.limit !== "number"
   ) {
-    console.error(`[RateLimit] Invalid RPC response for ${feature}:`, data);
-    throw new QuotaSystemError("Atomic quota RPC returned an invalid response");
+    console.error(`[RateLimit] Invalid RPC response for ${feature}:`, redactForLog(data));
+    // 🔒 SECURITY FIX: Fail fast on invalid response
+    throw new QuotaSystemError(
+      "Quota system returned invalid response. Please try again.",
+      { cause: new Error("Invalid RPC response structure") }
+    );
   }
 
   return {
@@ -126,55 +136,15 @@ export async function checkQuota(
 }
 
 /**
- * FIX H1: Atomic increment via upsert with ON CONFLICT DO UPDATE
- * Prevents race condition where multiple concurrent requests all pass quota check.
+ * Legacy wrapper kept for compatibility. Always delegates to the atomic RPC path.
  */
 export async function incrementUsage(
   userId: string,
   feature: QuotaFeature
 ): Promise<void> {
-  const supabase = await createClient();
-  const period = getCurrentPeriod();
-
-  // Atomic upsert: insert or increment in a single operation
-  const { error } = await supabase
-    .from("usage_counts")
-    .upsert(
-      {
-        user_id: userId,
-        feature,
-        period,
-        count: 1,
-      },
-      {
-        onConflict: "user_id,feature,period",
-        ignoreDuplicates: false,
-      }
-    );
-
-  if (error) {
-    // Fallback: try raw increment if upsert fails (e.g., no unique constraint)
-    const { data: existing } = await supabase
-      .from("usage_counts")
-      .select("id, count")
-      .eq("user_id", userId)
-      .eq("feature", feature)
-      .eq("period", period)
-      .single();
-
-    if (existing) {
-      await supabase
-        .from("usage_counts")
-        .update({ count: existing.count + 1 })
-        .eq("id", existing.id);
-    } else {
-      await supabase.from("usage_counts").insert({
-        user_id: userId,
-        feature,
-        period,
-        count: 1,
-      });
-    }
+  const quota = await incrementQuotaAtomic(userId, feature);
+  if (!quota.allowed) {
+    throw new QuotaSystemError("Quota exceeded");
   }
 }
 
