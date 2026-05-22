@@ -3,7 +3,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { callAI, AIError } from "@/lib/ai/client";
 import { HEALTH_ANALYSIS_PROMPT, buildHealthPrompt } from "@/lib/ai/prompts";
 import { sanitizeAIInput } from "@/lib/sanitize";
-import { parseAIResponse, HealthAnalysisSchema } from "@/lib/ai/schemas";
+import { parseAIResponse, HealthAnalysisSchema, type HealthAnalysis } from "@/lib/ai/schemas";
 import { encrypt } from "@/lib/encryption";
 import { generateIntegrityHash, recordOnBlockchain } from "@/lib/blockchain";
 import { parseFileServer } from "@/lib/server/file-parser";
@@ -11,6 +11,33 @@ import type { ApiResponse, ApiError, ScanResult } from "@/types/api";
 
 // Vercel Serverless config: extend timeout for OCR/AI processing
 export const maxDuration = 60;
+
+function normalizePercentage(value: number | null | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+
+  const percentage = Math.abs(value) <= 1 ? value * 100 : value;
+  return Math.min(100, Math.max(0, percentage));
+}
+
+function normalizeHealthMetrics(analysis: HealthAnalysis): HealthAnalysis {
+  return {
+    ...analysis,
+    debt_to_income_ratio: normalizePercentage(analysis.debt_to_income_ratio),
+    savings_rate: normalizePercentage(analysis.savings_rate),
+  };
+}
+
+function encryptOcrForRetention(ocrText: string): string | null {
+  try {
+    return encrypt(ocrText);
+  } catch (error) {
+    console.warn(
+      "[Scan DB] OCR encryption unavailable; applying zero-retention fallback:",
+      error instanceof Error ? error.message : String(error)
+    );
+    return null;
+  }
+}
 
 export async function POST(request: Request) {
   const startTime = Date.now();
@@ -54,7 +81,17 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.warn("Quota system failed, allowing scan (Fail-Open for UX):", quotaErr);
+      console.error("[Scan] Quota system unavailable:", quotaErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "QUOTA_SYSTEM_UNAVAILABLE",
+            message: "Sistem kuota sedang tidak tersedia. Coba lagi dalam beberapa saat.",
+          },
+        } satisfies ApiError,
+        { status: 503 }
+      );
     }
 
     // 3. Parse request body
@@ -245,7 +282,9 @@ export async function POST(request: Request) {
         { jsonMode: true, temperature: 0.2 }
       );
 
-      analysisResult = parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan");
+      analysisResult = normalizeHealthMetrics(
+        parseAIResponse(aiResponse.content, HealthAnalysisSchema, "health-scan")
+      );
     } catch (aiError) {
       console.error("AI Analysis failed:", aiError);
       const message = aiError instanceof AIError
@@ -266,22 +305,24 @@ export async function POST(request: Request) {
     let dbSuccess = false;
     let blockchainTxId: string | undefined;
     const integrityHash: string = generateIntegrityHash(analysisResult);
+    const encryptedOcrText = encryptOcrForRetention(ocrText);
 
     try {
       // Use admin client (service role) for DB writes to bypass RLS policies
       const adminSupabase = createAdminClient();
 
-      // Insert using ONLY columns from original schema (001_initial_schema.sql)
-      // Columns: user_id, image_url, ocr_raw_text, health_score, categories, recommendations, processing_time_ms
       const { data: scan, error: insertError } = await adminSupabase
         .from("scans")
         .insert({
           user_id: user.id,
           image_url: "server-processed",
-          ocr_raw_text: ocrText.substring(0, 5000),
+          ocr_raw_text: null,
+          encrypted_ocr_text: encryptedOcrText,
           health_score: Math.round(analysisResult.health_score), // Ensure INTEGER for DB
           categories: analysisResult.categories,
           recommendations: analysisResult.recommendations,
+          debt_to_income_ratio: analysisResult.debt_to_income_ratio,
+          savings_rate: analysisResult.savings_rate,
           processing_time_ms: Date.now() - startTime,
         })
         .select("id")

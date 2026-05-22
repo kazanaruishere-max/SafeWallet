@@ -5,6 +5,30 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+type QuotaFeature = "scan" | "scam_check" | "breach_check";
+
+type QuotaInfo = {
+  allowed: boolean;
+  used: number;
+  limit: number;
+  remaining: number;
+};
+
+type QuotaRpcResponse = {
+  success?: boolean;
+  current?: number;
+  limit?: number;
+  remaining?: number;
+};
+
+export class QuotaSystemError extends Error {
+  constructor(message: string, options?: { cause?: unknown }) {
+    super(message);
+    this.name = "QuotaSystemError";
+    this.cause = options?.cause;
+  }
+}
+
 export const TIER_LIMITS: Record<string, Record<string, number>> = {
   free: { scan: 5, scam_check: 10, breach_check: 3 },
   premium: { scan: 999999, scam_check: 999999, breach_check: 999999 },
@@ -17,13 +41,8 @@ export const TIER_LIMITS: Record<string, Record<string, number>> = {
  */
 export async function incrementQuotaAtomic(
   userId: string,
-  feature: "scan" | "scam_check" | "breach_check"
-): Promise<{
-  allowed: boolean;
-  used: number;
-  limit: number;
-  remaining: number;
-}> {
+  feature: QuotaFeature
+): Promise<QuotaInfo> {
   const supabase = await createClient();
   const period = getCurrentPeriod();
 
@@ -47,27 +66,32 @@ export async function incrementQuotaAtomic(
 
   if (error) {
     console.error(`[RateLimit] RPC Error for ${feature}:`, error.message);
-    // Fallback to non-atomic check if RPC fails
-    return checkQuota(userId, feature);
+    throw new QuotaSystemError("Atomic quota RPC failed", { cause: error });
+  }
+
+  const quota = data as QuotaRpcResponse | null;
+  if (
+    !quota ||
+    typeof quota.success !== "boolean" ||
+    typeof quota.current !== "number" ||
+    typeof quota.limit !== "number"
+  ) {
+    console.error(`[RateLimit] Invalid RPC response for ${feature}:`, data);
+    throw new QuotaSystemError("Atomic quota RPC returned an invalid response");
   }
 
   return {
-    allowed: data.success,
-    used: data.current,
-    limit: data.limit,
-    remaining: data.remaining ?? 0,
+    allowed: quota.success,
+    used: quota.current,
+    limit: quota.limit,
+    remaining: quota.remaining ?? Math.max(0, quota.limit - quota.current),
   };
 }
 
 export async function checkQuota(
   userId: string,
-  feature: "scan" | "scam_check" | "breach_check"
-): Promise<{
-  allowed: boolean;
-  used: number;
-  limit: number;
-  remaining: number;
-}> {
+  feature: QuotaFeature
+): Promise<QuotaInfo> {
   const supabase = await createClient();
 
   // Get user tier
@@ -107,7 +131,7 @@ export async function checkQuota(
  */
 export async function incrementUsage(
   userId: string,
-  feature: "scan" | "scam_check" | "breach_check"
+  feature: QuotaFeature
 ): Promise<void> {
   const supabase = await createClient();
   const period = getCurrentPeriod();

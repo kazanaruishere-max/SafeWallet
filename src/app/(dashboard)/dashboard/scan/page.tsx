@@ -402,13 +402,13 @@ export default function ScanPage() {
                     <span className="text-white/40 text-sm font-medium uppercase tracking-wider">Debt-to-Income</span>
                   </div>
                   <div className="text-4xl font-black text-white mb-2">
-                    {Math.round(result.debt_to_income_ratio * 100)}%
+                    {Math.round(result.debt_to_income_ratio)}%
                   </div>
                 </div>
                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full transition-all duration-1000 ${result.debt_to_income_ratio * 100 > 35 ? 'bg-red-500' : 'bg-emerald-500'}`} 
-                    style={{ width: `${Math.min(result.debt_to_income_ratio * 100, 100)}%` }}
+                    className={`h-full transition-all duration-1000 ${result.debt_to_income_ratio > 35 ? 'bg-red-500' : 'bg-emerald-500'}`} 
+                    style={{ width: `${Math.min(result.debt_to_income_ratio, 100)}%` }}
                   />
                 </div>
               </GlassCard>
@@ -422,13 +422,13 @@ export default function ScanPage() {
                     <span className="text-white/40 text-sm font-medium uppercase tracking-wider">Savings Rate</span>
                   </div>
                   <div className="text-4xl font-black text-white mb-2">
-                    {Math.round(result.savings_rate * 100)}%
+                    {Math.round(result.savings_rate)}%
                   </div>
                 </div>
                 <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-emerald-500 transition-all duration-1000" 
-                    style={{ width: `${Math.min(result.savings_rate * 100, 100)}%` }}
+                    style={{ width: `${Math.min(result.savings_rate, 100)}%` }}
                   />
                 </div>
               </GlassCard>

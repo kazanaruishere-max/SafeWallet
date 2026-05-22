@@ -50,10 +50,10 @@ export default function DashboardPage() {
   const healthScore = data?.latest_scan?.health_score ?? 0;
   
   const savingsRate = data?.latest_scan?.savings_rate !== undefined && data.latest_scan.savings_rate !== null 
-    ? `${Math.round(data.latest_scan.savings_rate * 100)}%` 
+    ? `${Math.round(data.latest_scan.savings_rate)}%` 
     : "—";
   const debtRatio = data?.latest_scan?.debt_to_income_ratio !== undefined && data.latest_scan.debt_to_income_ratio !== null 
-    ? `${Math.round(data.latest_scan.debt_to_income_ratio * 100)}%` 
+    ? `${Math.round(data.latest_scan.debt_to_income_ratio)}%` 
     : "—";
 
   return (

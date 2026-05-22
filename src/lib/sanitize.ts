@@ -44,16 +44,16 @@ export function sanitizeAIInput(input: string, maxLength = 5000): {
   // CRITICAL: Only redact patterns that are clearly PII. DO NOT redact patterns
   // that could be transaction descriptions, amounts, or banking keywords.
   const piiPatterns = [
-    // 1. Credit Card Numbers (very specific pattern)
-    { regex: /\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, replacement: "___CARD_REDACTED___" },
+    // 1. Explicit PII labels should win before generic 16-digit matching.
+    { regex: /\b(REK|NO\.?\s*REK|REKENING|ACCOUNT|ACC|NO\.?\s*HP|TELP|PIN|NIK)\s*[:.]?\s*\d{4,}\b/gi, replacement: "$1 ___REDACTED___" },
     // 2. Emails
     { regex: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, replacement: "___EMAIL_REDACTED___" },
     // 3. NIK (exactly 16 digits — Indonesian National ID)
     { regex: /\b\d{16}\b/g, replacement: "___NIK_REDACTED___" },
     // 4. Phone numbers (Indonesian format: 08xx or +62)
     { regex: /\b(?:0|\+62)\d{9,13}\b/g, replacement: "___PHONE_REDACTED___" },
-    // 5. Explicit bank account keywords followed by numbers
-    { regex: /\b(REK|NO\.?\s*REK|REKENING|ACCOUNT|ACC|NO\.?\s*HP|TELP|PIN|NIK)\s*[:.]?\s*\d{4,}\b/gi, replacement: "$1 ___REDACTED___" },
+    // 5. Credit Card Numbers (very specific pattern)
+    { regex: /\b\d{4}[ -]?\d{4}[ -]?\d{4}[ -]?\d{4}\b/g, replacement: "___CARD_REDACTED___" },
   ];
 
   let piiDetected = false;

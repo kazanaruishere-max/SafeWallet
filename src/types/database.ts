@@ -41,6 +41,7 @@ export type Scan = {
   user_id: string;
   image_url: string;
   ocr_raw_text: string | null;
+  encrypted_ocr_text: string | null;
   ocr_corrected_text: string | null;
   health_score: number | null;
   categories: Record<string, number> | null;
@@ -101,3 +102,24 @@ export type UsageCount = {
   period: string;
   count: number;
 };
+
+export type AuditLog = {
+  id: string;
+  user_id: string | null;
+  action: AuditActionType;
+  status: "SUCCESS" | "FAILED";
+  request_id: string;
+  details: Record<string, unknown>;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+
+export type AuditActionType =
+  | "USER_LOGIN"
+  | "USER_LOGOUT"
+  | "USER_DELETE"
+  | "PROFILE_UPDATE"
+  | "SUBSCRIPTION_UPDATE"
+  | "SECURITY_EVENT"
+  | "DATA_EXPORT";

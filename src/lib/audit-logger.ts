@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 
 export type AuditAction = 
@@ -15,14 +15,14 @@ export type AuditAction =
  * Utility for securely logging sensitive actions and data changes.
  */
 export async function logAudit(
-  userId: string,
+  userId: string | null,
   action: AuditAction,
-  details: Record<string, any> = {},
+  details: Record<string, unknown> = {},
   status: "SUCCESS" | "FAILED" = "SUCCESS"
 ) {
   const requestId = crypto.randomUUID();
   try {
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     
     let ipAddress = "127.0.0.1";
     let userAgent = "Unknown";
@@ -50,7 +50,8 @@ export async function logAudit(
     const { error } = await supabase.from("audit_logs").insert({
       user_id: userId,
       action,
-      details: { ...details, request_id: requestId },
+      request_id: requestId,
+      details,
       status,
       ip_address: ipAddress,
       user_agent: userAgent

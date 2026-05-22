@@ -204,7 +204,7 @@ async function parseCSVServer(buffer: Buffer): Promise<string> {
  * Includes text quality validation for scanned PDFs (image-embedded text).
  */
 async function parsePdfServer(buffer: Buffer, pdfPassword?: string): Promise<string> {
-  // @ts-ignore - pdf-parse/lib/pdf-parse.js doesn't have type definitions
+  // @ts-expect-error - pdf-parse/lib/pdf-parse.js doesn't have type definitions
   const pdfParseMod = await import("pdf-parse/lib/pdf-parse.js");
   const pdfParse = pdfParseMod.default || pdfParseMod;
   

@@ -8,6 +8,16 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    include: [
+      'src/**/*.{test,spec}.{ts,tsx}',
+      'test/**/*.{test,spec}.{ts,tsx}',
+    ],
+    exclude: [
+      'node_modules/**',
+      '.next/**',
+      'SafeWallet-ghsa-g374-rpgq-fphx/**',
+      'v3/**',
+    ],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },

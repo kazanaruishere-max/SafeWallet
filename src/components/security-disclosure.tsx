@@ -1,5 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ShieldAlert, Info, Lock } from "lucide-react";
+import { ShieldAlert, Lock } from "lucide-react";
 
 /**
  * SecurityDisclosure component provides transparency about the AI's limitations,
@@ -33,8 +33,8 @@ export function SecurityDisclosure() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Redaksi PII</strong>: Data pribadi sensitif (seperti NIK, Email, No. HP) disamarkan secara otomatis sebelum diproses.</li>
-            <li><strong>Enkripsi End-to-End</strong>: Hasil analisis disimpan dalam bentuk terenkripsi AES-256-GCM yang hanya dapat diakses oleh Anda.</li>
-            <li><strong>Pemrosesan Pihak Ketiga</strong>: Data transisi diproses menggunakan Google Gemini API. Meskipun kami meminimalkan pengiriman data mentah, penggunaan layanan ini tunduk pada kebijakan privasi penyedia AI tersebut.</li>
+            <li><strong>Retensi OCR Terenkripsi</strong>: Teks OCR mentah tidak disimpan dalam bentuk plaintext; jika retensi diperlukan, data disimpan dengan AES-256-GCM.</li>
+            <li><strong>Pemrosesan Pihak Ketiga</strong>: Analisis utama diproses melalui Groq API, sedangkan Gemini API dapat digunakan untuk embedding RAG OJK. Penggunaan layanan ini tunduk pada kebijakan privasi penyedia masing-masing.</li>
           </ul>
         </AlertDescription>
       </Alert>

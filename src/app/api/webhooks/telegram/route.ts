@@ -130,7 +130,7 @@ export async function POST(request: Request) {
       
       aiResponseText = aiResponse.content;
     } catch (aiError) {
-      console.error("[Telegram] Gemini AI Error:", aiError);
+      console.error("[Telegram] Groq AI Error:", aiError);
       aiResponseText = "Waduh, koneksi Saku ke otak utama lagi gangguan nih. Boleh diulang sebentar lagi? 🙏";
     }
 

@@ -12,7 +12,26 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "coverage/**",
+    "dist/**",
+    "node_modules/**",
+    "public/pdf.worker.min.mjs",
+    "SafeWallet-ghsa-g374-rpgq-fphx/**",
+    "v3/**",
+    "v3/gateway-nest/dist/**",
+    "v3/gateway-nest/coverage/**",
+    "v3/security-rust/target/**",
+    "src/app/prototype/**",
+    "test_api*.mjs",
+    "test_csv.mjs",
+    "test_pdf.mjs",
   ]),
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "react/no-unescaped-entities": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;

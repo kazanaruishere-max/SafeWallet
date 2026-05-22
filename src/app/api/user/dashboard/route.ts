@@ -4,6 +4,12 @@ import type { ApiResponse, ApiError, DashboardData } from "@/types/api";
 
 export const dynamic = "force-dynamic";
 
+function coerceNullableNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : undefined;
+}
+
 export async function GET() {
   try {
     const supabase = await createClient();
@@ -85,13 +91,13 @@ export async function GET() {
       },
       latest_scan: latestScan
         ? {
-            health_score: latestScan.health_score,
+            health_score: coerceNullableNumber(latestScan.health_score) ?? 0,
             date: latestScan.created_at,
-            debt_to_income_ratio: latestScan.debt_to_income_ratio,
-            savings_rate: latestScan.savings_rate,
+            debt_to_income_ratio: coerceNullableNumber(latestScan.debt_to_income_ratio),
+            savings_rate: coerceNullableNumber(latestScan.savings_rate),
           }
         : null,
-      scan_trend: scanTrend?.map((s) => s.health_score).reverse() ?? [],
+      scan_trend: scanTrend?.map((s) => coerceNullableNumber(s.health_score) ?? 0).reverse() ?? [],
       scam_checks_count: scamCount ?? 0,
       badges:
         badges?.map((b) => ({

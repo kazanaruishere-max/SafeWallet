@@ -38,6 +38,20 @@ export async function GET() {
       coaching_logs: coachRes.data ?? [],
     };
 
+    const { logAudit } = await import("@/lib/audit-logger");
+    await logAudit(
+      user.id,
+      "DATA_EXPORT",
+      {
+        scans_count: scansRes.data?.length ?? 0,
+        scam_checks_count: scamRes.data?.length ?? 0,
+        badges_count: badgesRes.data?.length ?? 0,
+        subscriptions_count: subsRes.data?.length ?? 0,
+        coaching_logs_count: coachRes.data?.length ?? 0,
+      },
+      "SUCCESS"
+    );
+
     // FIX M2: Add rate limit header to discourage rapid re-exports
     return new NextResponse(JSON.stringify(exportData, null, 2), {
       status: 200,

@@ -52,6 +52,19 @@ export async function POST(request: NextRequest) {
 
     if (error) throw error;
 
+    const { logAudit } = await import("@/lib/audit-logger");
+    await logAudit(
+      user.id,
+      "SUBSCRIPTION_UPDATE",
+      {
+        subscription_id: subscription?.id,
+        tier,
+        status: "pending",
+        payment_method: payment_method ?? "qris",
+      },
+      "SUCCESS"
+    );
+
     // NOTE: User tier is NOT updated here.
     // It will be updated when Midtrans webhook confirms payment.
     // See: app/api/webhooks/midtrans/route.ts

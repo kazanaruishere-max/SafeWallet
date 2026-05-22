@@ -65,7 +65,7 @@ export async function DELETE(request: Request) {
     }
 
     const { logAudit } = await import("@/lib/audit-logger");
-    await logAudit(user.id, "USER_DELETE", { email: user.email }, "SUCCESS");
+    await logAudit(user.id, "USER_DELETE", { target: "self" }, "SUCCESS");
 
     // --- Use admin client to bypass RLS for complete deletion ---
     const adminSupabase = createAdminClient();

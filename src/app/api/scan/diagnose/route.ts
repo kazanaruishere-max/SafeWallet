@@ -66,7 +66,8 @@ export async function GET() {
       const testPayload = {
         user_id: user.id,
         image_url: "diagnostic-test",
-        ocr_raw_text: "DIAGNOSTIC TEST - will be deleted",
+        ocr_raw_text: null,
+        encrypted_ocr_text: null,
         health_score: 99,
         categories: { "Test": 0 },
         recommendations: ["This is a diagnostic test"],
@@ -83,10 +84,10 @@ export async function GET() {
         diagnostics.write_test = {
           success: false,
           error: JSON.stringify(writeError),
-          error_code: (writeError as any).code,
-          error_message: (writeError as any).message,
-          error_details: (writeError as any).details,
-          error_hint: (writeError as any).hint,
+          error_code: writeError.code,
+          error_message: writeError.message,
+          error_details: writeError.details,
+          error_hint: writeError.hint,
           payload_sent: Object.keys(testPayload),
         };
 

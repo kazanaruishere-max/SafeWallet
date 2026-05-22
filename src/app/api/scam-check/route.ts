@@ -53,7 +53,17 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.warn("Quota system failed, allowing scan (Fail-Open):", quotaErr);
+      console.error("[ScamCheck] Quota system unavailable:", quotaErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "QUOTA_SYSTEM_UNAVAILABLE",
+            message: "Sistem kuota sedang tidak tersedia. Coba lagi dalam beberapa saat.",
+          },
+        } satisfies ApiError,
+        { status: 503 }
+      );
     }
 
     // 3. Parse & validate
@@ -108,9 +118,14 @@ export async function POST(request: Request) {
       const aiResponse = await routeAndExecuteAI(cleanContent, company_name, userAge);
       
       analysisResult = parseAIResponse(aiResponse.content, ScamAnalysisSchema, "scam-check");
-    } catch (aiError: any) {
-      const message = aiError.userMessage || "Layanan AI sedang tidak tersedia. Coba lagi.";
-      const code = aiError.code || "AI_UNAVAILABLE";
+    } catch (aiError) {
+      const aiFailure = aiError as {
+        userMessage?: string;
+        code?: string;
+        statusCode?: number;
+      };
+      const message = aiFailure.userMessage || "Layanan AI sedang tidak tersedia. Coba lagi.";
+      const code = aiFailure.code || "AI_UNAVAILABLE";
       
       return NextResponse.json(
         {
@@ -120,7 +135,7 @@ export async function POST(request: Request) {
             message,
           },
         } satisfies ApiError,
-        { status: aiError.statusCode || 503 }
+        { status: aiFailure.statusCode || 503 }
       );
     }
 

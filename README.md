@@ -3,9 +3,9 @@
 <br />
 
 <img src="https://img.shields.io/badge/Status-DEMO-orange?style=for-the-badge" alt="Demo Status" />
-<img src="https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js" alt="Next.js 15" />
+<img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js" alt="Next.js 16" />
 <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?style=for-the-badge&logo=supabase" alt="Supabase" />
-<img src="https://img.shields.io/badge/Google%20Gemini-AI-4285F4?style=for-the-badge&logo=google" alt="Gemini AI" />
+<img src="https://img.shields.io/badge/Groq-AI-F55036?style=for-the-badge" alt="Groq AI" />
 <img src="https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge" alt="MIT License" />
 
 <br />
@@ -23,7 +23,7 @@
 > [!NOTE]
 > **📢 THIS IS A DEMO PROJECT**
 > This application is a **demo/prototype** currently running on free-tier **Cloud SaaS** services:
-> Supabase (Free), Vercel (Hobby), Upstash Redis (Free), Google Gemini API (Free), and Sentry (Free).
+> Supabase (Free), Vercel (Hobby), Upstash Redis (Free), Groq API, optional Google Gemini Embeddings, and Sentry (Free).
 > Capacity, quota, and performance are limited by each service's free-tier constraints.
 > **Not recommended for production use with real financial data or high traffic** before upgrading to paid tiers.
 
@@ -41,8 +41,8 @@ SafeWallet adalah platform berbasis AI yang dirancang sebagai antitesis terhadap
 
 ### Konsep & Filosofi Inti
 
-1. **Pembedahan Radikal** — Membedah dokumen mutasi rekening bank secara otomatis menggunakan AI (Google Gemini). Cukup *Drag & Drop*.
-2. **Resusitasi Pinjol** — Mendeteksi *Debt-to-Income Ratio*. Jika melampaui 40%, protokol "Saku Academy Lock" diaktifkan.
+1. **Pembedahan Radikal** — Membedah dokumen mutasi rekening bank secara otomatis menggunakan Groq AI. Cukup *Drag & Drop*.
+2. **Resusitasi Pinjol** — Mendeteksi *Debt-to-Income Ratio*. Jika melampaui 35%, protokol "Saku Academy Lock" diaktifkan.
 3. **Peringatan Preventif** — Analisis deskripsi investasi untuk membedah pola Ponzi secara seketika.
 
 ### 🌐 Demo Live
@@ -62,8 +62,8 @@ graph TD
 
     C -->|Health Scanner| D[Upload Mutasi PDF/Gambar]
     D --> E[PII Stripping + Server Action]
-    E --> F[Gemini AI — Kategori + DTI + Insight]
-    F --> G{DTI > 40%?}
+    E --> F[Groq AI — OCR/Kategori/DTI/Insight]
+    F --> G{DTI > 35%?}
     G -- Ya --> H[🚨 Saku Academy Lock]
     G -- Tidak --> I[Health Score + Laporan]
 
@@ -82,12 +82,12 @@ graph TD
 
 | Teknologi | Versi | Keterangan |
 |---|---|---|
-| [Next.js](https://nextjs.org/) | `15` | Framework utama — App Router + Server Actions |
+| [Next.js](https://nextjs.org/) | `16` | Framework utama — App Router + Server Actions |
 | [React](https://react.dev/) | `19` | UI Library |
 | [TypeScript](https://www.typescriptlang.org/) | `5` | Type Safety |
-| [Tailwind CSS](https://tailwindcss.com/) | `3` | Utility-first CSS |
+| [Tailwind CSS](https://tailwindcss.com/) | `4` | Utility-first CSS |
 | [GSAP](https://gsap.com/) | `3.12` | Animasi scroll cinematic (ScrollTrigger) |
-| [Framer Motion](https://www.framer.com/motion/) | `^11` | Transisi halaman & micro-animations |
+| [Framer Motion](https://www.framer.com/motion/) | `^12` | Transisi halaman & micro-animations |
 | [Lucide React](https://lucide.dev/) | Latest | Icon system |
 
 ### Backend & Database
@@ -101,7 +101,8 @@ graph TD
 
 | Teknologi | Keterangan |
 |---|---|
-| [Google Gemini 2.0 Flash](https://ai.google.dev/) *(Free Tier)* | OCR mutasi bank, kategorisasi, scam detection |
+| [Groq](https://groq.com/) | AI utama: OCR vision, health scan, scam detection, legal generation (`llama-3.3-70b-versatile`, fallback `llama-3.1-8b-instant`) |
+| [Google Gemini Embeddings](https://ai.google.dev/) | Opsional untuk embedding RAG OJK (`text-embedding-004`) |
 | Custom PII Sanitizer | Menghapus NIK/email/rekening sebelum dikirim ke AI |
 
 ### Infrastructure
@@ -122,7 +123,7 @@ graph TD
 | Rate Limiting | Upstash Redis — IP-based (AI: 5/min, General: 50/min) |
 | PII Stripping | Regex redaction sebelum AI processing |
 | Audit Logging | `audit_logs` table — user actions + IP + user-agent |
-| Zero-Retention | File mutasi **tidak pernah disimpan** — hanya diproses di RAM |
+| Encrypted OCR Retention | File upload **tidak pernah disimpan**; OCR plaintext tidak disimpan, hanya `encrypted_ocr_text` AES-256-GCM bila `ENCRYPTION_KEY` tersedia |
 | OWASP Headers | HSTS, CSP, X-Frame-Options, Referrer-Policy |
 
 > [!IMPORTANT]
@@ -156,7 +157,9 @@ Buka [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | URL Project Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Anon Key Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service Role Key (untuk admin operations) |
-| `GEMINI_API_KEY` | ✅ | Google AI Studio API Key |
+| `GROQ_API_KEY` | ✅ | API key Groq untuk AI utama, OCR vision, scam detection, dan legal generation |
+| `GEMINI_API_KEY` | ⬜ | Opsional untuk embedding RAG OJK (`text-embedding-004`) |
+| `ENCRYPTION_KEY` | ✅ | Kunci minimal 32 karakter untuk enkripsi OCR AES-256-GCM |
 | `UPSTASH_REDIS_REST_URL` | ⬜ | Upstash Redis URL (untuk rate limiting) |
 | `UPSTASH_REDIS_REST_TOKEN` | ⬜ | Upstash Redis Token |
 | `MIDTRANS_SERVER_KEY` | ⬜ | Midtrans Server Key |
@@ -186,8 +189,8 @@ SafeWallet is an AI-powered financial wellness platform designed to combat the e
 
 ### Core Concepts
 
-1. **Radical Transparency** — Automatically dissect bank statement documents using AI (Google Gemini) to track every financial leak. Just *Drag & Drop*.
-2. **Debt-Snowball Rescue** — Detects Debt-to-Income Ratio automatically. If it exceeds 40%, the "Saku Academy Lock" protocol is triggered to guide users out of crisis.
+1. **Radical Transparency** — Automatically dissect bank statement documents using Groq AI to track every financial leak. Just *Drag & Drop*.
+2. **Debt-Snowball Rescue** — Detects Debt-to-Income Ratio automatically. If it exceeds 35%, the "Saku Academy Lock" protocol is triggered to guide users out of crisis.
 3. **Scam Interceptor** — Before sending money to an entity promising unrealistic returns, users can analyze investment descriptions. The AI will dissect Ponzi patterns instantly.
 
 ### 🌐 Live Demo
@@ -207,8 +210,8 @@ graph TD
 
     C -->|Health Scanner| D[Upload Bank Statement PDF/Image]
     D --> E[PII Stripping + Server Action]
-    E --> F[Gemini AI — Categories + DTI + Insights]
-    F --> G{DTI > 40%?}
+    E --> F[Groq AI — OCR/Categories/DTI/Insights]
+    F --> G{DTI > 35%?}
     G -- Yes --> H[🚨 Saku Academy Lock]
     G -- No --> I[Health Score + Report]
 
@@ -227,12 +230,12 @@ graph TD
 
 | Technology | Version | Description |
 |---|---|---|
-| [Next.js](https://nextjs.org/) | `15` | Core framework — App Router + Server Actions |
+| [Next.js](https://nextjs.org/) | `16` | Core framework — App Router + Server Actions |
 | [React](https://react.dev/) | `19` | UI Library |
 | [TypeScript](https://www.typescriptlang.org/) | `5` | Type Safety |
-| [Tailwind CSS](https://tailwindcss.com/) | `3` | Utility-first CSS |
+| [Tailwind CSS](https://tailwindcss.com/) | `4` | Utility-first CSS |
 | [GSAP](https://gsap.com/) | `3.12` | Cinematic scroll animations (ScrollTrigger) |
-| [Framer Motion](https://www.framer.com/motion/) | `^11` | Page transitions & micro-animations |
+| [Framer Motion](https://www.framer.com/motion/) | `^12` | Page transitions & micro-animations |
 | [Lucide React](https://lucide.dev/) | Latest | Icon system |
 
 ### Backend & Database
@@ -246,7 +249,8 @@ graph TD
 
 | Technology | Description |
 |---|---|
-| [Google Gemini 2.0 Flash](https://ai.google.dev/) *(Free Tier)* | Bank statement OCR, categorization, scam detection |
+| [Groq](https://groq.com/) | Primary AI: OCR vision, health scan, scam detection, legal generation (`llama-3.3-70b-versatile`, fallback `llama-3.1-8b-instant`) |
+| [Google Gemini Embeddings](https://ai.google.dev/) | Optional OJK RAG embeddings (`text-embedding-004`) |
 | Custom PII Sanitizer | Strips personal data (IDs, emails, accounts) before AI processing |
 
 ### Infrastructure
@@ -267,7 +271,7 @@ graph TD
 | Rate Limiting | Upstash Redis — IP-based (AI: 5/min, General: 50/min) |
 | PII Stripping | Regex redaction before AI processing |
 | Audit Logging | `audit_logs` table — user actions + IP + user-agent |
-| Zero-Retention | Uploaded files are **never stored** — processed in memory only |
+| Encrypted OCR Retention | Uploaded files are **never stored**; raw OCR plaintext is not retained, and `encrypted_ocr_text` uses AES-256-GCM when `ENCRYPTION_KEY` is configured |
 | OWASP Headers | HSTS, CSP, X-Frame-Options, Referrer-Policy |
 
 > [!IMPORTANT]
@@ -311,7 +315,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## ⚖️ Security | Keamanan
 
-Built with **Zero-Trust** principles. Bank statements are **never stored** permanently.
+Built with **Zero-Trust** principles. Uploaded bank statement files are **never stored** permanently; OCR text is either encrypted for retention or discarded.
 100% Row-Level Security on all Supabase tables. Full audit trail for sensitive actions.
 
 See [SECURITY.md](SECURITY.md) for details.

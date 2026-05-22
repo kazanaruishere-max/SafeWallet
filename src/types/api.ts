@@ -42,7 +42,9 @@ export type ScanResult = {
   scan_id: string;
   health_score: number;
   categories: Record<string, number>;
+  /** Normalized percentage from 0-100. Example: 35 means 35%. */
   debt_to_income_ratio: number;
+  /** Normalized percentage from 0-100. Example: 20 means 20%. */
   savings_rate: number;
   recommendations: string[];
   warnings: string[];
@@ -103,7 +105,9 @@ export type DashboardData = {
   latest_scan: { 
     health_score: number; 
     date: string;
+    /** Normalized percentage from 0-100. Example: 35 means 35%. */
     debt_to_income_ratio?: number;
+    /** Normalized percentage from 0-100. Example: 20 means 20%. */
     savings_rate?: number;
   } | null;
   scan_trend: number[];

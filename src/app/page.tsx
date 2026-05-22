@@ -628,7 +628,7 @@ export default function LandingPage() {
             </div>
           </div>
           <div className="relative z-10 px-10 md:px-20 w-full md:w-1/2">
-            <div className="mb-4 font-mono text-[#F2A971]/40 text-xs tracking-[0.4em] uppercase">// kepercayaan.triad</div>
+            <div className="mb-4 font-mono text-[#F2A971]/40 text-xs tracking-[0.4em] uppercase">{"// kepercayaan.triad"}</div>
             <h2 className="orbit-title text-5xl md:text-7xl font-black tracking-tighter leading-none mb-8 opacity-0">
               <span className="text-white block">Tiga Lapis</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F2A971] to-[#D9772B] block">Perlindungan</span>

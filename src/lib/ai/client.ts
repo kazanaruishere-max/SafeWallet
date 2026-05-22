@@ -1,7 +1,7 @@
 /**
- * AI Client — Google Gemini via Google AI Studio
- * Uses gemini-2.0-flash as primary with structured JSON output.
- * API key sent via header (not URL) for security.
+ * AI Client — Groq OpenAI-compatible chat completions.
+ * Uses llama-3.3-70b-versatile as primary with llama-3.1-8b-instant fallback.
+ * API key sent via Authorization header.
  */
 
 type Message = {
@@ -42,7 +42,7 @@ export async function callAI(
     _retryCount?: number;
   }
 ): Promise<AIResponse> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY; // Fallback for backward compatibility
+  const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) {
     throw new AIError(
       "CONFIG_ERROR",

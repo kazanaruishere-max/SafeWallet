@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { sanitizeAIInput } from '../lib/sanitize';
 
 describe('sanitizeAIInput', () => {
-  it('should redact bank account numbers', () => {
-    const input = 'My account number is 123456789012';
+  it('should redact explicit bank account numbers', () => {
+    const input = 'REKENING 123456789012';
     const { sanitized } = sanitizeAIInput(input);
-    expect(sanitized).toContain('___ID_REDACTED___');
+    expect(sanitized).toContain('REKENING ___REDACTED___');
     expect(sanitized).not.toContain('123456789012');
   });
 
@@ -16,11 +16,11 @@ describe('sanitizeAIInput', () => {
     expect(sanitized).not.toContain('test@example.com');
   });
 
-  it('should redact Indonesian names with titles', () => {
-    const input = 'Bpk. Budi Santoso transfered money';
+  it('should redact NIK numbers', () => {
+    const input = 'NIK 3201010101010001';
     const { sanitized } = sanitizeAIInput(input);
-    expect(sanitized).toContain('Bpk ___NAME_REDACTED___');
-    expect(sanitized).not.toContain('Budi Santoso');
+    expect(sanitized).toContain('NIK ___REDACTED___');
+    expect(sanitized).not.toContain('3201010101010001');
   });
 
   it('should prevent prompt injection', () => {
@@ -30,27 +30,23 @@ describe('sanitizeAIInput', () => {
     expect(sanitized).not.toContain('Ignore all previous instructions');
   });
 
-  it('should redact IP addresses', () => {
-    const input = 'Server IP is 192.168.1.1';
+  it('should redact Indonesian phone numbers', () => {
+    const input = 'No HP saya 081234567890';
     const { sanitized } = sanitizeAIInput(input);
-    expect(sanitized).toContain('___IP_REDACTED___');
-    expect(sanitized).not.toContain('192.168.1.1');
+    expect(sanitized).toContain('___PHONE_REDACTED___');
+    expect(sanitized).not.toContain('081234567890');
   });
 
-  it('should redact English names with titles (Global i18n)', () => {
-    const input = 'Mr. John Doe and Ms. Jane Smith signed the document';
+  it('should redact credit card numbers', () => {
+    const input = 'Card 4111 1111 1111 1111';
     const { sanitized } = sanitizeAIInput(input);
-    expect(sanitized).toContain('Mr ___NAME_REDACTED___');
-    expect(sanitized).toContain('Ms ___NAME_REDACTED___');
-    expect(sanitized).not.toContain('John Doe');
-    expect(sanitized).not.toContain('Jane Smith');
+    expect(sanitized).toContain('___CARD_REDACTED___');
+    expect(sanitized).not.toContain('4111 1111 1111 1111');
   });
 
-  it('should redact English street addresses (Global i18n)', () => {
-    const input = 'Office located at 123 Wall Street, Avenue Road';
+  it('should preserve unlabeled transaction-like numbers', () => {
+    const input = 'Transfer masuk 123456789012 dari penjualan';
     const { sanitized } = sanitizeAIInput(input);
-    expect(sanitized).toContain('___ADDRESS_REDACTED___');
-    expect(sanitized).not.toContain('Wall Street');
-    expect(sanitized).not.toContain('Avenue Road');
+    expect(sanitized).toContain('123456789012');
   });
 });

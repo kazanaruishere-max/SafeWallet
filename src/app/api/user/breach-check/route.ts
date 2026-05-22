@@ -3,6 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import crypto from "crypto";
 import type { ApiError } from "@/types/api";
 
+type BreachDetail = {
+  Name: string;
+  Title: string;
+  Domain: string;
+  BreachDate: string;
+  DataClasses: string[];
+  Description: string;
+};
+
 export async function POST(request: Request) {
   try {
     const supabase = await createClient();
@@ -36,7 +45,17 @@ export async function POST(request: Request) {
         );
       }
     } catch (quotaErr) {
-      console.warn("Quota system failed for breach_check:", quotaErr);
+      console.error("[BreachCheck] Quota system unavailable:", quotaErr);
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "QUOTA_SYSTEM_UNAVAILABLE",
+            message: "Sistem kuota sedang tidak tersedia. Coba lagi dalam beberapa saat.",
+          },
+        } satisfies ApiError,
+        { status: 503 }
+      );
     }
 
     // 3. Validasi Input
@@ -60,7 +79,7 @@ export async function POST(request: Request) {
     
     // Algoritma Mock sederhana: Jika email mengandung "bocor", kita buat seolah-olah bocor.
     let breachCount = 0;
-    let breachDetails: any[] = [];
+    let breachDetails: BreachDetail[] = [];
     
     const isMockLeaked = email_or_phone.includes("bocor") || email_or_phone.includes("test");
     
@@ -114,7 +133,7 @@ export async function POST(request: Request) {
       meta: { remaining_quota: quotaInfo?.remaining ?? 0 },
     });
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Breach Check API Error:", error);
     return NextResponse.json(
       { success: false, error: { code: "INTERNAL_ERROR", message: "Gagal memproses pengecekan." } } satisfies ApiError,

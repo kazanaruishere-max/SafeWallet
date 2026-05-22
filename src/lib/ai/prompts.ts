@@ -30,6 +30,7 @@ INSTRUKSI:
 PENTING:
 - Bahasa Indonesia, gaya bicara ramah dan suportif
 - Jumlah dalam Rupiah
+- savings_rate dan debt_to_income_ratio HARUS berupa angka persentase 0-100. Contoh: tulis 35 untuk 35%, JANGAN tulis 0.35.
 - Score HARUS realistis, jangan terlalu tinggi
 - Rekomendasi HARUS actionable dan spesifik
 
