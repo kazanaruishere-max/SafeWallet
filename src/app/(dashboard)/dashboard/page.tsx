@@ -49,8 +49,12 @@ export default function DashboardPage() {
   const scamQuota = data?.quota.scam_checks ?? { used: 0, limit: 5 };
   const healthScore = data?.latest_scan?.health_score ?? 0;
   
-  const savingsRate = data?.latest_scan?.savings_rate ? `${data.latest_scan.savings_rate}%` : "—";
-  const debtRatio = data?.latest_scan?.debt_to_income_ratio ? `${data.latest_scan.debt_to_income_ratio}%` : "—";
+  const savingsRate = data?.latest_scan?.savings_rate !== undefined && data.latest_scan.savings_rate !== null 
+    ? `${Math.round(data.latest_scan.savings_rate * 100)}%` 
+    : "—";
+  const debtRatio = data?.latest_scan?.debt_to_income_ratio !== undefined && data.latest_scan.debt_to_income_ratio !== null 
+    ? `${Math.round(data.latest_scan.debt_to_income_ratio * 100)}%` 
+    : "—";
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
