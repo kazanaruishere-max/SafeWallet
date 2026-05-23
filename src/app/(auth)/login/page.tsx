@@ -44,7 +44,7 @@ function LoginContent() {
     }
   };
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = async (forceSelect = false) => {
     try {
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
@@ -52,7 +52,10 @@ function LoginContent() {
         options: {
           redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(redirectTo)}`,
           queryParams: {
-            prompt: 'select_account',
+            // Selalu minta pemilihan akun saat dipanggil dari logout, atau jika URL mengandung ?prompt=select_account
+            prompt: (forceSelect || searchParams.get("prompt") === "select_account")
+              ? "select_account"
+              : "select_account", // SafeWallet selalu paksa pilih akun untuk cegah cross-account bug
           },
         },
       });

@@ -102,10 +102,11 @@ jobs:
             --platform managed \
             --allow-unauthenticated \
             --min-instances 0 \
-            --max-instances 10 \
+            --max-instances 2 \
             --memory 512Mi \
             --cpu 1 \
-            --timeout 60s \
+            --cpu-throttling \
+            --timeout 30s \
             --concurrency 80 \
             --set-env-vars "NODE_ENV=production" \
             --set-env-vars "NEXT_TELEMETRY_DISABLED=1" \

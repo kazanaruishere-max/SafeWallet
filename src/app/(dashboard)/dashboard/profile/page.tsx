@@ -121,10 +121,11 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     try {
       const supabase = createClient();
-      await supabase.auth.signOut();
+      // scope: 'global' = invalidate semua sesi di semua device
+      await supabase.auth.signOut({ scope: 'global' });
       toast.success("Berhasil keluar.");
-      // Force a full browser reload to clear all Next.js memory cache and Supabase states
-      window.location.href = "/login";
+      // Redirect ke login dengan prompt=select_account agar Google tidak auto-login akun lain
+      window.location.href = "/login?prompt=select_account";
     } catch {
       toast.error("Gagal melakukan log out.");
     }

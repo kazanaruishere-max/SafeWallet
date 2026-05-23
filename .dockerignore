@@ -2,10 +2,68 @@ Dockerfile
 .dockerignore
 node_modules
 npm-debug.log
-README.md
 .next
 .git
 .github
 .env.*
 .vercel
 .vscode
+
+# Dev/editor folders
+.kiro
+.sixth
+.trae
+.snyk
+.vscode
+v3
+test
+scripts
+
+# Large test/doc files
+*.pdf
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+
+# Tesseract OCR training data (besar, hanya dipakai server-side via API)
+*.traineddata
+
+# Markdown docs (tidak dipakai di runtime)
+*.md
+CHANGELOG*
+AUDIT*
+SECURITY*
+PRODUCTION*
+BACKUP*
+CONTRIBUTING*
+CODE_OF_CONDUCT*
+LICENSE
+AGENTS.md
+GEMINI.md
+CLAUDE.md
+ANTI_TIMEBOMB.md
+
+# Test files
+test_*.mjs
+vitest.config.ts
+buildntest*.md
+permasalahan.md
+testing*.md
+bigupdatev3.md
+update*.md
+V3_CRITIQUE*.md
+JOURNAL*.md
+I18N*.md
+PERFORMANCE*.md
+COMPREHENSIVE*.md
+
+# Security scan results
+"security scanning"
+SafeWallet-ghsa*
+
+# Misc
+et --hard*
+tsconfig.tsbuildinfo
+"Screenshot*"

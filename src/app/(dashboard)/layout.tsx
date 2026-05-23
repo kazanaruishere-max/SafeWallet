@@ -79,9 +79,13 @@ export default function DashboardLayout({
 
   const handleLogout = async () => {
     const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
+    // scope: 'global' memastikan SEMUA sesi di semua device di-invalidate
+    await supabase.auth.signOut({ scope: 'global' });
+    // Hapus semua cache browser agar sesi tidak tersisa
     router.refresh();
+    // Redirect ke login dengan ?prompt=select_account
+    // agar Google OAuth selalu menampilkan pemilihan akun (tidak auto-login akun lain)
+    window.location.href = '/login?prompt=select_account';
   };
 
   return (
