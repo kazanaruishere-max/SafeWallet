@@ -30,6 +30,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Skip auth redirects for the callback route — it handles its own flow
+  const isCallbackRoute = request.nextUrl.pathname.startsWith("/auth/callback");
+  if (isCallbackRoute) {
+    return supabaseResponse;
+  }
+
   // Protected routes: redirect to login if no session
   const isProtectedRoute = request.nextUrl.pathname.startsWith("/dashboard");
   const isAuthRoute =
