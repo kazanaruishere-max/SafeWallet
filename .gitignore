@@ -38,6 +38,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# build artifacts & caches
+**/target/
+**/__pycache__/
+SafeWallet-ghsa-g374-rpgq-fphx/
+
 # env files (can opt-in for committing if needed)
 .env*
 
