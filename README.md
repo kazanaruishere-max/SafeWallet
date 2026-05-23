@@ -71,7 +71,7 @@ graph TD
     Vercel -->|Rate Limit| Upstash[(Upstash Redis)]
     Vercel -->|AI Inference| Groq[Groq API]
     
-    subgraph Core Features
+    subgraph Core_Features [Core Features]
         Vercel --> Scanner[Health Scanner]
         Vercel --> ScamCheck[Scam Checker]
         Vercel --> SakuAcademy[Saku Academy Lock]
@@ -135,8 +135,8 @@ flowchart TD
 stateDiagram-v2
     [*] --> NormalDashboard
     NormalDashboard --> HitungDTI: Update Mutasi Baru
-    HitungDTI --> SakuAcademyLock: DTI > 35%
-    HitungDTI --> NormalDashboard: DTI <= 35%
+    HitungDTI --> SakuAcademyLock: DTI Lebih Dari 35 Persen
+    HitungDTI --> NormalDashboard: DTI Kurang Dari 35 Persen
     
     state SakuAcademyLock {
         [*] --> TampilkanPeringatan
@@ -188,7 +188,9 @@ flowchart LR
     B --> C[ESLint & Prettier Check]
     B --> D[Type Checking - tsc]
     B --> E[Unit Tests - Vitest]
-    C & D & E --> F{Status CI}
+    C --> F{Status CI}
+    D --> F
+    E --> F
     F -- Lulus --> G[Vercel Build]
     F -- Gagal --> H[Blokir PR / Deployment]
     G --> I[Deploy ke Vercel Preview / Production]
@@ -272,7 +274,7 @@ graph TD
     Vercel -->|Rate Limit| Upstash[(Upstash Redis)]
     Vercel -->|AI Inference| Groq[Groq API]
     
-    subgraph Core Features
+    subgraph Core_Features [Core Features]
         Vercel --> Scanner[Health Scanner]
         Vercel --> ScamCheck[Scam Checker]
         Vercel --> SakuAcademy[Saku Academy Lock]
@@ -349,7 +351,9 @@ flowchart LR
     B --> C[ESLint & Prettier Check]
     B --> D[Type Checking - tsc]
     B --> E[Unit Tests - Vitest]
-    C & D & E --> F{CI Status}
+    C --> F{CI Status}
+    D --> F
+    E --> F
     F -- Pass --> G[Vercel Build]
     F -- Fail --> H[Block PR / Deployment]
     G --> I[Deploy to Vercel Preview / Production]

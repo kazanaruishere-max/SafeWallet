@@ -21,16 +21,16 @@ Berikut adalah bagaimana lapisan keamanan SafeWallet bekerja memproses permintaa
 
 ```mermaid
 flowchart TD
-    User([Pengguna]) -->|Request & Payload| Vercel[Vercel Edge / WAF]
+    User([Pengguna]) -->|Request dan Payload| Vercel[Vercel Edge / WAF]
     Vercel --> RateLimit{Upstash Rate Limiter}
     
-    RateLimit -- Melebihi Kuota --> Block[Blokir IP & Return 429]
+    RateLimit -- Melebihi Kuota --> Block[Blokir IP dan Return 429]
     RateLimit -- Lolos --> MagicByte{Pengecekan Magic Bytes}
     
-    MagicByte -- File Palsu / Bahaya --> Reject[Tolak Upload & Return 400]
+    MagicByte -- File Palsu / Bahaya --> Reject[Tolak Upload dan Return 400]
     MagicByte -- File Asli --> InMem[In-Memory OCR Processing]
     
-    InMem --> PII[PII Stripping & Regex Sanitization]
+    InMem --> PII[PII Stripping dan Regex Sanitization]
     PII -->|Hapus NIK, Email, Rekening| Sanitized[Teks Tersanitasi]
     
     Sanitized --> LLM[Analisis Groq AI]
