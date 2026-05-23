@@ -11,10 +11,10 @@ $ErrorActionPreference = "Stop"
 Write-Host "🔄 SafeWallet Multi-Cloud Sync Tool (Windows PowerShell)" -ForegroundColor Yellow
 Write-Host "----------------------------------------"
 
-# 1. Check if git has clean working directory
-$gitStatus = git status --porcelain
+# 1. Check if git has clean working directory (ignoring untracked files)
+$gitStatus = git status --porcelain | Where-Object { $_ -notmatch '^\?\?\s' }
 if ($gitStatus) {
-    Write-Host "❌ Error: You have uncommitted changes. Please stash or commit them first." -ForegroundColor Red
+    Write-Host "❌ Error: You have uncommitted changes in tracked files. Please stash or commit them first." -ForegroundColor Red
     Exit 1
 }
 
