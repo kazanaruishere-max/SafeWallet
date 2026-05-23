@@ -81,11 +81,15 @@ export default function DashboardLayout({
     const supabase = createClient();
     // scope: 'global' memastikan SEMUA sesi di semua device di-invalidate
     await supabase.auth.signOut({ scope: 'global' });
+    
+    // Ambil URL publik dari environment, fallback ke origin saat ini
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
+    
     // Hapus semua cache browser agar sesi tidak tersisa
     router.refresh();
-    // Redirect ke login dengan ?prompt=select_account
-    // agar Google OAuth selalu menampilkan pemilihan akun (tidak auto-login akun lain)
-    window.location.href = '/login?prompt=select_account';
+    
+    // Redirect PAKSA ke URL absolut
+    window.location.href = `${appUrl}/login?prompt=select_account`;
   };
 
   return (
