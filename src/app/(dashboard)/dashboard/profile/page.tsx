@@ -120,14 +120,22 @@ export default function ProfilePage() {
 
   const handleLogout = async () => {
     try {
+      // 1. Call server-side logout to clear HTTP-only cookies
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const data = await res.json();
+
+      // 2. Clear client-side auth state
       const supabase = createClient();
-      // scope: 'global' = invalidate semua sesi di semua device
-      await supabase.auth.signOut({ scope: 'global' });
+      await supabase.auth.signOut({ scope: "local" });
+
       toast.success("Berhasil keluar.");
-      // Redirect ke login dengan prompt=select_account agar Google tidak auto-login akun lain
-      window.location.href = "/login?prompt=select_account";
+
+      // 3. Hard redirect to login
+      window.location.href = data.redirectTo || "/login?prompt=select_account";
     } catch {
       toast.error("Gagal melakukan log out.");
+      // Fallback redirect
+      window.location.href = "/login?prompt=select_account";
     }
   };
 

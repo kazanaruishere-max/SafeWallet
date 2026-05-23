@@ -78,18 +78,23 @@ export default function DashboardLayout({
   const router = useRouter();
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    // scope: 'global' memastikan SEMUA sesi di semua device di-invalidate
-    await supabase.auth.signOut({ scope: 'global' });
-    
-    // Ambil URL publik dari environment, fallback ke origin saat ini
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin;
-    
-    // Hapus semua cache browser agar sesi tidak tersisa
-    router.refresh();
-    
-    // Redirect PAKSA ke URL absolut
-    window.location.href = `${appUrl}/login?prompt=select_account`;
+    try {
+      // 1. Call server-side logout to clear HTTP-only cookies
+      //    This is critical — client-side signOut() alone does NOT clear server cookies,
+      //    causing "ghost sessions" where middleware still sees user as logged in.
+      const res = await fetch("/api/auth/logout", { method: "POST" });
+      const data = await res.json();
+
+      // 2. Also clear client-side auth state (localStorage/sessionStorage)
+      const supabase = createClient();
+      await supabase.auth.signOut({ scope: "local" });
+
+      // 3. Hard redirect to login — use server-provided URL or fallback
+      window.location.href = data.redirectTo || "/login?prompt=select_account";
+    } catch {
+      // Fallback: redirect even if API fails
+      window.location.href = "/login?prompt=select_account";
+    }
   };
 
   return (
