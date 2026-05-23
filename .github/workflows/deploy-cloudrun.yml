@@ -110,6 +110,7 @@ jobs:
             --concurrency 80 \
             --set-env-vars "NODE_ENV=production" \
             --set-env-vars "NEXT_TELEMETRY_DISABLED=1" \
+            --set-env-vars "APP_URL=${{ secrets.CLOUDRUN_APP_URL }}" \
             --set-env-vars "NEXT_PUBLIC_APP_URL=${{ secrets.CLOUDRUN_APP_URL }}" \
             --set-env-vars "NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME || 'SafeWallet' }}" \
             --set-env-vars "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" \

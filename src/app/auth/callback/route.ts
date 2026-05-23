@@ -8,8 +8,9 @@ import { headers } from "next/headers";
  */
 async function getPublicOrigin(request: Request): Promise<string> {
   // PAKSA gunakan URL publik jika ada di environment
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+  const envUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl) {
+    return envUrl.replace(/\/$/, "");
   }
 
   // Jika tidak ada, baru cek header (GCloud/Vercel)

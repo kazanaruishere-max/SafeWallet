@@ -42,18 +42,17 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/signup");
 
+  // Get the reliable absolute URL for redirects
+  const rawAppUrl = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  const appUrl = rawAppUrl ? rawAppUrl.replace(/\/$/, "") : request.nextUrl.origin;
+
   if (isProtectedRoute && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(`${appUrl}/login?redirect=${encodeURIComponent(request.nextUrl.pathname)}`);
   }
 
   // Redirect authenticated users away from auth pages
   if (isAuthRoute && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    return NextResponse.redirect(`${appUrl}/dashboard`);
   }
 
   return supabaseResponse;
