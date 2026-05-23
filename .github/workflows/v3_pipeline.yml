@@ -15,6 +15,10 @@ env:
   NODE_VERSION: '22'
   SNYK_SEVERITY: 'high'
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   # ==========================================================================
   # Job 1: SAST & Dependency Scanning
@@ -22,9 +26,6 @@ jobs:
   sast-scan:
     name: Security Scanning (Snyk)
     runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
 
     steps:
       - name: Checkout code
