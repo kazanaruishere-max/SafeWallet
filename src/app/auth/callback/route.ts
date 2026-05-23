@@ -7,6 +7,12 @@ import { headers } from "next/headers";
  * like Cloud Run's load balancer. Falls back to request URL origin.
  */
 async function getPublicOrigin(request: Request): Promise<string> {
+  // Prioritas 1: Gunakan variabel lingkungan jika ada (Paling aman untuk GCloud)
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, ""); // hapus slash di akhir jika ada
+  }
+
+  // Prioritas 2: Cek header proxy
   const headersList = await headers();
   const forwardedHost = headersList.get("x-forwarded-host");
   const forwardedProto = headersList.get("x-forwarded-proto") ?? "https";
@@ -15,7 +21,7 @@ async function getPublicOrigin(request: Request): Promise<string> {
     return `${forwardedProto}://${forwardedHost}`;
   }
 
-  // Fallback to the request URL origin (works on Vercel)
+  // Fallback terakhir (Vercel)
   return new URL(request.url).origin;
 }
 
