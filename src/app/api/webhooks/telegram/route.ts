@@ -143,18 +143,72 @@ export async function POST(request: Request) {
   }
 }
 
-// Helper function to reply
+// Helper function to escape HTML special characters for Telegram HTML parse_mode
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Helper function to convert safe markdown to HTML for Telegram
+function markdownToHtml(text: string): string {
+  const escaped = escapeHtml(text);
+  return escaped
+    .replace(/\*\*(.*?)\*\*/g, "<b>$1</b>")
+    .replace(/\*(.*?)\*/g, "<i>$1</i>")
+    .replace(/_(.*?)_/g, "<i>$1</i>")
+    .replace(/`(.*?)`/g, "<code>$1</code>");
+}
+
+// Helper function to reply to Telegram safely with logs and fallbacks
 async function replyTelegram(chatId: string, text: string) {
   const telegramToken = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  if (!telegramToken) return;
+  if (!telegramToken) {
+    console.error("[Telegram] TELEGRAM_BOT_TOKEN is not configured — reply canceled");
+    return;
+  }
 
-  await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text: text,
-      parse_mode: "Markdown",
-    }),
-  });
+  const htmlText = markdownToHtml(text);
+
+  try {
+    // 1. Try sending with HTML formatting (modern, highly robust and structured)
+    const response = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: htmlText,
+        parse_mode: "HTML",
+      }),
+    });
+
+    const result = await response.json() as any;
+
+    if (!response.ok || !result.ok) {
+      console.warn(`[Telegram] HTML sendMessage failed (Status ${response.status}):`, JSON.stringify(result));
+      console.warn("[Telegram] Falling back to plain text delivery...");
+
+      // 2. Fallback: Send as plain text (guaranteed to succeed regardless of any formatting issues)
+      const fallbackResponse = await fetch(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text, // raw text without parse_mode
+        }),
+      });
+
+      const fallbackResult = await fallbackResponse.json() as any;
+      if (!fallbackResponse.ok || !fallbackResult.ok) {
+        console.error(`[Telegram] Plain text fallback sendMessage also failed (Status ${fallbackResponse.status}):`, JSON.stringify(fallbackResult));
+      } else {
+        console.log("[Telegram] Plain text fallback message delivered successfully!");
+      }
+    } else {
+      console.log(`[Telegram] Message delivered successfully using HTML parse_mode (message_id=${result.result?.message_id})`);
+    }
+  } catch (err) {
+    console.error("[Telegram] replyTelegram critical fetch error:", redactForLog(err));
+  }
 }
