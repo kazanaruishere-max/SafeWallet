@@ -20,12 +20,12 @@
 
 <br />
 
-> [!NOTE]
-> **📢 THIS IS A DEMO PROJECT**
-> This application is a **demo/prototype** currently running on free-tier **Cloud SaaS** services:
-> Supabase (Free), Vercel (Hobby), Upstash Redis (Free), Groq API, optional Google Gemini Embeddings, and Sentry (Free).
-> Capacity, quota, and performance are limited by each service's free-tier constraints.
-> **Not recommended for production use with real financial data or high traffic** before upgrading to paid tiers.
+> [!CAUTION]
+> **📢 THIS PROJECT IS A DEMO / PROTOTYPE**
+> This application is currently running as a **demonstration prototype** on free-tier **Cloud SaaS** services:
+> Supabase (Free), Vercel (Hobby), Upstash Redis (Free), Groq API, and Sentry (Free).
+> Capacity, quotas, and performance are strictly limited by each service's free-tier constraints.
+> **DO NOT USE FOR PRODUCTION WITH REAL FINANCIAL DATA OR PII.** Upgrade to enterprise/paid tiers before deploying to a high-traffic production environment.
 
 </div>
 
@@ -35,99 +35,179 @@
 
 ## Tentang SafeWallet
 
-SafeWallet adalah platform berbasis AI yang dirancang sebagai antitesis terhadap epidemi investasi bodong, kebrutalan Pinjaman Online (Pinjol), dan rendahnya literasi finansial di Indonesia.
+SafeWallet adalah platform berbasis AI yang dirancang sebagai antitesis terhadap epidemi investasi bodong, kebrutalan Pinjaman Online (Pinjol), dan rendahnya literasi finansial di Indonesia. Platform ini dirancang dengan pendekatan keamanan tinggi (*Zero-Trust*).
 
 > *"Karena tidak ada yang seharusnya hancur hanya karena ketidaktahuan finansial."*
 
-### Konsep & Filosofi Inti
+### Konsep & Fitur Inti
 
-1. **Pembedahan Radikal** — Membedah dokumen mutasi rekening bank secara otomatis menggunakan Groq AI. Cukup *Drag & Drop*.
-2. **Resusitasi Pinjol** — Mendeteksi *Debt-to-Income Ratio*. Jika melampaui 35%, protokol "Saku Academy Lock" diaktifkan.
-3. **Peringatan Preventif** — Analisis deskripsi investasi untuk membedah pola Ponzi secara seketika.
+1. **Pembedahan Radikal (Health Scanner)** — Membedah dokumen mutasi rekening bank secara otomatis (via OCR & LLM) untuk mengkategorikan pengeluaran dan menemukan anomali finansial.
+2. **Resusitasi Pinjol (Saku Academy Lock)** — Mendeteksi *Debt-to-Income Ratio* (DTI). Jika melampaui 35%, antarmuka akan terkunci dalam mode penyelamatan untuk memandu pengguna keluar dari krisis.
+3. **Peringatan Preventif (Scam Checker)** — Menganalisis deskripsi investasi untuk membedah pola Ponzi atau skema piramida seketika menggunakan RAG (Retrieval-Augmented Generation) berbasis data OJK.
+4. **AI Pengacara (Legal Generator)** — Generator otomatis untuk dokumen hukum dasar dan somasi perlindungan konsumen.
+5. **Data Breach (Kebocoran Data)** — Pemantauan dan peringatan *real-time* jika kredensial atau data pribadi pengguna ditemukan di web gelap atau forum *hacker*.
+6. **Bot Telegram** — Memberikan ringkasan, notifikasi pengeluaran, dan *coaching* harian.
 
 ### 🌐 Demo Live
 
-| Environment | URL |
+| Lingkungan | URL |
 |---|---|
-| **Production** | [safe-wallet-orpin.vercel.app](https://safe-wallet-orpin.vercel.app) |
+| **Production Demo** | [safe-wallet-orpin.vercel.app](https://safe-wallet-orpin.vercel.app) |
 
 ---
 
-## 📐 Arsitektur
+## 📐 Arsitektur Sistem & Workflow
+
+SafeWallet memiliki arsitektur modular yang terbagi dalam beberapa *pipeline* fitur. Berikut adalah rincian *flowchart* untuk semua fitur utama.
+
+### 1. Arsitektur Utama (High-Level)
 
 ```mermaid
 graph TD
-    A[Pendaftaran via Magic Link] --> B(Supabase Auth + RLS)
-    B --> C{Dashboard}
+    User([Pengguna]) -->|Akses Web| Vercel[Vercel Edge & Serverless]
+    User -->|Akses Telegram| TeleBot[Telegram Bot Webhook]
 
-    C -->|Health Scanner| D[Upload Mutasi PDF/Gambar]
-    D --> E[PII Stripping + Server Action]
-    E --> F[Groq AI — OCR/Kategori/DTI/Insight]
-    F --> G{DTI > 35%?}
-    G -- Ya --> H[🚨 Saku Academy Lock]
-    G -- Tidak --> I[Health Score + Laporan]
+    Vercel -->|Auth & DB| Supabase[(Supabase PostgreSQL)]
+    Vercel -->|Rate Limit| Upstash[(Upstash Redis)]
+    Vercel -->|AI Inference| Groq[Groq API]
+    
+    subgraph Core_Features [Core Features]
+        Vercel --> Scanner[Health Scanner]
+        Vercel --> ScamCheck[Scam Checker]
+        Vercel --> SakuAcademy[Saku Academy Lock]
+        Vercel --> LegalGen[AI Pengacara]
+        Vercel --> Breach[Data Breach]
+    end
 
-    C -->|Scam Checker| J[Input Teks/URL]
-    J --> K[AI Scam Engine]
-    K --> L[Kartu Bahaya Ponzi]
+    Scanner --> Groq
+    ScamCheck --> Groq
+    LegalGen --> Groq
+    Breach --> Groq
+    
+    Vercel -->|Log Error| Sentry[Sentry Error Tracking]
+```
 
-    C -->|Telegram| M[Bot Coaching Harian]
+### 2. Workflow: Health Scanner (Upload Mutasi)
+
+Proses pemindaian riwayat keuangan pengguna tanpa menyimpan berkas asli secara permanen.
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Server Action
+    participant AI as Groq LLM
+    participant DB as Supabase DB
+
+    U->>F: Upload PDF/Gambar Mutasi
+    F->>S: Kirim Buffer Data
+    S->>S: Validasi Ekstensi & Magic Bytes
+    S->>S: OCR Ekstraksi Teks
+    S->>S: PII Stripping (Hapus NIK/Rekening/Nama)
+    S->>AI: Kirim Teks tersanitasi untuk Analisis
+    AI-->>S: Kembalikan JSON (Kategori, DTI, Skor)
+    S->>DB: Simpan Hasil JSON (Encrypted)
+    S->>S: Hapus Buffer Asli dari Memori
+    S-->>F: Tampilkan Laporan Keuangan
+```
+
+### 3. Workflow: Scam Checker (Deteksi Penipuan)
+
+Memanfaatkan RAG (Retrieval-Augmented Generation) untuk mencocokkan input dengan modus operandi yang dikenal.
+
+```mermaid
+flowchart TD
+    A[Input Pengguna: Teks, URL, atau Prompt] --> B{Validasi URL/Teks}
+    B --> C[Scraping URL - Jika ada]
+    B --> D[Sanitasi Input]
+    C --> D
+    D --> E[Query Vector ke Supabase pgvector]
+    E --> F[Ambil Konteks OJK/Skema Ponzi]
+    F --> G[Kirim Prompt + Konteks ke Groq LLM]
+    G --> H{Apakah Indikasi Scam?}
+    H -- Ya --> I[Tampilkan Peringatan Bahaya Merah]
+    H -- Tidak --> J[Tampilkan Penjelasan Aman/Risiko]
+```
+
+### 4. Workflow: Saku Academy Lock (Crisis Mode)
+
+```mermaid
+stateDiagram-v2
+    [*] --> NormalDashboard
+    NormalDashboard --> HitungDTI: Update Mutasi Baru
+    HitungDTI --> SakuAcademyLock: DTI Lebih Dari 35 Persen
+    HitungDTI --> NormalDashboard: DTI Kurang Dari 35 Persen
+    
+    state SakuAcademyLock {
+        [*] --> TampilkanPeringatan
+        TampilkanPeringatan --> ModulEdukasi
+        ModulEdukasi --> SimulasiRestrukturisasi
+    }
+    
+    SakuAcademyLock --> NormalDashboard: Lulus Modul / DTI Turun
+```
+
+### 5. Workflow: AI Pengacara (Legal Generator)
+
+```mermaid
+flowchart TD
+    A[Pengguna Memilih Jenis Dokumen] --> B[Input Data Kasus]
+    B --> C[Validasi Input Zod]
+    C --> D[Kirim Konteks ke Groq LLM]
+    D --> E[LLM Menyusun Somasi/Hukum]
+    E --> F[Preview Dokumen Hukum]
+    F --> G[Download PDF / Cetak]
+```
+
+### 6. Workflow: Data Breach (Deteksi Kebocoran Data)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Server Action
+    participant HIBP as External API/DB
+    
+    U->>F: Masukkan Email/Nomor HP
+    F->>S: Kirim Permintaan Cek
+    S->>S: Sanitasi & Enkripsi Input
+    S->>HIBP: Cek Database Kebocoran
+    HIBP-->>S: Kembalikan Data Breach
+    S-->>F: Tampilkan Peringatan Kebocoran & Rekomendasi
 ```
 
 ---
 
-## 🛠 Tech Stack
+## 🛠 CI/CD Pipeline
 
-### Frontend
+Proyek ini menggunakan GitHub Actions dan Vercel untuk *Continuous Integration* dan *Continuous Deployment*.
 
-| Teknologi | Versi | Keterangan |
-|---|---|---|
-| [Next.js](https://nextjs.org/) | `16` | Framework utama — App Router + Server Actions |
-| [React](https://react.dev/) | `19` | UI Library |
-| [TypeScript](https://www.typescriptlang.org/) | `5` | Type Safety |
-| [Tailwind CSS](https://tailwindcss.com/) | `4` | Utility-first CSS |
-| [GSAP](https://gsap.com/) | `3.12` | Animasi scroll cinematic (ScrollTrigger) |
-| [Framer Motion](https://www.framer.com/motion/) | `^12` | Transisi halaman & micro-animations |
-| [Lucide React](https://lucide.dev/) | Latest | Icon system |
+```mermaid
+flowchart LR
+    A[Push / PR ke GitHub] --> B{GitHub Actions CI}
+    B --> C[ESLint & Prettier Check]
+    B --> D[Type Checking - tsc]
+    B --> E[Unit Tests - Vitest]
+    C --> F{Status CI}
+    D --> F
+    E --> F
+    F -- Lulus --> G[Vercel Build]
+    F -- Gagal --> H[Blokir PR / Deployment]
+    G --> I[Deploy ke Vercel Preview / Production]
+```
 
-### Backend & Database
+---
 
-| Teknologi | Keterangan |
-|---|---|
-| [Supabase](https://supabase.com/) *(Free Tier)* | PostgreSQL + Auth (Magic Link) + Row-Level Security |
-| [Next.js API Routes](https://nextjs.org/) | REST endpoints: scan, scam-check, webhooks, cron |
+## 🛡️ Keamanan & Privasi (Security Policy)
 
-### AI & Intelligence
+SafeWallet mengimplementasikan prinsip keamanan **Zero-Trust** pada aplikasi finansial. Rincian lebih lanjut dapat dibaca di [SECURITY.md](SECURITY.md).
 
-| Teknologi | Keterangan |
-|---|---|
-| [Groq](https://groq.com/) | AI utama: OCR vision, health scan, scam detection, legal generation (`llama-3.3-70b-versatile`, fallback `llama-3.1-8b-instant`) |
-| [Google Gemini Embeddings](https://ai.google.dev/) | Opsional untuk embedding RAG OJK (`text-embedding-004`) |
-| Custom PII Sanitizer | Menghapus NIK/email/rekening sebelum dikirim ke AI |
-
-### Infrastructure
-
-| Teknologi | Keterangan |
-|---|---|
-| [Vercel](https://vercel.com/) *(Hobby)* | Hosting + Serverless + Edge Middleware |
-| [Upstash Redis](https://upstash.com/) *(Free Tier)* | IP-based Rate Limiting |
-| [Midtrans](https://midtrans.com/) | Payment Gateway — SHA-512 webhook verification |
-| [Sentry](https://sentry.io/) *(Free Tier)* | Error monitoring & alerting |
-| [Telegram Bot API](https://core.telegram.org/bots/api) | Daily coaching notifications |
-
-### Security Stack
-
-| Mekanisme | Detail |
-|---|---|
-| Signature Verification | SHA-512 Midtrans, Telegram Secret Token |
-| Rate Limiting | Upstash Redis — IP-based (AI: 5/min, General: 50/min) |
-| PII Stripping | Regex redaction sebelum AI processing |
-| Audit Logging | `audit_logs` table — user actions + IP + user-agent |
-| Encrypted OCR Retention | File upload **tidak pernah disimpan**; OCR plaintext tidak disimpan, hanya `encrypted_ocr_text` AES-256-GCM bila `ENCRYPTION_KEY` tersedia |
-| OWASP Headers | HSTS, CSP, X-Frame-Options, Referrer-Policy |
-
-> [!IMPORTANT]
-> **Catatan Cloud SaaS:** Seluruh infrastruktur menggunakan tier gratis dari layanan cloud. Untuk produksi yang serius, diperlukan upgrade ke paid tier dari Supabase, Vercel, dan Upstash.
+### Fokus Utama Keamanan:
+1. **Zero Retention (Tidak Ada Penyimpanan Berkas)**: Dokumen PDF/gambar transaksi pengguna **tidak pernah disimpan** di *bucket storage* manapun. Diproses di memori dan langsung dihancurkan (Garbage Collected).
+2. **PII Stripping Otomatis**: Data *Personally Identifiable Information* seperti NIK, Nomor Rekening, dan Email disensor menggunakan *Regex* sebelum dikirim ke Groq AI.
+3. **Enkripsi Data At Rest**: Teks hasil OCR yang perlu disimpan (jika pengguna mengizinkan riwayat) dienkripsi secara ketat menggunakan **AES-256-GCM** sebelum masuk ke *database* PostgreSQL.
+4. **Rate Limiting Edge-Level**: Menggunakan Upstash Redis, kami mencegah serangan DDoS, *brute force*, dan pengurasan kuota AI (AI limit: 5/menit, General limit: 50/menit per IP).
+5. **Row-Level Security (RLS)**: Setiap akses ke *database* dijamin melalui Supabase RLS agar pengguna A tidak mungkin dapat membaca *scan_history* milik pengguna B.
 
 ---
 
@@ -144,44 +224,13 @@ npm install
 cp .env.example .env.local
 # Isi kredensial di .env.local
 
-# 4. Jalankan
+# 4. Jalankan Server Dev
 npm run dev
 ```
 
 Buka [http://localhost:3000](http://localhost:3000).
 
-### Environment Variables
-
-| Variable | Wajib | Keterangan |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | URL Project Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Anon Key Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Service Role Key (untuk admin operations) |
-| `GROQ_API_KEY` | ✅ | API key Groq untuk AI utama, OCR vision, scam detection, dan legal generation |
-| `GEMINI_API_KEY` | ⬜ | Opsional untuk embedding RAG OJK (`text-embedding-004`) |
-| `ENCRYPTION_KEY` | ✅ | Kunci minimal 32 karakter untuk enkripsi OCR AES-256-GCM |
-| `UPSTASH_REDIS_REST_URL` | ✅ Production | Upstash Redis URL untuk rate limiting; API fail-closed di production bila kosong |
-| `UPSTASH_REDIS_REST_TOKEN` | ✅ Production | Upstash Redis Token untuk rate limiting; jangan expose sebagai `NEXT_PUBLIC_*` |
-| `MIDTRANS_SERVER_KEY` | ⬜ | Midtrans Server Key |
-| `TELEGRAM_BOT_TOKEN` | ⬜ | Telegram Bot Token |
-| `TELEGRAM_WEBHOOK_SECRET` | ✅ Jika Telegram aktif | Secret header webhook Telegram |
-| `WHATSAPP_APP_SECRET` | ✅ Jika WhatsApp aktif | Meta App Secret untuk verifikasi `x-hub-signature-256` |
-| `WHATSAPP_VERIFY_TOKEN` | ✅ Jika WhatsApp aktif | Token verifikasi webhook WhatsApp |
-| `WHATSAPP_API_TOKEN` | ✅ Jika WhatsApp aktif | Meta WhatsApp API token, server-only |
-| `WHATSAPP_PHONE_ID` | ✅ Jika WhatsApp aktif | WhatsApp phone number ID |
-| `CRON_SECRET` | ⬜ | Secret untuk cron job authentication |
-| `DIAGNOSTIC_SECRET` | ⬜ | Opsional untuk membuka `/api/scan/diagnose`; tanpa ini endpoint 404 di production |
-
----
-
-## 🚦 Roadmap
-
-| Fase | Status | Deskripsi |
-|---|---|---|
-| **Fase 1 — MVP** | ✅ | AI Scanner, Scam Detector, Telegram, Langganan |
-| **Fase 2 — OJK API** | 🔲 | Sinkronisasi dengan Blacklist SWI OJK |
-| **Fase 3 — Side-Hustle AI** | 🔲 | RAG Database pekerjaan freelance |
-| **Fase 4 — Crisis Button** | 🔲 | Panic Button ke bantuan psikologis |
+Untuk berkontribusi, silakan baca [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -189,99 +238,140 @@ Buka [http://localhost:3000](http://localhost:3000).
 
 ## About SafeWallet
 
-SafeWallet is an AI-powered financial wellness platform designed to combat the epidemic of investment fraud, predatory online lending (Pinjol), and low financial literacy in Indonesia.
+SafeWallet is an AI-powered financial wellness platform designed to combat the epidemic of investment fraud, predatory online lending (Pinjol), and low financial literacy in Indonesia. The platform is designed with a high-security approach (Zero-Trust).
 
 > *"Because no one should be destroyed simply by financial ignorance."*
 
-### Core Concepts
+### Core Concepts & Features
 
-1. **Radical Transparency** — Automatically dissect bank statement documents using Groq AI to track every financial leak. Just *Drag & Drop*.
-2. **Debt-Snowball Rescue** — Detects Debt-to-Income Ratio automatically. If it exceeds 35%, the "Saku Academy Lock" protocol is triggered to guide users out of crisis.
-3. **Scam Interceptor** — Before sending money to an entity promising unrealistic returns, users can analyze investment descriptions. The AI will dissect Ponzi patterns instantly.
+1. **Radical Transparency (Health Scanner)** — Automatically dissect bank statement documents via OCR & LLM to categorize spending and find financial anomalies.
+2. **Debt-Snowball Rescue (Saku Academy Lock)** — Detects Debt-to-Income Ratio (DTI). If it exceeds 35%, the interface locks into a rescue mode to guide users out of crisis.
+3. **Scam Interceptor (Scam Checker)** — Analyzes investment descriptions to dissect Ponzi or pyramid patterns instantly using Retrieval-Augmented Generation (RAG) backed by official OJK data.
+4. **AI Lawyer (Legal Generator)** — Automated generator for basic legal documents and consumer protection cease-and-desists.
+5. **Data Breach Monitor** — Real-time monitoring and alerts if user credentials or personal data are found on the dark web or hacker forums.
+6. **Telegram Bot** — Provides summaries, daily coaching, and expense notifications.
 
 ### 🌐 Live Demo
 
 | Environment | URL |
 |---|---|
-| **Production** | [safe-wallet-orpin.vercel.app](https://safe-wallet-orpin.vercel.app) |
+| **Production Demo** | [safe-wallet-orpin.vercel.app](https://safe-wallet-orpin.vercel.app) |
 
 ---
 
-## 📐 Architecture
+## 📐 Architecture & Workflow
+
+SafeWallet has a modular architecture separated into several feature pipelines. Below are detailed flowcharts for major features.
+
+### 1. High-Level Architecture
 
 ```mermaid
 graph TD
-    A[Sign Up via Magic Link] --> B(Supabase Auth + RLS)
-    B --> C{Dashboard}
+    User([User]) -->|Web Access| Vercel[Vercel Edge & Serverless]
+    User -->|Telegram Access| TeleBot[Telegram Bot Webhook]
 
-    C -->|Health Scanner| D[Upload Bank Statement PDF/Image]
-    D --> E[PII Stripping + Server Action]
-    E --> F[Groq AI — OCR/Categories/DTI/Insights]
-    F --> G{DTI > 35%?}
-    G -- Yes --> H[🚨 Saku Academy Lock]
-    G -- No --> I[Health Score + Report]
+    Vercel -->|Auth & DB| Supabase[(Supabase PostgreSQL)]
+    Vercel -->|Rate Limit| Upstash[(Upstash Redis)]
+    Vercel -->|AI Inference| Groq[Groq API]
+    
+    subgraph Core_Features [Core Features]
+        Vercel --> Scanner[Health Scanner]
+        Vercel --> ScamCheck[Scam Checker]
+        Vercel --> SakuAcademy[Saku Academy Lock]
+        Vercel --> LegalGen[AI Lawyer]
+        Vercel --> Breach[Data Breach]
+    end
 
-    C -->|Scam Checker| J[Input Text/URL]
-    J --> K[AI Scam Engine]
-    K --> L[Ponzi Threat Card]
+    Scanner --> Groq
+    ScamCheck --> Groq
+    LegalGen --> Groq
+    Breach --> Groq
+    
+    Vercel -->|Error Logging| Sentry[Sentry Error Tracking]
+```
 
-    C -->|Telegram| M[Daily Coaching Bot]
+### 2. Workflow: Health Scanner (Statement Upload)
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Server Action
+    participant AI as Groq LLM
+    participant DB as Supabase DB
+
+    U->>F: Upload PDF/Image Statement
+    F->>S: Send Data Buffer
+    S->>S: Validate Extensions & Magic Bytes
+    S->>S: OCR Text Extraction
+    S->>S: PII Stripping (Remove IDs/Accounts)
+    S->>AI: Send Sanitized Text for Analysis
+    AI-->>S: Return JSON (Categories, DTI, Score)
+    S->>DB: Store JSON Result (Encrypted)
+    S->>S: Delete Original Buffer from Memory
+    S-->>F: Display Financial Report
+```
+
+### 3. Workflow: AI Lawyer (Legal Generator)
+
+```mermaid
+flowchart TD
+    A[User Selects Document Type] --> B[Input Case Details]
+    B --> C[Zod Input Validation]
+    C --> D[Send Context to Groq LLM]
+    D --> E[LLM Drafts Legal Document]
+    E --> F[Document Preview]
+    F --> G[Download PDF / Print]
+```
+
+### 4. Workflow: Data Breach Monitor
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Server Action
+    participant HIBP as External API/DB
+    
+    U->>F: Input Email/Phone Number
+    F->>S: Send Check Request
+    S->>S: Sanitize & Encrypt Input
+    S->>HIBP: Query Breach Database
+    HIBP-->>S: Return Breach Data
+    S-->>F: Display Breach Alert & Recommendations
+```
+
+### 5. Workflow: CI/CD Pipeline
+
+We utilize GitHub Actions and Vercel for our deployment pipeline.
+
+```mermaid
+flowchart LR
+    A[Push / PR to GitHub] --> B{GitHub Actions CI}
+    B --> C[ESLint & Prettier Check]
+    B --> D[Type Checking - tsc]
+    B --> E[Unit Tests - Vitest]
+    C --> F{CI Status}
+    D --> F
+    E --> F
+    F -- Pass --> G[Vercel Build]
+    F -- Fail --> H[Block PR / Deployment]
+    G --> I[Deploy to Vercel Preview / Production]
 ```
 
 ---
 
-## 🛠 Tech Stack
+## 🛡️ Security Policy & Privacy
 
-### Frontend
+SafeWallet implements strict **Zero-Trust** security principles. 
+For detailed threat models and vulnerability reporting, see [SECURITY.md](SECURITY.md).
 
-| Technology | Version | Description |
-|---|---|---|
-| [Next.js](https://nextjs.org/) | `16` | Core framework — App Router + Server Actions |
-| [React](https://react.dev/) | `19` | UI Library |
-| [TypeScript](https://www.typescriptlang.org/) | `5` | Type Safety |
-| [Tailwind CSS](https://tailwindcss.com/) | `4` | Utility-first CSS |
-| [GSAP](https://gsap.com/) | `3.12` | Cinematic scroll animations (ScrollTrigger) |
-| [Framer Motion](https://www.framer.com/motion/) | `^12` | Page transitions & micro-animations |
-| [Lucide React](https://lucide.dev/) | Latest | Icon system |
-
-### Backend & Database
-
-| Technology | Description |
-|---|---|
-| [Supabase](https://supabase.com/) *(Free Tier)* | PostgreSQL + Auth (Magic Link) + Row-Level Security |
-| [Next.js API Routes](https://nextjs.org/) | REST endpoints: scan, scam-check, webhooks, cron |
-
-### AI & Intelligence
-
-| Technology | Description |
-|---|---|
-| [Groq](https://groq.com/) | Primary AI: OCR vision, health scan, scam detection, legal generation (`llama-3.3-70b-versatile`, fallback `llama-3.1-8b-instant`) |
-| [Google Gemini Embeddings](https://ai.google.dev/) | Optional OJK RAG embeddings (`text-embedding-004`) |
-| Custom PII Sanitizer | Strips personal data (IDs, emails, accounts) before AI processing |
-
-### Infrastructure
-
-| Technology | Description |
-|---|---|
-| [Vercel](https://vercel.com/) *(Hobby)* | Hosting + Serverless Functions + Edge Middleware |
-| [Upstash Redis](https://upstash.com/) *(Free Tier)* | IP-based Rate Limiting |
-| [Midtrans](https://midtrans.com/) | Payment Gateway — SHA-512 webhook verification |
-| [Sentry](https://sentry.io/) *(Free Tier)* | Error monitoring & alerting |
-| [Telegram Bot API](https://core.telegram.org/bots/api) | Daily coaching notifications |
-
-### Security Stack
-
-| Mechanism | Details |
-|---|---|
-| Signature Verification | SHA-512 Midtrans, Telegram Secret Token |
-| Rate Limiting | Upstash Redis — IP-based (AI: 5/min, General: 50/min) |
-| PII Stripping | Regex redaction before AI processing |
-| Audit Logging | `audit_logs` table — user actions + IP + user-agent |
-| Encrypted OCR Retention | Uploaded files are **never stored**; raw OCR plaintext is not retained, and `encrypted_ocr_text` uses AES-256-GCM when `ENCRYPTION_KEY` is configured |
-| OWASP Headers | HSTS, CSP, X-Frame-Options, Referrer-Policy |
-
-> [!IMPORTANT]
-> **Cloud SaaS Note:** The entire infrastructure runs on free-tier cloud services. For serious production use, upgrading to paid tiers of Supabase, Vercel, and Upstash is required.
+### Key Security Implementations:
+1. **Zero Retention Storage**: Uploaded files (PDFs/Images) are **never stored** on disk or cloud storage. They are processed entirely in memory and garbage collected.
+2. **Automated PII Stripping**: Personally Identifiable Information (ID numbers, Emails, Accounts) are scrubbed via Regex before any payload hits Groq LLM.
+3. **Data Encryption at Rest**: Any retained OCR data is aggressively encrypted using **AES-256-GCM** before being inserted into PostgreSQL.
+4. **Edge-Level Rate Limiting**: Upstash Redis is used to prevent DDoS, abuse, and quota draining on AI endpoints.
+5. **Row-Level Security (RLS)**: Cryptographically guarantees that User A cannot fetch the data records of User B.
 
 ---
 
@@ -296,7 +386,6 @@ npm install
 
 # 3. Setup environment
 cp .env.example .env.local
-# Fill in credentials in .env.local
 
 # 4. Run
 npm run dev
@@ -304,54 +393,17 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
----
-
-## 🚦 Roadmap
-
-| Phase | Status | Description |
-|---|---|---|
-| **Phase 1 — MVP** | ✅ | AI Scanner, Scam Detector, Telegram, Subscription |
-| **Phase 2 — OJK API** | 🔲 | Sync with Indonesia Financial Authority Blacklist |
-| **Phase 3 — Side-Hustle AI** | 🔲 | RAG-based freelance job matching against user expense gaps |
-| **Phase 4 — Crisis Button** | 🔲 | Panic button connected to psychological help hotlines |
+To contribute, please read [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
-<div align="center">
-
-## ⚖️ Security | Keamanan
-
-Built with **Zero-Trust** principles. Uploaded bank statement files are **never stored** permanently; OCR text is either encrypted for retention or discarded.
-100% Row-Level Security on all Supabase tables. Full audit trail for sensitive actions.
-
-See [SECURITY.md](SECURITY.md) for details.
-
----
-
-## 🧑‍💻 Creator | Kreator
+## 🧑‍💻 Creator
 
 Built with dedication by **[Kazanaru](https://github.com/kazanaruishere-max)**.
 
 > *"Code is a shield. Technology is a tool for justice."*
 
----
-
-## 📜 License | Lisensi
+## 📜 License
 
 Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
-
 Copyright © 2026 **Kazanaru.**
-
-## Star History
-
-<a href="https://www.star-history.com/?repos=kazanaruishere-max%2FSafeWallet&type=date&legend=bottom-right">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=kazanaruishere-max/SafeWallet&type=date&theme=dark&legend=bottom-right" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=kazanaruishere-max/SafeWallet&type=date&legend=bottom-right" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=kazanaruishere-max/SafeWallet&type=date&legend=bottom-right" />
- </picture>
-</a>
-
-</div>
-
-<!-- YOLO Badge Hunt Test -->
