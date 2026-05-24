@@ -39,6 +39,7 @@ export default function ProfilePage() {
 
   const [linkCode, setLinkCode] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -154,6 +155,26 @@ export default function ProfilePage() {
       toast.error("Gagal terhubung ke server.");
     } finally {
       setLinking(false);
+    }
+  };
+
+  const handleDisconnectBot = async () => {
+    if (!confirm("Yakin ingin memutuskan koneksi dengan Bot Saku Telegram?")) return;
+    setUnlinking(true);
+    try {
+      const res = await fetch("/api/user/telegram-unlink", { method: "POST" });
+      const json = await res.json();
+      if (json.success) {
+        setProfile((prev) => prev ? { ...prev, telegram_chat_id: null } : prev);
+        setLinkCode(null);
+        toast.success("Koneksi Bot Telegram berhasil diputus.");
+      } else {
+        toast.error(json.error?.message ?? "Gagal memutuskan koneksi.");
+      }
+    } catch {
+      toast.error("Gagal terhubung ke server.");
+    } finally {
+      setUnlinking(false);
     }
   };
 
@@ -354,7 +375,14 @@ export default function ProfilePage() {
                   <p className="text-white/50 text-sm leading-relaxed">
                     Saku Assistant sudah aktif 24/7 di Telegram. Saku dapat melihat kondisi finansial Anda saat ini untuk memberi rekomendasi paling relevan.
                   </p>
-                  <Button variant="outline" className="mt-6 border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl w-full">Putuskan Koneksi Bot</Button>
+                  <Button 
+                    variant="outline" 
+                    className="mt-6 border-red-500/20 text-red-400 hover:bg-red-500/10 rounded-xl w-full"
+                    onClick={handleDisconnectBot}
+                    disabled={unlinking}
+                  >
+                    {unlinking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memutuskan...</> : "Putuskan Koneksi Bot"}
+                  </Button>
                 </div>
               )}
             </div>
