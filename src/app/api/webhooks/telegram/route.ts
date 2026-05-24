@@ -126,7 +126,7 @@ export async function POST(request: Request) {
           { role: "system", content: FINANCIAL_COACHING_PROMPT + ragContext },
           { role: "user", content: `(Pesan dari ${userName}): ${userMessage}` }
         ],
-        { jsonMode: false, temperature: 0.7 }
+        { model: "llama-3.1-8b-instant", jsonMode: false, temperature: 0.7 }
       );
       
       aiResponseText = aiResponse.content;
