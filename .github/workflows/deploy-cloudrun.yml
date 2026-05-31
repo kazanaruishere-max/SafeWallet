@@ -81,7 +81,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     env:
-      IMAGE_URI: ${{ env.REGISTRY }}/${{ secrets.GCP_PROJECT_ID }}/safewallet/safewallet-app:${{ github.sha }}
+      IMAGE_URI: asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/safewallet/safewallet-app:${{ github.sha }}
 
     steps:
       - name: Authenticate to Google Cloud (WIF)

@@ -199,18 +199,20 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Scan History shortcut */}
-        <Card className="bg-[#1A1D24]/60 backdrop-blur-xl border-white/5 rounded-[2rem] p-6 flex items-center justify-between hover:bg-white/5 cursor-pointer transition-colors group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
-              <History className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+        <Link href="/dashboard/history" className="block">
+          <Card className="bg-[#1A1D24]/60 backdrop-blur-xl border-white/5 rounded-[2rem] p-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                <History className="w-6 h-6 text-white/50 group-hover:text-white transition-colors" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold">Riwayat Scan</h3>
+                <p className="text-sm text-white/40">Lihat data historis analisis</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-white font-bold">Riwayat Scan</h3>
-              <p className="text-sm text-white/40">Lihat data historis analisis</p>
-            </div>
-          </div>
-          <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[#F2A971] group-hover:translate-x-1 transition-all" />
-        </Card>
+            <ArrowRight className="w-5 h-5 text-white/30 group-hover:text-[#F2A971] group-hover:translate-x-1 transition-all" />
+          </Card>
+        </Link>
       </div>
     </div>
   );

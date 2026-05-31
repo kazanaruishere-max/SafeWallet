@@ -81,14 +81,9 @@ export async function middleware(request: NextRequest) {
   // 1. IP Rate Limiting untuk semua /api/ routes
   if (request.nextUrl.pathname.startsWith("/api/")) {
     if (!rateLimits) {
-      if (process.env.NODE_ENV === "production") {
-        return applySecurityHeaders(
-          NextResponse.json(
-            { error: "Rate limit service unavailable" },
-            { status: 503 }
-          )
-        );
-      }
+      // Allow requests to pass through even if Upstash is not configured,
+      // to prevent the entire app from breaking if env vars are missing.
+      console.warn("[RateLimit] Upstash is not configured. Rate limiting is disabled.");
     } else {
     // Fallback order for IP detection
     const ip = getClientIp(request);
