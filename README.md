@@ -52,7 +52,7 @@ SafeWallet adalah platform berbasis AI yang dirancang sebagai antitesis terhadap
 
 | Lingkungan | URL |
 |---|---|
-| **Production App (Web)** | [safewallet-app-240283524030.asia-southeast2.run.app](https://safewallet-app-240283524030.asia-southeast2.run.app/) |
+| **Production App (Web)** | [https://safewallet-app-zkcapjqxxa-et.a.run.app/](https://safewallet-app-zkcapjqxxa-et.a.run.app/) |
 | **Telegram Bot Link** | [@SakuSafeBot](https://t.me/SakuSafeBot) |
 
 ---
